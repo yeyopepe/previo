@@ -1,0 +1,29 @@
+{
+  "skillModels": {
+    "_instructions": "Tras editar 'default' o 'overrides' de esta seccion, ejecuta desde la raiz del repo: python .claude/skills/ms-init/scripts/sync-skill-models.py -- reescribe el campo 'model'/'effort' en el frontmatter de cada SKILL.md 'ms-*' segun lo que quede configurado aqui. El harness de Claude Code solo lee ese frontmatter, no este JSON, asi que sin ejecutar el script los cambios de aqui no tienen efecto.",
+    "default": { "model": "claude-sonnet-5", "effort": "medium" },
+    "overrides": {
+      "ms-status": { "model": "claude-haiku-4-5", "effort": "medium" },
+      "ms-todo": { "model": "claude-haiku-4-5", "effort": "medium" },
+      "ms-do": { "model": "claude-haiku-4-5", "effort": "medium" }
+    }
+  },
+  "framework": {
+    "skills": {
+      "mockups": "ms-internal-mockups-html",
+      "diagrams": "ms-internal-tech-mermaid"
+    },
+    "sourcecodeDir": "src",
+    "workFolder": "/",
+    "numberWidth": 5,
+    "docs": {
+      "functional": {
+        "featuresDocPathDir": "design/docs/features"
+      },
+      "tech": {
+        "architectureDocDir": "design/docs/architecture",
+        "styleBibleDocDir": "design/docs/style"
+      }
+    }
+  }
+}

@@ -1,0 +1,183 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "ms-context.schema.json",
+  "title": ".claude/ms-context.json",
+  "description": "Fichero en la raiz del repo (junto a la carpeta .claude/) que da contexto a todas las skills del framework ms-* (ms-init, ms-internal-workflow, ms-new, ms-fix, ms-how, ms-do). Es lo unico que hace que esas skills sean genericas en vez de estar atadas a un proyecto concreto. Lo crea y actualiza la skill ms-init; ninguna otra skill debe escribirlo desde cero. Si el fichero existe pero incompleto, ms-init hace merge sobre lo ya existente sin pisar nada. Cualquier skill ms-* que necesite un campo que falte debe decirle al usuario que ejecute ms-init, no reimplementar el bootstrap.",
+  "type": "object",
+  "required": ["framework"],
+  "additionalProperties": false,
+  "properties": {
+    "skillModels": {
+      "type": "object",
+      "description": "OPCIONAL. Fuente de verdad para el modelo/esfuerzo (Claude) con el que corre cada skill 'ms-*' de este repo. El harness de Claude Code solo lee el campo 'model'/'effort' del frontmatter de cada SKILL.md -- no este JSON -- asi que esta seccion no tiene efecto por si sola. Tras editar 'default' o 'overrides', hay que ejecutar el script de sincronizacion documentado en '_instructions' para propagar los valores al frontmatter real de cada SKILL.md.",
+      "additionalProperties": false,
+      "properties": {
+        "_instructions": {
+          "type": "string",
+          "description": "Recordatorio, en el propio fichero, de como aplicar cambios hechos en 'default'/'overrides'. Ninguna skill debe borrar esta clave."
+        },
+        "default": {
+          "$ref": "#/$defs/modelConfig",
+          "description": "Modelo/esfuerzo por defecto para cualquier skill 'ms-*' que no tenga entrada propia en 'overrides'."
+        },
+        "overrides": {
+          "type": "object",
+          "description": "OPCIONAL. Una entrada por nombre de skill (el 'name:' de su SKILL.md, p.ej. 'ms-status') que necesite un modelo/esfuerzo distinto del 'default'.",
+          "additionalProperties": { "$ref": "#/$defs/modelConfig" }
+        }
+      }
+    },
+    "framework": {
+      "type": "object",
+      "description": "Configuracion que entienden y usan las skills ms-* directamente (rutas del proceso de tracking de cambios). Forma fija, a diferencia de 'project'.",
+      "additionalProperties": false,
+      "properties": {
+        "workFolder": {
+          "type": "string",
+          "default": "/",
+          "description": "OPCIONAL (por defecto '/', la raiz del repo). Carpeta relativa a la raiz del repo bajo la que el framework ms-* gestiona TODO su trabajo. Dentro de workFolder, las skills crean por si mismas dos subcarpetas de nombre fijo -- '{workFolder}/changes/' y '{workFolder}/versions/' -- que el usuario no elige ni renombra, para evitar cualquier configuracion manual que pueda romper o hacer colisionar esas rutas. '{workFolder}/changes/' contiene dos subarboles con subcarpetas numeradas ({xxxx}): 'changes/inProgress/' (cambios/fixes documentados por ms-new/ms-fix, pendientes de implementar o de planificar) y 'changes/implemented/' (cambios/fixes cuyo plan.md ya se ha implementado -- los mueve ahi ms-do); un mismo {xxxx} nunca debe repetirse entre ambos. Tambien puede convivir ahi 'changes/todo/' (ideas sueltas de ms-todo, ajenas al flujo de change/fix) y 'changes/closed/' (cambios/fixes ya incorporados a una entrega, gestionados por ms-version/ms-internal-changelog). '{workFolder}/versions/' contiene una subcarpeta por cada entrega preparada con ms-version, con codigo XXXX de texto libre elegido por el usuario en cada invocacion -- espacio de numeracion totalmente independiente del {xxxx} de changes/.",
+          "examples": ["/", "_ms"]
+        },
+        "sourcecodeDir": {
+          "type": "string",
+          "description": "OPCIONAL. Carpeta raiz del codigo fuente del proyecto (relativa a la raiz del repo). La usa ms-how como contexto de respaldo al analizar un cambio/fix y escribir su plan.md, solo cuando docs.tech.architectureDocDir no existe como carpeta real en el repo.",
+          "examples": ["src", "app"]
+        },
+        "skills": {
+          "type": "object",
+          "description": "OPCIONAL. Skills (herramienta Skill) intercambiables que el resto del framework invoca por nombre para delegar una responsabilidad concreta, en vez de tenerla fija en el codigo de cada skill que la necesita. Sustituir el nombre aqui basta para cambiar de tecnologia/notacion sin tocar ms-new/ms-fix/ms-how/ms-internal-workflow, siempre que la skill indicada cumpla el mismo contrato de entrada/salida que la que sustituye (documentado en el SKILL.md de la que sustituye).",
+          "additionalProperties": false,
+          "properties": {
+            "mockups": {
+              "type": "string",
+              "default": "ms-internal-mockups-html",
+              "description": "OPCIONAL (por defecto 'ms-internal-mockups-html'). Nombre de la skill que ms-new y ms-fix invocan para crear/editar las maquetas 'design_*.html' de un change/fix, solo cuando ya se sabe que hace falta al menos una. No hace falta preguntarlo ni configurarlo salvo que el usuario quiera sustituir la generacion de maquetas en HTML por otra tecnologia (Figma, una libreria de componentes, imagenes...): en ese caso, la skill indicada aqui debe cumplir el mismo contrato de entrada/salida documentado en ms-internal-mockups-html/SKILL.md (carpeta destino + lista de elementos a crear/editar como entrada; rutas de los ficheros resultantes como salida) para poder sustituirla sin tocar ms-new/ms-fix.",
+              "examples": ["ms-internal-mockups-html"]
+            },
+            "diagrams": {
+              "type": "string",
+              "default": "ms-internal-tech-mermaid",
+              "description": "OPCIONAL (por defecto 'ms-internal-tech-mermaid'). Nombre de la skill que ms-internal-workflow, ms-new, ms-fix y ms-how invocan para generar los diagramas Mermaid (funcionales o tecnicos -- flujo, secuencia) de un change/fix, solo cuando ya se sabe que hace falta al menos uno. No hace falta preguntarlo ni configurarlo salvo que el usuario quiera sustituir la generacion de diagramas en Mermaid por otra notacion o herramienta: en ese caso, la skill indicada aqui debe cumplir el mismo contrato de entrada/salida documentado en ms-internal-tech-mermaid/SKILL.md (lista de diagramas a generar, con tipo y que debe representar cada uno, como entrada; el codigo de cada diagrama como salida) para poder sustituirla sin tocar ms-internal-workflow/ms-new/ms-fix/ms-how.",
+              "examples": ["ms-internal-tech-mermaid"]
+            }
+          }
+        },
+        "numberWidth": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 4,
+          "description": "OPCIONAL (por defecto 4). Numero de digitos del codigo secuencial 'xxxx', con ceros a la izquierda. No hace falta preguntarlo al usuario salvo que quiera algo distinto del default.",
+          "examples": [4]
+        },
+        "docs": {
+          "type": "object",
+          "description": "OPCIONAL. Documentacion de referencia externa del proyecto, agrupada por area ('functional', 'tech').",
+          "additionalProperties": false,
+          "properties": {
+            "functional": {
+              "type": "object",
+              "description": "OPCIONAL. Documentacion funcional que las skills ms-* usan como contexto y mantienen sincronizada.",
+              "additionalProperties": false,
+              "properties": {
+                "featuresDocPathDir": {
+                  "type": "string",
+                  "description": "OPCIONAL. Listado de funcionalidades ya implementadas en el proyecto (relativo a la raiz del repo). Puede ser una CARPETA (recomendado, p.ej. 'design/docs/features') con un fichero por funcionalidad mas un 'INDEX.md' generado -- en ese caso ms-do delega la lectura/escritura en la skill ms-internal-doc-features, que conoce esa convencion -- o, en proyectos antiguos que todavia no han migrado, un unico fichero .md. ms-do anade o actualiza ahi la entrada correspondiente cada vez que implementa un cambio/fix, creando la carpeta/fichero si todavia no existe. Si no esta configurado, ese paso se omite sin preguntar nada.",
+                  "examples": ["design/docs/features", "design/docs/FEATURES.md"]
+                }
+              }
+            },
+            "tech": {
+              "type": "object",
+              "description": "OPCIONAL. Documentacion tecnica que las skills ms-* usan como contexto y mantienen sincronizada.",
+              "additionalProperties": false,
+              "properties": {
+                "architectureDocDir": {
+                  "type": "string",
+                  "description": "OPCIONAL. Carpeta (relativa a la raiz del repo) con el documento de arquitectura/diseno tecnico, partido en varios ficheros para lectura selectiva por un LLM. Debe contener un 'INDEX.md' que resuma que cubre cada fichero hermano (con prefijo numerico de 2 digitos, p.ej. '01-', '02-'). ms-do mantiene esta carpeta sincronizada tras implementar cada cambio/fix, creando un fichero nuevo con el siguiente numero libre si el tema no encaja en ninguno existente. Si no esta configurado, ese paso se omite sin preguntar nada.",
+                  "examples": ["design/docs/architecture"]
+                },
+                "styleBibleDocDir": {
+                  "type": "string",
+                  "description": "OPCIONAL. Carpeta (relativa a la raiz del repo) con la guia de estilo (visual, de interaccion, de redaccion) del proyecto, partida en varios ficheros para lectura selectiva por un LLM. Debe contener un 'INDEX.md' que resuma que cubre cada fichero hermano (con prefijo numerico de 2 digitos, p.ej. '01-', '02-'). ms-do mantiene esta carpeta sincronizada tras implementar cada cambio/fix, creando un fichero nuevo con el siguiente numero libre si el tema no encaja en ninguno existente. Si no esta configurado, ese paso se omite sin preguntar nada.",
+                  "examples": ["design/docs/style"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "project": {
+      "type": "object",
+      "description": "OPCIONAL, sin forma fija. Informacion libre y especifica de este proyecto concreto (que es, stack, convenciones, lo que haga falta). Las skills ms-* no dependen de ningun campo de aqui para funcionar, pero lo usan como contexto adicional al redactar documentos o tomar decisiones (p.ej. para que el resumen funcional de un fix hable con el vocabulario correcto del dominio). La define ms-init en conversacion con el usuario, proyecto a proyecto; puede quedar como objeto vacio si el usuario no quiere anotar nada.",
+      "additionalProperties": true,
+      "examples": [
+        {
+          "name": "Errantes",
+          "summary": "Prototipo de juego de mesa jugable en navegador.",
+          "stack": ["JavaScript vanilla", "HTML/CSS", "PowerShell build script"],
+          "notes": "El entregable es un unico HTML autocontenido por version."
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "modelConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "effort"],
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "Valor aceptado por el campo 'model' del frontmatter de un SKILL.md (los mismos IDs que acepta /model, p.ej. 'claude-sonnet-5', 'claude-haiku-4-5-20251001', o 'inherit').",
+          "examples": ["claude-sonnet-5", "claude-haiku-4-5-20251001"]
+        },
+        "effort": {
+          "type": "string",
+          "description": "Valor aceptado por el campo 'effort' del frontmatter de un SKILL.md.",
+          "examples": ["low", "medium", "high"]
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "skillModels": {
+        "_instructions": "Tras editar 'default'/'overrides', ejecuta desde la raiz del repo: python .claude/skills/ms-init/scripts/sync-skill-models.py -- reescribe 'model'/'effort' en el frontmatter de cada SKILL.md 'ms-*' segun esta seccion.",
+        "default": { "model": "claude-sonnet-5", "effort": "medium" },
+        "overrides": {
+          "ms-status": { "model": "claude-haiku-4-5-20251001", "effort": "medium" }
+        }
+      },
+      "framework": {
+        "workFolder": "/",
+        "numberWidth": 4,
+        "docs": {
+          "functional": {
+            "featuresDocPathDir": "design/docs/features"
+          },
+          "tech": {
+            "architectureDocDir": "design/docs/architecture"
+          }
+        },
+        "sourcecodeDir": "src",
+        "skills": {
+          "mockups": "ms-internal-mockups-html",
+          "diagrams": "ms-internal-tech-mermaid"
+        }
+      },
+      "project": {
+        "name": "Errantes",
+        "summary": "Prototipo de juego de mesa jugable en navegador.",
+        "stack": ["JavaScript vanilla", "HTML/CSS", "PowerShell build script"],
+        "notes": "El entregable es un unico HTML autocontenido por version."
+      }
+    },
+    {
+      "framework": {
+        "workFolder": "_ms"
+      },
+      "project": {}
+    }
+  ]
+}
