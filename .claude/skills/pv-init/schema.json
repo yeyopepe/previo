@@ -2,62 +2,106 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pv-context.schema.json",
   "title": ".claude/pv-context.json",
-  "description": "Fichero en la raiz del repo (junto a la carpeta .claude/) que da contexto a todas las skills del framework pv-* (pv-init, pv-internal-workflow, pv-new, pv-fix, pv-how, pv-do). Es lo unico que hace que esas skills sean genericas en vez de estar atadas a un proyecto concreto. Lo crea y actualiza la skill pv-init; ninguna otra skill debe escribirlo desde cero. Si el fichero existe pero incompleto, pv-init hace merge sobre lo ya existente sin pisar nada. Cualquier skill pv-* que necesite un campo que falte debe decirle al usuario que ejecute pv-init, no reimplementar el bootstrap.",
+  "description": "File at the repo root (alongside the .claude/ folder) that gives context to every skill in the pv-* framework (pv-init, pv-internal-workflow, pv-new, pv-fix, pv-how, pv-do). It's the only thing that makes those skills generic instead of tied to a specific project. Created and updated by the pv-init skill; no other skill should write it from scratch. If the file exists but is incomplete, pv-init merges onto what's already there without overwriting anything. Any pv-* skill that needs a missing field should tell the user to run pv-init, not reimplement the bootstrap.",
   "type": "object",
   "required": ["framework"],
   "additionalProperties": false,
   "properties": {
     "skillModels": {
       "type": "object",
-      "description": "OPCIONAL. Fuente de verdad para el modelo/esfuerzo (Claude) con el que corre cada skill 'pv-*' de este repo. El harness de Claude Code solo lee el campo 'model'/'effort' del frontmatter de cada SKILL.md -- no este JSON -- asi que esta seccion no tiene efecto por si sola. Tras editar 'default' o 'overrides', hay que ejecutar el script de sincronizacion documentado en '_instructions' para propagar los valores al frontmatter real de cada SKILL.md.",
+      "description": "OPTIONAL. Source of truth for which model/effort (Claude) each 'pv-*' skill in this repo runs with. The Claude Code harness only reads the 'model'/'effort' field from each SKILL.md's frontmatter -- not this JSON -- so this section has no effect on its own. After editing 'default' or 'overrides', run the sync script documented in '_instructions' to propagate the values to each SKILL.md's actual frontmatter.",
       "additionalProperties": false,
       "properties": {
         "_instructions": {
           "type": "string",
-          "description": "Recordatorio, en el propio fichero, de como aplicar cambios hechos en 'default'/'overrides'. Ninguna skill debe borrar esta clave."
+          "description": "Reminder, in the file itself, of how to apply changes made to 'default'/'overrides'. No skill should delete this key."
         },
         "default": {
           "$ref": "#/$defs/modelConfig",
-          "description": "Modelo/esfuerzo por defecto para cualquier skill 'pv-*' que no tenga entrada propia en 'overrides'."
+          "description": "Default model/effort for any 'pv-*' skill without its own entry in 'overrides'."
         },
         "overrides": {
           "type": "object",
-          "description": "OPCIONAL. Una entrada por nombre de skill (el 'name:' de su SKILL.md, p.ej. 'pv-status') que necesite un modelo/esfuerzo distinto del 'default'.",
+          "description": "OPTIONAL. One entry per skill name (the 'name:' in its SKILL.md, e.g. 'pv-status') that needs a model/effort different from 'default'.",
           "additionalProperties": { "$ref": "#/$defs/modelConfig" }
         }
       }
     },
     "framework": {
       "type": "object",
-      "description": "Configuracion que entienden y usan las skills pv-* directamente (rutas del proceso de tracking de cambios).",
+      "description": "Configuration that the pv-* skills understand and use directly (paths for the change-tracking process, language configuration).",
       "additionalProperties": false,
       "properties": {
         "workFolder": {
           "type": "string",
           "default": "/",
-          "description": "OPCIONAL (por defecto '/', la raiz del repo). Carpeta relativa a la raiz del repo bajo la que el framework pv-* gestiona TODO su trabajo. Dentro de workFolder, las skills crean por si mismas dos subcarpetas de nombre fijo -- '{workFolder}/changes/' y '{workFolder}/versions/' -- que el usuario no elige ni renombra, para evitar cualquier configuracion manual que pueda romper o hacer colisionar esas rutas. '{workFolder}/changes/' contiene dos subarboles con subcarpetas numeradas ({xxxx}): 'changes/inProgress/' (cambios/fixes documentados por pv-new/pv-fix, pendientes de implementar o de planificar) y 'changes/implemented/' (cambios/fixes cuyo plan.md ya se ha implementado -- los mueve ahi pv-do); un mismo {xxxx} nunca debe repetirse entre ambos. Tambien puede convivir ahi 'changes/todo/' (ideas sueltas de pv-todo, ajenas al flujo de change/fix) y 'changes/closed/' (cambios/fixes ya incorporados a una entrega, gestionados por pv-version/pv-internal-changelog). '{workFolder}/versions/' contiene una subcarpeta por cada entrega preparada con pv-version, con codigo XXXX de texto libre elegido por el usuario en cada invocacion -- espacio de numeracion totalmente independiente del {xxxx} de changes/.",
+          "description": "OPTIONAL (default '/', the repo root). Folder, relative to the repo root, under which the pv-* framework manages ALL of its work. Inside workFolder, the skills create two fixed-name subfolders by themselves -- '{workFolder}/changes/' and '{workFolder}/versions/' -- which the user doesn't choose or rename, to avoid any manual configuration that could break or collide with those paths. '{workFolder}/changes/' contains two subtrees with numbered subfolders ({xxxx}): 'changes/inProgress/' (changes/fixes documented by pv-new/pv-fix, pending implementation or planning) and 'changes/implemented/' (changes/fixes whose plan.md has already been implemented -- pv-do moves them there); the same {xxxx} must never repeat between the two. 'changes/todo/' (loose ideas from pv-todo, outside the change/fix flow) and 'changes/closed/' (changes/fixes already folded into a release, managed by pv-version/pv-internal-changelog) can also live there. '{workFolder}/versions/' contains one subfolder per release prepared with pv-version, with a free-text XXXX code chosen by the user on each invocation -- a numbering space entirely independent from changes/'s {xxxx}.",
           "examples": ["/", "_previo"]
         },
         "sourcecodeDir": {
           "type": "string",
-          "description": "OPCIONAL. Carpeta raiz del codigo fuente del proyecto (relativa a la raiz del repo). La usa pv-how como contexto de respaldo al analizar un cambio/fix y escribir su plan.md, solo cuando docs.tech.architectureDocDir no existe como carpeta real en el repo.",
+          "description": "OPTIONAL. Project's source code root folder (relative to the repo root). Used by pv-how as fallback context when analyzing a change/fix and writing its plan.md, only when docs.tech.architectureDocDir doesn't exist as a real folder in the repo.",
           "examples": ["src", "app"]
+        },
+        "interaction": {
+          "type": "object",
+          "description": "OPTIONAL. Language the pv-* skills use to talk to the user in chat (questions, confirmations, summaries). Also the fallback value for changes.language, versions.language, and any docs.*.language block without its own language.",
+          "additionalProperties": false,
+          "properties": {
+            "language": {
+              "type": "string",
+              "default": "en",
+              "description": "OPTIONAL (default 'en'). Free text or an ISO 639-1 code (e.g. 'es', 'fr').",
+              "examples": ["en", "es"]
+            }
+          }
+        },
+        "changes": {
+          "type": "object",
+          "description": "OPTIONAL. Language of the documents for an in-progress change/fix (description.md, plan.md, history.md, and the sample text in design_*.html/.txt mockups) under {workFolder}/changes/**.",
+          "additionalProperties": false,
+          "properties": {
+            "language": {
+              "type": "string",
+              "default": "en",
+              "description": "OPTIONAL. Defaults to framework.interaction.language (or 'en' if that's also missing).",
+              "examples": ["en", "es"]
+            }
+          }
+        },
+        "versions": {
+          "type": "object",
+          "description": "OPTIONAL. Language of changelog.md, generated by pv-internal-changelog under {workFolder}/versions/{XXXX}/ from changes/closed.",
+          "additionalProperties": false,
+          "properties": {
+            "language": {
+              "type": "string",
+              "default": "en",
+              "description": "OPTIONAL. Defaults to framework.interaction.language (or 'en' if that's also missing).",
+              "examples": ["en", "es"]
+            }
+          }
+        },
+        "_comments": {
+          "type": "object",
+          "description": "OPTIONAL. Informational metadata for whoever edits the JSON by hand (e.g. why each language was chosen). Ignored at runtime by the skills -- same pattern as skillModels._instructions.",
+          "additionalProperties": { "type": "string" }
         },
         "skills": {
           "type": "object",
-          "description": "OPCIONAL. Skills (herramienta Skill) intercambiables que el resto del framework invoca por nombre para delegar una responsabilidad concreta, en vez de tenerla fija en el codigo de cada skill que la necesita. Sustituir el nombre aqui basta para cambiar de tecnologia/notacion sin tocar pv-new/pv-fix/pv-how/pv-internal-workflow, siempre que la skill indicada cumpla el mismo contrato de entrada/salida que la que sustituye (documentado en el SKILL.md de la que sustituye).",
+          "description": "OPTIONAL. Swappable skills (Skill tool) that the rest of the framework invokes by name to delegate a specific responsibility, instead of hardcoding it into every skill that needs it. Swapping the name here is enough to change technology/notation without touching pv-new/pv-fix/pv-how/pv-internal-workflow, as long as the skill named here fulfills the same input/output contract as the one it replaces (documented in that skill's SKILL.md).",
           "additionalProperties": false,
           "properties": {
             "mockups": {
               "type": "string",
               "default": "pv-internal-mockups-html",
-              "description": "OPCIONAL (por defecto 'pv-internal-mockups-html'). Nombre de la skill que pv-new y pv-fix invocan para crear/editar las maquetas 'design_*.html' de un change/fix, solo cuando ya se sabe que hace falta al menos una. No hace falta preguntarlo ni configurarlo salvo que el usuario quiera sustituir la generacion de maquetas en HTML por otra tecnologia (Figma, una libreria de componentes, imagenes...): en ese caso, la skill indicada aqui debe cumplir el mismo contrato de entrada/salida documentado en pv-internal-mockups-html/SKILL.md (carpeta destino + lista de elementos a crear/editar como entrada; rutas de los ficheros resultantes como salida) para poder sustituirla sin tocar pv-new/pv-fix.",
+              "description": "OPTIONAL (default 'pv-internal-mockups-html'). Name of the skill that pv-new and pv-fix invoke to create/edit a change/fix's 'design_*.html' mockups, only once it's already known that at least one is needed. No need to ask about it or configure it unless the user wants to replace HTML mockup generation with another technology (Figma, a component library, images...): in that case, the skill named here must fulfill the same input/output contract documented in pv-internal-mockups-html/SKILL.md (destination folder + list of elements to create/edit as input; paths of the resulting files as output) so it can be swapped in without touching pv-new/pv-fix.",
               "examples": ["pv-internal-mockups-html"]
             },
             "diagrams": {
               "type": "string",
               "default": "pv-internal-tech-mermaid",
-              "description": "OPCIONAL (por defecto 'pv-internal-tech-mermaid'). Nombre de la skill que pv-internal-workflow, pv-new, pv-fix y pv-how invocan para generar los diagramas Mermaid (funcionales o tecnicos -- flujo, secuencia) de un change/fix, solo cuando ya se sabe que hace falta al menos uno. No hace falta preguntarlo ni configurarlo salvo que el usuario quiera sustituir la generacion de diagramas en Mermaid por otra notacion o herramienta: en ese caso, la skill indicada aqui debe cumplir el mismo contrato de entrada/salida documentado en pv-internal-tech-mermaid/SKILL.md (lista de diagramas a generar, con tipo y que debe representar cada uno, como entrada; el codigo de cada diagrama como salida) para poder sustituirla sin tocar pv-internal-workflow/pv-new/pv-fix/pv-how.",
+              "description": "OPTIONAL (default 'pv-internal-tech-mermaid'). Name of the skill that pv-internal-workflow, pv-new, pv-fix and pv-how invoke to generate a change/fix's Mermaid diagrams (functional or technical -- flow, sequence), only once it's already known that at least one is needed. No need to ask about it or configure it unless the user wants to replace Mermaid diagram generation with another notation or tool: in that case, the skill named here must fulfill the same input/output contract documented in pv-internal-tech-mermaid/SKILL.md (list of diagrams to generate, with type and what each should represent, as input; each diagram's code as output) so it can be swapped in without touching pv-internal-workflow/pv-new/pv-fix/pv-how.",
               "examples": ["pv-internal-tech-mermaid"]
             }
           }
@@ -66,40 +110,52 @@
           "type": "integer",
           "minimum": 1,
           "default": 4,
-          "description": "OPCIONAL (por defecto 4). Numero de digitos del codigo secuencial 'xxxx', con ceros a la izquierda. No hace falta preguntarlo al usuario salvo que quiera algo distinto del default.",
+          "description": "OPTIONAL (default 4). Number of digits of the sequential 'xxxx' code, zero-padded. No need to ask the user unless they want something different from the default.",
           "examples": [4]
         },
         "docs": {
           "type": "object",
-          "description": "OPCIONAL. Documentacion de referencia externa del proyecto, agrupada por area ('functional', 'tech').",
+          "description": "OPTIONAL. External reference documentation for the project, grouped by area ('functional', 'tech').",
           "additionalProperties": false,
           "properties": {
             "functional": {
               "type": "object",
-              "description": "OPCIONAL. Documentacion funcional que las skills pv-* usan como contexto y mantienen sincronizada.",
+              "description": "OPTIONAL. Functional documentation that the pv-* skills use as context and keep in sync.",
               "additionalProperties": false,
               "properties": {
                 "featuresDocPathDir": {
                   "type": "string",
-                  "description": "OPCIONAL. Listado de funcionalidades ya implementadas en el proyecto (relativo a la raiz del repo). Puede ser una CARPETA (recomendado, p.ej. 'design/docs/features') con un fichero por funcionalidad mas un 'INDEX.md' generado -- en ese caso pv-do delega la lectura/escritura en la skill pv-internal-doc-features, que conoce esa convencion -- o, en proyectos antiguos que todavia no han migrado, un unico fichero .md. pv-do anade o actualiza ahi la entrada correspondiente cada vez que implementa un cambio/fix, creando la carpeta/fichero si todavia no existe. Si no esta configurado, ese paso se omite sin preguntar nada.",
+                  "description": "OPTIONAL. Listing of features already implemented in the project (relative to the repo root). Can be a FOLDER (recommended, e.g. 'design/docs/features') with one file per feature plus a generated 'INDEX.md' -- in that case pv-do delegates reading/writing to the pv-internal-doc-features skill, which knows that convention -- or, in older projects that haven't migrated yet, a single .md file. pv-do adds or updates the corresponding entry there every time it implements a change/fix, creating the folder/file if it doesn't exist yet. If not configured, this step is skipped without asking anything.",
                   "examples": ["design/docs/features", "design/docs/FEATURES.md"]
+                },
+                "language": {
+                  "type": "string",
+                  "default": "en",
+                  "description": "OPTIONAL. Language of featuresDocPathDir. Defaults to framework.interaction.language (or 'en' if that's also missing).",
+                  "examples": ["en", "es"]
                 }
               }
             },
             "tech": {
               "type": "object",
-              "description": "OPCIONAL. Documentacion tecnica que las skills pv-* usan como contexto y mantienen sincronizada.",
+              "description": "OPTIONAL. Technical documentation that the pv-* skills use as context and keep in sync.",
               "additionalProperties": false,
               "properties": {
                 "architectureDocDir": {
                   "type": "string",
-                  "description": "OPCIONAL. Carpeta (relativa a la raiz del repo) con el documento de arquitectura/diseno tecnico, partido en varios ficheros para lectura selectiva por un LLM. Debe contener un 'INDEX.md' que resuma que cubre cada fichero hermano (con prefijo numerico de 2 digitos, p.ej. '01-', '02-'). pv-do mantiene esta carpeta sincronizada tras implementar cada cambio/fix, creando un fichero nuevo con el siguiente numero libre si el tema no encaja en ninguno existente. Si no esta configurado, ese paso se omite sin preguntar nada.",
+                  "description": "OPTIONAL. Folder (relative to the repo root) with the architecture/technical-design document, split into several files for selective reading by an LLM. Must contain an 'INDEX.md' summarizing what each sibling file covers (with a 2-digit numeric prefix, e.g. '01-', '02-'). pv-do keeps this folder in sync after implementing each change/fix, creating a new file with the next free number if the topic doesn't fit any existing one. If not configured, this step is skipped without asking anything.",
                   "examples": ["design/docs/architecture"]
                 },
                 "styleBibleDocDir": {
                   "type": "string",
-                  "description": "OPCIONAL. Carpeta (relativa a la raiz del repo) con la guia de estilo (visual, de interaccion, de redaccion) del proyecto, partida en varios ficheros para lectura selectiva por un LLM. Debe contener un 'INDEX.md' que resuma que cubre cada fichero hermano (con prefijo numerico de 2 digitos, p.ej. '01-', '02-'). pv-do mantiene esta carpeta sincronizada tras implementar cada cambio/fix, creando un fichero nuevo con el siguiente numero libre si el tema no encaja en ninguno existente. Si no esta configurado, ese paso se omite sin preguntar nada.",
+                  "description": "OPTIONAL. Folder (relative to the repo root) with the project's style guide (visual, interaction, writing), split into several files for selective reading by an LLM. Must contain an 'INDEX.md' summarizing what each sibling file covers (with a 2-digit numeric prefix, e.g. '01-', '02-'). pv-do keeps this folder in sync after implementing each change/fix, creating a new file with the next free number if the topic doesn't fit any existing one. If not configured, this step is skipped without asking anything.",
                   "examples": ["design/docs/style"]
+                },
+                "language": {
+                  "type": "string",
+                  "default": "en",
+                  "description": "OPTIONAL. Language shared by architectureDocDir and styleBibleDocDir. Defaults to framework.interaction.language (or 'en' if that's also missing).",
+                  "examples": ["en", "es"]
                 }
               }
             }
@@ -116,12 +172,12 @@
       "properties": {
         "model": {
           "type": "string",
-          "description": "Valor aceptado por el campo 'model' del frontmatter de un SKILL.md (los mismos IDs que acepta /model, p.ej. 'claude-sonnet-5', 'claude-haiku-4-5-20251001', o 'inherit').",
+          "description": "Value accepted by a SKILL.md frontmatter's 'model' field (the same IDs accepted by /model, e.g. 'claude-sonnet-5', 'claude-haiku-4-5-20251001', or 'inherit').",
           "examples": ["claude-sonnet-5", "claude-haiku-4-5-20251001"]
         },
         "effort": {
           "type": "string",
-          "description": "Valor aceptado por el campo 'effort' del frontmatter de un SKILL.md.",
+          "description": "Value accepted by a SKILL.md frontmatter's 'effort' field.",
           "examples": ["low", "medium", "high"]
         }
       }
@@ -130,7 +186,7 @@
   "examples": [
     {
       "skillModels": {
-        "_instructions": "Tras editar 'default'/'overrides', ejecuta desde la raiz del repo: python .claude/skills/pv-init/scripts/sync-skill-models.py -- reescribe 'model'/'effort' en el frontmatter de cada SKILL.md 'pv-*' segun esta seccion.",
+        "_instructions": "After editing 'default'/'overrides', run from the repo root: python .claude/skills/pv-init/scripts/sync-skill-models.py -- rewrites 'model'/'effort' in every 'pv-*' SKILL.md's frontmatter according to this section.",
         "default": { "model": "claude-sonnet-5", "effort": "medium" },
         "overrides": {
           "pv-status": { "model": "claude-haiku-4-5-20251001", "effort": "medium" }
@@ -139,18 +195,30 @@
       "framework": {
         "workFolder": "/",
         "numberWidth": 4,
+        "interaction": { "language": "en" },
+        "changes": { "language": "es" },
+        "versions": { "language": "es" },
         "docs": {
           "functional": {
-            "featuresDocPathDir": "design/docs/features"
+            "featuresDocPathDir": "design/docs/features",
+            "language": "es"
           },
           "tech": {
-            "architectureDocDir": "design/docs/architecture"
+            "architectureDocDir": "design/docs/architecture",
+            "language": "en"
           }
         },
         "sourcecodeDir": "src",
         "skills": {
           "mockups": "pv-internal-mockups-html",
           "diagrams": "pv-internal-tech-mermaid"
+        },
+        "_comments": {
+          "interaction.language": "Chat with the user in English.",
+          "changes.language": "The team documents each in-progress change/fix in Spanish.",
+          "versions.language": "The published changelog is written in Spanish.",
+          "docs.functional.language": "Feature documentation in Spanish.",
+          "docs.tech.language": "Architecture and style bible in English, to share with external collaborators."
         }
       }
     },

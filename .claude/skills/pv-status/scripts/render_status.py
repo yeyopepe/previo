@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
-"""Renderiza el informe completo de /pv-status a partir de STATUS.template.md.
+"""Renders /pv-status's full report from STATUS.template.md.
 
-Reutiliza collect_status.collect() para reunir todos los datos (estados,
-totales por tipo, subStatus de inProgress, avisos) y aplica el mapeo
-completo descrito en el paso 2 de SKILL.md sobre la plantilla
-STATUS.template.md, igual que filter_status.py ya hace para el modo de un
-solo estado -- asi el modelo que invoca este script no gasta tokens
-mapeando campos ni redactando las listas, solo pega la salida tal cual.
+Reuses collect_status.collect() to gather all the data (states, totals by
+type, inProgress subStatus, warnings) and applies the full mapping
+described in SKILL.md's step 2 onto the STATUS.template.md template, same
+as filter_status.py already does for single-state mode -- this way the
+model invoking this script doesn't spend tokens mapping fields or drafting
+the lists, it just pastes the output as-is.
 
-La plantilla define, ademas de los placeholders escalares de la tabla,
-cuatro patrones de fila reutilizables y tres secciones opcionales que se
-eliminan enteras (cabecera incluida) cuando no aplican:
+Besides the table's scalar placeholders, the template defines four
+reusable row patterns and three optional sections that get removed
+entirely (including their heading) when they don't apply:
 
-  <!-- ROW_ENTRY: ... -->    fila de "implementando"/"pendientes" (xxxx/nombre/tipo)
-  <!-- EMPTY_ENTRY: ... -->  texto si una de esas dos listas esta vacia
-  <!-- ROW_FAST: ... -->     fila de "cambios fast implementados"
-  <!-- ROW_IDEA: ... -->     fila de "ideas en todo/"
-  <!-- ROW_AVISO: ... -->    fila de "avisos"
-  <!-- EMPTY_IDEAS: ... -->  texto si no hay ninguna idea en todo/
+  <!-- ROW_ENTRY: ... -->    "in progress"/"pending" row (xxxx/name/type)
+  <!-- EMPTY_ENTRY: ... -->  text if one of those two lists is empty
+  <!-- ROW_FAST: ... -->     "implemented fast changes" row
+  <!-- ROW_IDEA: ... -->     "ideas in todo/" row
+  <!-- ROW_WARNING: ... -->  "warnings" row
+  <!-- EMPTY_IDEAS: ... -->  text if there are no ideas in todo/
 
-  <!-- SECTION:sinDescripcion --> ... <!-- /SECTION:sinDescripcion -->
+  <!-- SECTION:noDescription --> ... <!-- /SECTION:noDescription -->
   <!-- SECTION:fast --> ... <!-- /SECTION:fast -->
-  <!-- SECTION:avisos --> ... <!-- /SECTION:avisos -->
+  <!-- SECTION:warnings --> ... <!-- /SECTION:warnings -->
 
-La seccion "Cambios fast implementados" se omite por defecto aunque haya
-entradas fast: solo se incluye si se pasa --show-fast (usar unicamente
-cuando el usuario la pida explicitamente).
+The "Implemented fast changes" section is omitted by default even if there
+are fast entries: it's only included if --show-fast is passed (use only
+when the user explicitly asks for it).
 
-No escribe nada en disco: imprime el markdown final por stdout.
+Writes nothing to disk: prints the final markdown to stdout.
 
-Uso:
+Usage:
   python render_status.py
   python render_status.py --work-folder /
   python render_status.py --show-fast
@@ -47,8 +47,6 @@ import terminal_output as term  # noqa: E402
 
 TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "STATUS.template.md"
 
-FECHA_RE = re.compile(r"\*\*Fecha\*\*\s*[:—-]\s*(.+)")
-
 ROW_RE_TEMPLATE = r"<!--\s*{name}:\s*(.+?)\s*-->\n?"
 SECTION_RE_TEMPLATE = r"<!--\s*SECTION:{name}\s*-->\n?(.*?)<!--\s*/SECTION:{name}\s*-->\n?"
 
@@ -58,14 +56,14 @@ BAR_WIDTH = 20
 STATE_ORDER = ["todo", "inProgress", "implemented", "closed"]
 STATE_LABELS = {
     "todo": "💡 Todo",
-    "inProgress": "🔧 En progreso",
-    "implemented": "✅ Implementado",
-    "closed": "📦 Cerrado",
+    "inProgress": "🔧 In progress",
+    "implemented": "✅ Implemented",
+    "closed": "📦 Closed",
 }
 
 
 def render_bars(counts: dict[str, int]) -> str:
-    """Barras de texto proporcionales al estado con mas entradas, deterministas."""
+    """Text bars proportional to the state with the most entries, deterministic."""
     values = [counts.get(state, 0) for state in STATE_ORDER]
     max_count = max(values) or 1
     label_width = max(term.display_width(STATE_LABELS[state]) for state in STATE_ORDER)
@@ -81,11 +79,11 @@ def render_bars(counts: dict[str, int]) -> str:
     return "\n".join(lines)
 
 
-def extract_fecha(entry_dir: Path) -> str:
+def extract_date(entry_dir: Path) -> str:
     description_path = entry_dir / "description.md"
     if description_path.is_file():
         text = description_path.read_text(encoding="utf-8")
-        match = FECHA_RE.search(text)
+        match = re.search(r"\*\*Creation date\*\*\s*[:—-]\s*(.+)", text)
         if match:
             return match.group(1).strip()
         return datetime.fromtimestamp(description_path.stat().st_mtime).strftime("%Y-%m-%d")
@@ -95,7 +93,7 @@ def extract_fecha(entry_dir: Path) -> str:
 def extract_marker(template_text: str, name: str) -> str:
     match = re.search(ROW_RE_TEMPLATE.format(name=name), template_text)
     if not match:
-        raise SystemExit(f"La plantilla {TEMPLATE_PATH} no tiene el marcador {name}.")
+        raise SystemExit(f"Template {TEMPLATE_PATH} is missing the {name} marker.")
     return match.group(1)
 
 
@@ -109,7 +107,7 @@ def apply_section(text: str, name: str, keep: bool) -> str:
     pattern = re.compile(SECTION_RE_TEMPLATE.format(name=name), re.DOTALL)
     match = pattern.search(text)
     if not match:
-        raise SystemExit(f"La plantilla {TEMPLATE_PATH} no tiene la seccion {name}.")
+        raise SystemExit(f"Template {TEMPLATE_PATH} is missing the {name} section.")
     replacement = match.group(1) if keep else ""
     return pattern.sub(replacement, text)
 
@@ -120,9 +118,9 @@ def entry_lines(entries: list[dict], row_template: str, empty_template: str) -> 
     return "\n".join(
         row_template.format(
             xxxx=entry["code"],
-            nombre=entry["name"] or "(sin nombre)",
-            tipo=entry["type"],
-            icono=TYPE_ICONS.get(entry["type"], "❓"),
+            name=entry["name"] or "(no name)",
+            type=entry["type"],
+            icon=TYPE_ICONS.get(entry["type"], "❓"),
         )
         for entry in entries
     )
@@ -130,10 +128,10 @@ def entry_lines(entries: list[dict], row_template: str, empty_template: str) -> 
 
 def split_in_progress(states: dict) -> tuple[list[dict], list[dict], list[dict]]:
     entries = states.get("inProgress", {}).get("entries", [])
-    to_implement = [e for e in entries if e["subStatus"] == "listo_para_implementar"]
-    pending = [e for e in entries if e["subStatus"] == "descrito"]
-    sin_descripcion = [e for e in entries if e["subStatus"] == "sin_descripcion"]
-    return to_implement, pending, sin_descripcion
+    to_implement = [e for e in entries if e["subStatus"] == "ready_to_implement"]
+    pending = [e for e in entries if e["subStatus"] == "described"]
+    no_description = [e for e in entries if e["subStatus"] == "no_description"]
+    return to_implement, pending, no_description
 
 
 def collect_fast_entries(states: dict) -> list[dict]:
@@ -157,29 +155,29 @@ def render(result: dict, changes_dir: Path, show_fast: bool = False) -> str:
     empty_entry = extract_marker(template_text, "EMPTY_ENTRY")
     row_fast = extract_marker(template_text, "ROW_FAST")
     row_idea = extract_marker(template_text, "ROW_IDEA")
-    row_aviso = extract_marker(template_text, "ROW_AVISO")
+    row_warning = extract_marker(template_text, "ROW_WARNING")
     empty_ideas = extract_marker(template_text, "EMPTY_IDEAS")
 
-    # Las lineas de marcador (ROW_*/EMPTY_*) contienen sus propios
-    # placeholders literales ({xxxx}, {código}...) que no forman parte de
-    # los kwargs del format() final: hay que quitarlas del texto ANTES de
-    # aplicar secciones y formatear, o format() fallaria con KeyError.
+    # The marker lines (ROW_*/EMPTY_*) contain their own literal
+    # placeholders ({xxxx}, {code}...) that aren't part of the final
+    # format() kwargs: they must be stripped from the text BEFORE applying
+    # sections and formatting, or format() would fail with a KeyError.
     template_text = strip_markers(
-        template_text, "ROW_ENTRY", "EMPTY_ENTRY", "ROW_FAST", "ROW_IDEA", "ROW_AVISO", "EMPTY_IDEAS"
+        template_text, "ROW_ENTRY", "EMPTY_ENTRY", "ROW_FAST", "ROW_IDEA", "ROW_WARNING", "EMPTY_IDEAS"
     )
 
-    to_implement, pending, sin_descripcion = split_in_progress(states)
+    to_implement, pending, no_description = split_in_progress(states)
     implemented_entries = states.get("implemented", {}).get("entries", [])
     fast_entries = collect_fast_entries(states)
     todo_entries = states.get("todo", {}).get("entries", [])
 
-    body = apply_section(template_text, "sinDescripcion", keep=bool(sin_descripcion))
+    body = apply_section(template_text, "noDescription", keep=bool(no_description))
     body = apply_section(body, "fast", keep=show_fast and bool(fast_entries))
-    body = apply_section(body, "avisos", keep=bool(result["warnings"]))
+    body = apply_section(body, "warnings", keep=bool(result["warnings"]))
 
     body = body.format(
-        fechaGeneracion=datetime.now().strftime("%Y-%m-%d"),
-        resumenBarras=render_bars(
+        generatedDate=datetime.now().strftime("%Y-%m-%d"),
+        summaryBars=render_bars(
             {state: states.get(state, {}).get("total", 0) for state in STATE_ORDER}
         ),
         todoTotal=states.get("todo", {}).get("total", 0),
@@ -199,22 +197,22 @@ def render(result: dict, changes_dir: Path, show_fast: bool = False) -> str:
         fastTotal=totals.get("fast", 0),
         totalTotal=result["grandTotal"],
         toImplementTotal=len(to_implement),
-        filasImplementar=entry_lines(to_implement, row_entry, empty_entry),
+        toImplementRows=entry_lines(to_implement, row_entry, empty_entry),
         pendingTotal=len(pending),
-        filasPendientes=entry_lines(pending, row_entry, empty_entry),
+        pendingRows=entry_lines(pending, row_entry, empty_entry),
         toCloseTotal=states.get("implemented", {}).get("total", 0),
-        filasListas=entry_lines(implemented_entries, row_entry, empty_entry),
-        filasSinDescripcion=", ".join(e["code"] for e in sin_descripcion),
-        filasFast="\n".join(
-            row_fast.format(código=e["code"], nombre=e["name"] or "(sin nombre)", fecha=extract_fecha(changes_dir / ("implemented" if e in implemented_entries else "closed") / e["code"]))
+        readyRows=entry_lines(implemented_entries, row_entry, empty_entry),
+        noDescriptionRows=", ".join(e["code"] for e in no_description),
+        fastRows="\n".join(
+            row_fast.format(code=e["code"], name=e["name"] or "(no name)", date=extract_date(changes_dir / ("implemented" if e in implemented_entries else "closed") / e["code"]))
             for e in fast_entries
         ),
-        filasIdeas=(
-            "\n".join(row_idea.format(codigo=e["code"], idea=e["name"] or "(sin idea)") for e in todo_entries)
+        ideaRows=(
+            "\n".join(row_idea.format(code=e["code"], idea=e["name"] or "(no idea)") for e in todo_entries)
             if todo_entries
             else empty_ideas
         ),
-        filasAvisos="\n".join(row_aviso.format(aviso=w) for w in result["warnings"]),
+        warningRows="\n".join(row_warning.format(warning=w) for w in result["warnings"]),
     )
 
     return body.rstrip("\n") + "\n"
@@ -236,7 +234,7 @@ def render_terminal_table(states: dict, totals: dict, grand_total: int) -> list[
 
     todo_total = states.get("todo", {}).get("total", 0)
     lines = [
-        row("Estado", "Change", "Fix", "Fast", "Todo", "Total"),
+        row("State", "Change", "Fix", "Fast", "Todo", "Total"),
         row(
             STATE_LABELS["todo"], "—", "—", "—", todo_total, todo_total
         ),
@@ -279,11 +277,11 @@ def render_terminal_table(states: dict, totals: dict, grand_total: int) -> list[
 def render_terminal_entries(title_text: str, entries: list[dict]) -> list[str]:
     block = ["", term.colorize(f"{title_text} ({len(entries)})")]
     if not entries:
-        block.append(term.wrap("(ninguno)", indent="  "))
+        block.append(term.wrap("(none)", indent="  "))
     else:
         for entry in entries:
-            nombre = entry["name"] or "(sin nombre)"
-            block.append(term.wrap(f"- {entry['code']} — {nombre}", indent="  "))
+            name = entry["name"] or "(no name)"
+            block.append(term.wrap(f"- {entry['code']} — {name}", indent="  "))
     return block
 
 
@@ -291,13 +289,13 @@ def render_terminal(result: dict, changes_dir: Path, show_fast: bool = False) ->
     states = result["states"]
     totals = result["totalsByType"]
 
-    to_implement, pending, sin_descripcion = split_in_progress(states)
+    to_implement, pending, no_description = split_in_progress(states)
     implemented_entries = states.get("implemented", {}).get("entries", [])
     fast_entries = collect_fast_entries(states)
     todo_entries = states.get("todo", {}).get("entries", [])
 
     lines = [
-        term.title("ESTADO DEL PROYECTO", f"Generado: {datetime.now().strftime('%Y-%m-%d')}"),
+        term.title("PROJECT STATUS", f"Generated: {datetime.now().strftime('%Y-%m-%d')}"),
         "",
         render_bars({state: states.get(state, {}).get("total", 0) for state in STATE_ORDER}),
         "",
@@ -305,43 +303,43 @@ def render_terminal(result: dict, changes_dir: Path, show_fast: bool = False) ->
         *render_terminal_table(states, totals, result["grandTotal"]),
         term.hr("-"),
         "",
-        term.heading("🔧 EN PROGRESO"),
+        term.heading("🔧 IN PROGRESS"),
     ]
 
-    lines += render_terminal_entries("🟢 Listos para revisar y cerrar", implemented_entries)
-    lines += render_terminal_entries("🟡 Pendientes de analisis tecnico", pending)
-    lines += render_terminal_entries("🟠 Planificados, pendientes de implementar", to_implement)
+    lines += render_terminal_entries("🟢 Ready to review and close", implemented_entries)
+    lines += render_terminal_entries("🟡 Pending technical analysis", pending)
+    lines += render_terminal_entries("🟠 Planned, pending implementation", to_implement)
 
-    if sin_descripcion:
+    if no_description:
         lines.append("")
         lines.append(
             term.wrap(
-                "Entradas sin description.md (anomalas): "
-                + ", ".join(e["code"] for e in sin_descripcion)
+                "Entries without description.md (anomalous): "
+                + ", ".join(e["code"] for e in no_description)
             )
         )
 
     if show_fast and fast_entries:
         lines.append("")
-        lines.append(term.heading("⚡ CAMBIOS FAST IMPLEMENTADOS"))
+        lines.append(term.heading("⚡ IMPLEMENTED FAST CHANGES"))
         for entry in fast_entries:
             state_dir = "implemented" if entry in implemented_entries else "closed"
-            fecha = extract_fecha(changes_dir / state_dir / entry["code"])
-            nombre = entry["name"] or "(sin nombre)"
-            lines.append(term.wrap(f"- {entry['code']} — {nombre} ({fecha})", indent="  "))
+            date = extract_date(changes_dir / state_dir / entry["code"])
+            name = entry["name"] or "(no name)"
+            lines.append(term.wrap(f"- {entry['code']} — {name} ({date})", indent="  "))
 
     lines.append("")
-    lines.append(term.heading("💡 IDEAS EN TODO/"))
+    lines.append(term.heading("💡 IDEAS IN TODO/"))
     if todo_entries:
         for entry in todo_entries:
-            idea = entry["name"] or "(sin idea)"
+            idea = entry["name"] or "(no idea)"
             lines.append(term.wrap(f"- {entry['code']}: {idea}", indent="  "))
     else:
-        lines.append(term.wrap("(No hay ninguna idea apuntada en todo/.)"))
+        lines.append(term.wrap("(No ideas noted in todo/.)"))
 
     if result["warnings"]:
         lines.append("")
-        lines.append(term.heading("⚠️ AVISOS"))
+        lines.append(term.heading("⚠️ WARNINGS"))
         for warning in result["warnings"]:
             lines.append(term.wrap(f"- {warning}", indent="  "))
 
@@ -355,21 +353,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--work-folder",
-        help="Ruta a workFolder relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/pv-context.json (default '/').",
+        help="Path to workFolder relative to the repo root. If not given, "
+        "read from .claude/pv-context.json (default '/').",
     )
     parser.add_argument(
         "--show-fast",
         action="store_true",
-        help="Incluye la seccion 'Cambios fast implementados'. Omitida por defecto: "
-        "solo pasar este flag cuando el usuario la pida explicitamente.",
+        help="Includes the 'Implemented fast changes' section. Omitted by "
+        "default: only pass this flag when the user explicitly asks for it.",
     )
     parser.add_argument(
         "--terminal",
         action="store_true",
-        help="Salida en texto plano sin markdown, ajustada a 70 columnas, para "
-        "pegar en una terminal clasica. Uso exclusivo de pv.py: la skill "
-        "pv-status (invocada desde el chat) no debe pasar este flag.",
+        help="Plain-text output without markdown, fixed to 70 columns, for "
+        "pasting into a classic terminal. Exclusive use of pv.py: the "
+        "pv-status skill (invoked from chat) must not pass this flag.",
     )
     args = parser.parse_args()
 

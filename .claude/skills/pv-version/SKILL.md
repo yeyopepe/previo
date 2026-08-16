@@ -1,7 +1,7 @@
 ---
 name: pv-version
-description: Prepara una entrega/versión del proyecto en {workFolder}/versions/{XXXX}/ — genera el entregable, copia la documentación técnica vigente y encadena pv-internal-changelog para el changelog funcional. Parte del framework pv-*. Trigger: /pv-version <XXXX>, o cuando el usuario pide preparar/empaquetar una versión entregable.
-argument-hint: <XXXX de la versión a preparar>
+description: Prepares a project release/version at {workFolder}/versions/{XXXX}/ — generates the deliverable, copies the current technical documentation, and chains pv-internal-changelog for the functional changelog. Part of the pv-* framework. Trigger: /pv-version <XXXX>, or when the user asks to prepare/package a deliverable version.
+argument-hint: <XXXX of the version to prepare>
 model: claude-sonnet-5
 effort: medium
 metadata:
@@ -11,89 +11,91 @@ metadata:
 
 # pv-version
 
-Orquesta la preparación de una entrega del proyecto: resuelve los change/fix pendientes de cerrar, genera el entregable, copia la documentación técnica vigente, y encadena `pv-internal-changelog` para redactar el changelog funcional a partir de `{workFolder}/changes/closed/`.
+Orchestrates preparing a project release: resolves change/fix entries pending closure, generates the deliverable, copies the current technical documentation, and chains `pv-internal-changelog` to draft the functional changelog from `{workFolder}/changes/closed/`.
 
-`{workFolder}` es el valor de `framework.workFolder` en `.claude/pv-context.json` (por defecto `"/"`, la raíz del repo). Dentro de él, `changes/` y `versions/` son subcarpetas de nombre fijo que el framework crea por sí mismo — no se preguntan ni se configuran por separado. `{workFolder}/versions/{XXXX}/` es un espacio de numeración de texto libre, elegido por el usuario en cada invocación, sin ninguna relación con el `xxxx` de change/fix ni con ninguna otra carpeta llamada "versions" que pueda existir en el repo (p.ej. la salida propia de un build script): esta skill nunca lee ni escribe fuera de `{workFolder}/versions/`.
+**Language.** Use `framework.interaction.language` (default English) for everything you say to the user in this conversation, including the fixed messages below. Copying technical documentation and generating the deliverable are copy/build operations, not new prose (`language` doesn't apply); it chains `pv-internal-changelog` for `changelog.md`. If `language` is not configured anywhere, everything is English.
 
-## 0. Framework inicializado
+`{workFolder}` is `.claude/pv-context.json`'s `framework.workFolder` value (default `"/"`, the repo root). Inside it, `changes/` and `versions/` are fixed-name subfolders the framework creates by itself — not asked about or configured separately. `{workFolder}/versions/{XXXX}/` is a free-text numbering space, chosen by the user on each invocation, with no relation to change/fix's `xxxx` nor to any other folder called "versions" that might exist in the repo (e.g. a build script's own output): this skill never reads or writes outside `{workFolder}/versions/`.
 
-Lee `.claude/pv-context.json` en la raíz del repo. Si no existe, o le falta la sección `framework`, no continúes: dile al usuario que primero debe ejecutar la skill `pv-init` para inicializar/completar el framework en este proyecto, y detente ahí.
+## 0. Framework initialized
+
+Read `.claude/pv-context.json` at the repo root. If it doesn't exist, or is missing the `framework` section, don't continue: tell the user they must first run the `pv-init` skill to initialize/complete the framework in this project, and stop there.
 
 ```
-Este proyecto todavía no tiene el framework `pv-*` inicializado (o le falta configuración). Ejecuta primero `/pv-init` antes de volver a invocarme.
+This project doesn't have the `pv-*` framework initialized yet (or is missing configuration). Run `/pv-init` first before invoking me again.
 ```
 
-## 0.1. Diagrama del proceso, bajo demanda
+## 0.1. Process diagram, on demand
 
-En cualquier momento de la invocación, si el usuario pregunta cómo funciona el proceso o pide explícitamente "el diagrama"/"el flujo", muestra el contenido íntegro de [`version-flow-diagram.template.md`](version-flow-diagram.template.md) tal cual (sin regenerarlo ni parafrasearlo) y continúa donde se había quedado el flujo.
+At any point during invocation, if the user asks how the process works or explicitly asks for "the diagram"/"the flow", show [`version-flow-diagram.template.md`](version-flow-diagram.template.md)'s full content as-is (without regenerating or paraphrasing it) and continue wherever the flow had gotten to.
 
-## 0.2. Invocación puramente informativa sobre el proceso de build
+## 0.2. Purely informational invocation about the build process
 
-Es posible que el usuario invoque esta skill únicamente para informar de un cambio en el procedimiento de compilación/generación del entregable (p.ej. "ahora el build también genera un PDF de reglas", "cambia el comando de compilación a..."), sin pedir explícitamente preparar una entrega ahora mismo.
+The user might invoke this skill only to report a change in the build/deliverable-generation procedure (e.g. "the build now also generates a rules PDF", "change the build command to..."), without explicitly asking to prepare a release right now.
 
-Si esa es la intención: actualiza `{workFolder}/framework/how-to-compile-version.md` con la información nueva, siguiendo [`how-to-compile-version.template.md`](how-to-compile-version.template.md) (incluido su soporte para procesos de varios pasos/artefactos si aplica — ver el propio template), y **no continúes con el resto del flujo**. Pregunta explícitamente al usuario si quiere lanzar el proceso de versionado ahora con este procedimiento ya actualizado. Solo si confirma específicamente, continúa con el paso 0.5; si no confirma (o no contesta a eso), detente aquí.
+If that's the intent: update `{workFolder}/framework/how-to-compile-version.md` with the new information, following [`how-to-compile-version.template.md`](how-to-compile-version.template.md) (including its support for multi-step/multi-artifact processes if applicable — see the template itself), and **don't continue with the rest of the flow**. Explicitly ask the user whether they want to launch the versioning process now with this now-updated procedure. Only if they specifically confirm, continue with step 0.5; if they don't confirm (or don't answer that), stop here.
 
-## 0.5. Guardarraíl: `implemented/` debe estar vacío antes de empezar
+## 0.5. Guardrail: `implemented/` must be empty before starting
 
-Al arrancar el proceso de versionado no puede haber ningún change/fix en estado `implemented`. Lista las carpetas de `{workFolder}/changes/implemented/`; si hay alguna, **no se puede avanzar de ninguna manera** (ni crear la carpeta de versión, ni nada de lo que sigue) hasta resolverlas todas.
+When starting the versioning process there can be no change/fix in the `implemented` state. List `{workFolder}/changes/implemented/`'s folders; if there's any, **there's no way to proceed at all** (not creating the version's folder, nor anything that follows) until all of them are resolved.
 
-Por cada carpeta encontrada, pregunta explícitamente al usuario si ese change/fix pasa a `closed`:
+For each folder found, explicitly ask the user whether that change/fix moves to `closed`:
 
-- Si confirma, ejecuta (desde la raíz del repo):
+- If they confirm, run (from the repo root):
 
   ```
   python .claude/skills/pv-internal-workflow/scripts/move-change.py --xxxx <xxxx> --from implemented --to closed
   ```
 
-- Si no confirma, **espera la confirmación del usuario** sin continuar el flujo — no se salta ni se ignora la entrada, no hay "seguir de todas formas".
+- If they don't confirm, **wait for the user's confirmation** without continuing the flow — the entry isn't skipped or ignored, there's no "continue anyway".
 
-Repite hasta que `implemented/` quede vacío; solo entonces continúa con el paso 1.
+Repeat until `implemented/` is empty; only then continue with step 1.
 
-## 1. Resolver `XXXX`
+## 1. Resolve `XXXX`
 
-Si no se indica al invocar, pregúntalo explícitamente — no lo asumas. Es texto libre elegido por el usuario, no se calcula ni se valida contra `numberWidth` (espacio de numeración independiente del de change/fix).
+If not given when invoking, ask explicitly — don't assume it. It's free text chosen by the user, not computed or validated against `numberWidth` (a numbering space independent from change/fix's).
 
-## 2. Crear la carpeta de la versión
+## 2. Create the version's folder
 
-Ejecuta desde la raíz del repo:
+Run from the repo root:
 
 ```
 python .claude/skills/pv-version/scripts/init-version-folder.py --xxxx <XXXX>
 ```
 
-Crea `{workFolder}/versions/{XXXX}/` con subcarpetas vacías `files/` y `docs/`, e imprime la ruta creada. Si `{workFolder}/versions/{XXXX}/` ya existe, el script termina en error sin tocar nada — en ese caso, pregunta al usuario si quiere continuar sobre lo ya existente (regenerar) o elegir otro `XXXX`, y vuelve a este paso con el nuevo valor si aplica.
+Creates `{workFolder}/versions/{XXXX}/` with empty `files/` and `docs/` subfolders, and prints the created path. If `{workFolder}/versions/{XXXX}/` already exists, the script exits with an error without touching anything — in that case, ask the user whether they want to continue over what already exists (regenerate) or choose another `XXXX`, and return to this step with the new value if applicable.
 
-## 3. Comprobar `how-to-compile-version.md`
+## 3. Check `how-to-compile-version.md`
 
-Busca `{workFolder}/framework/how-to-compile-version.md` (fichero propio del proyecto, no de la skill ni de `pv-context.json`: es un procedimiento de shell/build, no configuración declarativa).
+Look for `{workFolder}/framework/how-to-compile-version.md` (the project's own file, not the skill's nor `pv-context.json`'s: it's a shell/build procedure, not declarative configuration).
 
-- **Si no existe**: pregunta al usuario el procedimiento exacto para generar el entregable de este proyecto (qué comando(s) ejecutar, dónde queda el fichero resultante y cómo identificarlo — o, si el proceso consta de varios pasos que generan artefactos distintos, cada paso con su propio comando y fichero resultante), y escríbelo siguiendo [`how-to-compile-version.template.md`](how-to-compile-version.template.md). No continúes con el paso 4 en la misma respuesta sin haber guardado el fichero.
-- **Si ya existe**: léelo y síguelo tal cual, sin volver a preguntar.
+- **If it doesn't exist**: ask the user for this project's exact procedure to generate the deliverable (which command(s) to run, where the resulting file ends up and how to identify it — or, if the process has several steps generating different artifacts, each step with its own command and resulting file), and write it following [`how-to-compile-version.template.md`](how-to-compile-version.template.md). Don't continue with step 4 in the same reply without having saved the file.
+- **If it already exists**: read it and follow it as-is, without asking again.
 
-## 4. Generar la versión
+## 4. Generate the version
 
-Ejecuta el/los comando(s) que indique `how-to-compile-version.md` (uno por cada paso, si el procedimiento consta de varios) y localiza el/los fichero(s) resultantes tal como describe. Si algún comando falla o el fichero esperado no aparece, para y explícaselo al usuario en vez de improvisar una solución alternativa.
+Run the command(s) `how-to-compile-version.md` gives (one per step, if the procedure has several) and locate the resulting file(s) as it describes. If any command fails or the expected file doesn't show up, stop and explain it to the user instead of improvising an alternative solution.
 
-Con todos los artefactos localizados, cópialos a `{workFolder}/versions/{XXXX}/files/` ejecutando desde la raíz del repo (un `--source` por artefacto, aunque provenga de un único paso):
+With all artifacts located, copy them to `{workFolder}/versions/{XXXX}/files/` by running from the repo root (one `--source` per artifact, even if it comes from a single step):
 
 ```
-python .claude/skills/pv-version/scripts/copy-build-artifacts.py --xxxx <XXXX> --source <ruta-artefacto-1> [--source <ruta-artefacto-2> ...]
+python .claude/skills/pv-version/scripts/copy-build-artifacts.py --xxxx <XXXX> --source <artifact-path-1> [--source <artifact-path-2> ...]
 ```
 
-## 5. Copiar documentación técnica y funcional
+## 5. Copy technical and functional documentation
 
-Solo si el paso 4 generó el entregable correctamente. Ejecuta desde la raíz del repo:
+Only if step 4 generated the deliverable correctly. Run from the repo root:
 
 ```
 python .claude/skills/pv-version/scripts/copy-docs.py --xxxx <XXXX>
 ```
 
-Lee `framework.docs.tech.architectureDocDir`, `framework.docs.tech.styleBibleDocDir` y `framework.docs.functional.featuresDocPathDir` de `.claude/pv-context.json` (los que estén configurados; si ninguno lo está, se omite sin preguntar, igual que hace `pv-do`), comprime cada uno en un `.zip` (carpeta completa con todos sus ficheros, incluido su `INDEX.md`; o el único fichero `.md`, si esa ruta no es una carpeta) y lo guarda en `{workFolder}/versions/{XXXX}/docs/`. Anota qué se copió y qué se omitió (lo devuelve el script en su JSON de salida) para el resumen del paso 7.
+Reads `.claude/pv-context.json`'s `framework.docs.tech.architectureDocDir`, `framework.docs.tech.styleBibleDocDir` and `framework.docs.functional.featuresDocPathDir` (whichever are configured; if none are, it's skipped without asking, same as `pv-do` does), zips each one (the whole folder with all its files, including its `INDEX.md`; or the single `.md` file, if that path isn't a folder) and saves it at `{workFolder}/versions/{XXXX}/docs/`. Note what was copied and what was skipped (the script returns this in its JSON output) for step 7's summary.
 
-## 6. Generar el changelog
+## 6. Generate the changelog
 
-Invoca la skill `pv-internal-changelog` (herramienta Skill) pasándole la carpeta destino `{workFolder}/versions/{XXXX}/`.
+Invoke the `pv-internal-changelog` skill (Skill tool) passing it the destination folder `{workFolder}/versions/{XXXX}/`.
 
-## 7. Confirmar al usuario
+## 7. Confirm to the user
 
-Resume lo generado: entregable en `files/`, docs comprimidos en `docs/` (o cuáles se omitieron por no estar configurados), y que el changelog quedó en `changelog.md` — usa el resumen que te devuelva `pv-internal-changelog` (número de entradas por sección, incluida Fixes, y si se borraron o no las carpetas de `{workFolder}/changes/closed/`).
+Summarize what was generated: the deliverable in `files/`, zipped docs in `docs/` (or which ones were skipped for not being configured), and that the changelog ended up in `changelog.md` — use the summary `pv-internal-changelog` returns to you (number of entries per section, including Fixes, and whether `{workFolder}/changes/closed/`'s folders were deleted or not).

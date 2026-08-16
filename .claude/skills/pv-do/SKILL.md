@@ -1,7 +1,7 @@
 ---
 name: pv-do
-description: Implementa un change/fix cuyo plan.md ya está escrito en {changesDir}/inProgress/{xxxx}/ — edita el código según la solución técnica, actualiza la documentación sincronizada, y mueve la entrada a {changesDir}/implemented. Parte del framework pv-*. Trigger: /pv-do <xxxx>, o cuando el usuario pide implementar un cambio/fix ya planificado por pv-how (normalmente encadenado automáticamente desde ella).
-argument-hint: <xxxx del cambio/fix ya planificado>
+description: Implements a change/fix whose plan.md is already written at {changesDir}/inProgress/{xxxx}/ — edits the code per the technical solution, updates the synced documentation, and moves the entry to {changesDir}/implemented. Part of the pv-* framework. Trigger: /pv-do <xxxx>, or when the user asks to implement a change/fix already planned by pv-how (normally chained automatically from it).
+argument-hint: <xxxx of the already-planned change/fix>
 model: claude-haiku-4-5
 effort: medium
 metadata:
@@ -11,76 +11,78 @@ metadata:
 
 # pv-do
 
-Toma una entrada de `{changesDir}/inProgress/{xxxx}/` cuya solución técnica ya está escrita en `plan.md` (por la skill `pv-how`) y la lleva hasta implementada: edita el código, actualiza la documentación sincronizada, y mueve la carpeta a `{changesDir}/implemented/{xxxx}/`.
+Takes an entry from `{changesDir}/inProgress/{xxxx}/` whose technical solution is already written in `plan.md` (by the `pv-how` skill) and carries it through to implemented: edits the code, updates the synced documentation, and moves the folder to `{changesDir}/implemented/{xxxx}/`.
 
-**Fuente de la verdad.** El `plan.md` de esta entrada es la guía de lo que hay que implementar. Si durante la implementación algo no cuadra con el código real, el código manda — para y coméntaselo al usuario en vez de improvisar una solución distinta sin decírselo (ver paso 2). Si la entrada tiene un `history.md`, no lo abras: es historial de prompts de uso exclusivo de `pv-new`/`pv-fix`, nunca información a tener en cuenta al implementar ni al documentar (paso 2.1), y leerlo solo gastaría contexto sin aportar nada.
+**Language.** Use `framework.interaction.language` (default English) for everything you say to the user in this conversation. When updating `docs.functional.featuresDocPathDir` (via `pv-internal-doc-features`), use `docs.functional.language`; when updating `docs.tech.architectureDocDir`/`styleBibleDocDir`, use `docs.tech.language` (fallback `interaction.language` in both cases) — **not** `changes.language`, even though the source (`plan.md`) is in another language: translating the content when writing it into the final reference document is your responsibility. If `language` is not configured anywhere, everything is English.
 
-**Nunca uses git de forma destructiva ni hagas commit sin permiso.** Esta skill edita ficheros de código/documentación y mueve la carpeta del cambio (paso 3), pero nunca va más allá por su cuenta:
+**Source of truth.** This entry's `plan.md` is the guide for what to implement. If during implementation something doesn't line up with the real code, the code rules — stop and tell the user instead of improvising a different solution without telling them (see step 2). If the entry has a `history.md`, don't open it: it's prompt history for the exclusive use of `pv-new`/`pv-fix`, never information to take into account when implementing or documenting (step 2.1), and reading it would only spend context without adding anything.
 
-- No ejecutes `git commit` (ni `git add` seguido de commit) salvo que el usuario lo haya pedido explícitamente en este turno. Terminar la implementación no es una autorización implícita para commitear.
-- No ejecutes `git restore`, `git checkout -- <fichero>`, `git reset`, `git clean`, ni ningún otro comando que descarte cambios en el árbol de trabajo, aunque el fichero afectado parezca no tener relación con esta entrada. Si al hacer `git status`/`git add` ves cambios de otro trabajo en curso (tuyo o del usuario) que no quieres incluir, dilo y pregunta cómo proceder — no los deseches tú mismo.
-- Si necesitas comprobar el estado del repo (`git status`, `git diff`) hazlo solo para verificar tu propio trabajo, nunca como paso previo a limpiar o descartar ficheros que no has tocado en esta implementación.
+**Never use git destructively nor commit without permission.** This skill edits code/documentation files and moves the change's folder (step 3), but never goes further on its own:
 
-## 0. Cargar el contexto del proyecto
+- Don't run `git commit` (nor `git add` followed by commit) unless the user explicitly asked for it in this turn. Finishing the implementation is not implicit authorization to commit.
+- Don't run `git restore`, `git checkout -- <file>`, `git reset`, `git clean`, or any other command that discards changes in the working tree, even if the affected file seems unrelated to this entry. If running `git status`/`git add` shows changes from other work in progress (yours or the user's) that you don't want to include, say so and ask how to proceed — don't discard them yourself.
+- If you need to check the repo's state (`git status`, `git diff`), do it only to verify your own work, never as a step before cleaning up or discarding files you haven't touched in this implementation.
 
-Lee `.claude/pv-context.json` en la raíz del repo. Si no existe, o le falta la sección `framework`, no continúes: dile al usuario que primero debe ejecutar la skill `pv-init` para inicializar/completar el framework en este proyecto, y detente ahí.
+## 0. Load the project context
 
-```
-Este proyecto todavía no tiene el framework `pv-*` inicializado (o le falta configuración). Ejecuta primero `/pv-init` antes de volver a invocarme.
-```
-
-`docs.tech.architectureDocDir`, `docs.functional.featuresDocPathDir` y `docs.tech.styleBibleDocDir` son opcionales y se usan en el paso 2.1; si no están configurados, omite las actualizaciones correspondientes sin preguntar nada.
-
-## 1. Identificar la entrada a implementar
-
-Si el usuario, al invocar esta skill, indica un `xxxx`, un nombre de carpeta o una descripción del cambio/fix, resuélvelo buscando **únicamente** dentro de `{changesDir}/inProgress/`, y comprueba que tiene `plan.md`:
-
-- Si la carpeta existe pero **no** tiene `plan.md` todavía: no continúes. Dile al usuario que esa entrada aún no tiene solución técnica planificada y que primero debe invocar `pv-how` sobre ese `xxxx`.
-- Si no encuentras ninguna carpeta que corresponda dentro de `{changesDir}/inProgress/`: si existe con ese `xxxx` en `{changesDir}/implemented/`, dile al usuario que ese cambio/fix ya está implementado; si no existe en ningún sitio, dile que no lo encuentras y pregunta el `xxxx` o la carpeta correctos.
-
-**Si no indica nada** (p.ej. invoca `/pv-do` sin argumentos): no asumas que se refiere al último cambio/fix mencionado en la conversación ni a ningún otro dato del contexto de chat. Lista únicamente las carpetas de `{changesDir}/inProgress/` que ya tengan `plan.md` (listas para implementar) — su `xxxx` y, si lo tiene, el nombre/resumen de su `description.md` — y pregunta explícitamente al usuario cuál quiere implementar. Si no hay ninguna con `plan.md` todavía (aunque haya entradas en `inProgress` sin planificar), dile que no hay ningún cambio/fix listo para implementar y que primero hace falta planificarlo con `pv-how`.
+Read `.claude/pv-context.json` at the repo root. If it doesn't exist, or is missing the `framework` section, don't continue: tell the user they must first run the `pv-init` skill to initialize/complete the framework in this project, and stop there.
 
 ```
-Estos cambios/fixes ya tienen `plan.md` y están listos para implementar:
-- {xxxx} — {nombre/resumen}
+This project doesn't have the `pv-*` framework initialized yet (or is missing configuration). Run `/pv-init` first before invoking me again.
+```
+
+`docs.tech.architectureDocDir`, `docs.functional.featuresDocPathDir` and `docs.tech.styleBibleDocDir` are optional and used in step 2.1; if not configured, skip the corresponding updates without asking anything.
+
+## 1. Identify the entry to implement
+
+If the user, when invoking this skill, gives an `xxxx`, a folder name, or a description of the change/fix, resolve it by searching **only** within `{changesDir}/inProgress/`, and check that it has `plan.md`:
+
+- If the folder exists but does **not** have `plan.md` yet: don't continue. Tell the user that entry doesn't have a planned technical solution yet and that `pv-how` must be invoked on that `xxxx` first.
+- If you don't find a matching folder within `{changesDir}/inProgress/`: if it exists with that `xxxx` under `{changesDir}/implemented/`, tell the user that change/fix is already implemented; if it doesn't exist anywhere, tell them you can't find it and ask for the correct `xxxx` or folder.
+
+**If they give nothing** (e.g. they invoke `/pv-do` with no arguments): don't assume it refers to the last change/fix mentioned in the conversation nor any other piece of chat context. List only the `{changesDir}/inProgress/` folders that already have `plan.md` (ready to implement) — their `xxxx` and, if it has one, its `description.md`'s name/summary — and explicitly ask the user which one they want to implement. If none has `plan.md` yet (even if there are unplanned entries in `inProgress`), tell them there's no change/fix ready to implement and that it needs to be planned with `pv-how` first.
+
+```
+These changes/fixes already have `plan.md` and are ready to implement:
+- {xxxx} — {name/summary}
 - ...
 
-¿Cuál quieres que implemente?
+Which one do you want me to implement?
 ```
 
 ```
-No hay ningún cambio/fix con `plan.md` listo para implementar. Usa `pv-how` primero para planificar alguno de los pendientes en `{changesDir}/inProgress/`.
+There's no change/fix with `plan.md` ready to implement. Use `pv-how` first to plan one of the pending ones in `{changesDir}/inProgress/`.
 ```
 
-Una vez identificada, esa es `{xxxx}` y su carpeta `{changesDir}/inProgress/{xxxx}/` para el resto del proceso.
+Once identified, that's `{xxxx}` and its folder `{changesDir}/inProgress/{xxxx}/` for the rest of the process.
 
-## 2. Implementar
+## 2. Implement
 
-Implementa todo lo que dice `plan.md`. Sus checklists (`(b)` y, si existe, `(e)`) son la única lista de tareas fiable — no confíes en lo que recuerdes de haberlas leído antes, ve casilla por casilla:
+Implement everything `plan.md` says. Its checklists (`(b)` and, if present, `(e)`) are the only reliable task list — don't trust what you remember from reading them earlier, go box by box:
 
-- Recorre la sección **(b) Solución técnica** **una tarea a la vez, en orden**: implementa esa tarea concreta (editar código, verificar que compila / pasan los tests si los hay) y, inmediatamente después de darla por hecha, edita `plan.md` marcando esa casilla como `- [x]` antes de pasar a la siguiente. No implementes varias tareas seguidas y las marques todas al final — el marcado inmediato es lo que evita saltarse una sin darte cuenta.
-- Si `plan.md` tiene sección **(c) Cambios de arquitectura**, aplica esos cambios al fichero (o ficheros) de `docs.tech.architectureDocDir` que indique esa sección, como parte de esta implementación.
-- Si `plan.md` tiene sección **(e) Verificación**, una vez marcadas todas las casillas de (b), recorre cada ítem de (e) **uno a uno** y comprueba que el resultado observable descrito se cumple de verdad (leyendo el código/DOM/estilos resultantes, no dando por hecho que la tarea de (b) que lo produce quedó bien). Marca su casilla `- [x]` solo cuando lo hayas comprobado así. Si algún ítem no se cumple, corrígelo antes de marcarlo — no lo des por terminado ni lo menciones como pendiente al usuario.
-- **Antes de pasar al paso 3**, relee `plan.md` completo buscando casillas `- [ ]` sin marcar en (b) o (e). Si encuentras alguna, esa tarea o verificación quedó pendiente sin que te dieras cuenta: complétala ahora, no la ignores ni la des por implícita.
+- Go through section **(b) Technical solution** **one task at a time, in order**: implement that specific task (edit code, verify it compiles / tests pass if there are any) and, right after considering it done, edit `plan.md` marking that box as `- [x]` before moving to the next. Don't implement several tasks in a row and mark them all at the end — marking immediately is what avoids skipping one without noticing.
+- If `plan.md` has section **(c) Architecture changes**, apply those changes to the `docs.tech.architectureDocDir` file(s) that section names, as part of this implementation.
+- If `plan.md` has section **(e) Verification**, once every box in (b) is checked, go through each item in (e) **one at a time** and verify the described observable result truly holds (by reading the resulting code/DOM/styles, not assuming the (b) task that produces it went fine). Check its box `- [x]` only once you've verified it this way. If an item doesn't hold, fix it before checking it off — don't consider it done nor mention it to the user as pending.
+- **Before moving to step 3**, reread the entire `plan.md` looking for unchecked `- [ ]` boxes in (b) or (e). If you find any, that task or check was left pending without you noticing: complete it now, don't ignore it or treat it as implicit.
 
-Si durante la implementación descubres que el plan no es viable tal cual está escrito, para y coméntaselo al usuario en vez de improvisar una solución distinta sin decírselo.
+If during implementation you discover the plan isn't viable as written, stop and tell the user instead of improvising a different solution without telling them.
 
-## 2.1 Actualizar documentación tras implementar
+## 2.1 Update documentation after implementing
 
-Una vez implementado en código lo anterior, actualiza siempre lo siguiente antes de mover la carpeta:
+Once the above is implemented in code, always update the following before moving the folder:
 
-- **`docs.tech.architectureDocDir`** — si está configurado, revisa el fichero (o ficheros) de esa carpeta que correspondan al área tocada y déjalos reflejando fielmente el estado técnico resultante. Aplica lo que diga la sección (c) del plan si la tenía; si no la tenía pero al implementar resulta que sí se ha tocado algo que esa carpeta describe, actualízala igualmente — no depende únicamente de que el plan lo anticipara. Si la solución introduce un tema nuevo que no encaja en ningún fichero existente de esa carpeta, crea uno nuevo con el siguiente número libre (`NN-slug.md`, sin reutilizar ni renumerar los existentes) y añádelo a la tabla-índice de `INDEX.md`. Si no está configurado, omite este punto sin preguntar nada.
-- **`docs.functional.featuresDocPathDir`** — si está configurado, es documentación **funcional**, no un changelog: describe qué puede hacer la app hoy, organizado por área/módulo funcional, no una lista cronológica de changes/fixes. En cualquiera de los dos casos de abajo, si lo implementado amplía o modifica una funcionalidad que ya tiene entrada propia, **edítala in place** para que siga describiendo fielmente el comportamiento actual (nunca añadas una entrada nueva para lo mismo), añadiendo el `xxxx` de esta entrada a su campo **Código**; si es una funcionalidad nueva, crea una entrada en el área funcional que le corresponda (crea el área si no existe todavía) con el `xxxx` de esta entrada en **Código**.
-  - **Diagramas funcionales.** Si `description.md` de esta entrada contiene algún diagrama Mermaid **funcional** (los generados en el paso 2 de `pv-new`/`extend-entry.md`), o la carpeta de la entrada tiene uno o varios `design_navigation_*.md` (diagramas de navegación de UI — `pv-new` puede haber generado varios, uno por cada caso de uso distinto), y alguno de esos diagramas representa un flujo de la funcionalidad que estás documentando aquí, llévalo también a la entrada de features — tal cual, sin reescribirlo. Si dos o más de esos diagramas se referencian entre sí (p.ej. uno dice "ver diagrama 1" o nombra un estado/nodo definido en otro fichero), llévalos siempre juntos, todos o ninguno — nunca incluyas un diagrama que referencia a otro sin ese otro también, para no dejar una referencia rota en la documentación de features. **Nunca** lleves diagramas técnicos (los de `plan.md`: flujo técnico, secuencia técnica, ni los de `docs.tech.architectureDocDir`) — esos son de implementación interna, no de cara al usuario. Si la entrada de features ya tenía diagramas propios de una versión anterior de la funcionalidad, consérvalos salvo que este cambio los deje desactualizados (en ese caso, sustitúyelos por los nuevos en vez de acumular ambos).
-  - **Si `featuresDocPathDir` es una carpeta** (la convención recomendada — compruébalo mirando si existe como directorio, o si aún no existe pero el valor no termina en `.md`): invoca la skill `pv-internal-doc-features` (herramienta Skill) con `action=find` y una descripción breve de la funcionalidad implementada, para saber si ya tiene fichero propio. Redacta el contenido final (cuerpo, diagramas funcionales según el punto anterior, `Disponible en`, lista completa de `Código`) tú mismo con el criterio de arriba, y guárdalo invocando `pv-internal-doc-features` con `action=upsert` (pasando `diagramas` solo si hay alguno que incluir) — pasando `fichero_existente` si `find` devolvió una coincidencia, u omitiéndolo si es una entrada nueva.
-  - **Si `featuresDocPathDir` es un único fichero** (proyectos que todavía no han migrado a carpeta): edítalo tú mismo con el mismo criterio (incluidos los diagramas funcionales), usando como plantilla de una entrada nueva la de [`FEATURES.template.md`](FEATURES.template.md) de esta skill; créalo a partir de esa plantilla si todavía no existe.
-  - Si `docs.functional.featuresDocPathDir` no está configurado, omite este punto sin preguntar nada.
-- **`docs.tech.styleBibleDocDir`** — si está configurado, revisa el fichero (o ficheros) de esa carpeta que correspondan y actualízalos si lo implementado introduce o modifica convenciones de estilo (visual, de interacción, de redacción, etc.) relevantes para el proyecto. Igual que con `architectureDocDir`, si el tema no encaja en ningún fichero existente crea uno nuevo con el siguiente número libre y añádelo a la tabla-índice de `INDEX.md`. Si no está configurado, o lo implementado no afecta a ninguna convención de estilo, omite este punto sin preguntar nada.
+- **`docs.tech.architectureDocDir`** — if configured, review the file(s) in that folder matching the touched area and make sure they faithfully reflect the resulting technical state. Apply whatever section (c) of the plan says if it had one; if it didn't but implementation turned out to touch something that folder describes, update it anyway — it doesn't depend solely on the plan having anticipated it. If the solution introduces a new topic that doesn't fit any existing file in that folder, create a new one with the next free number (`NN-slug.md`, without reusing or renumbering existing ones) and add it to `INDEX.md`'s index table. If not configured, skip this point without asking anything.
+- **`docs.functional.featuresDocPathDir`** — if configured, it's **functional** documentation, not a changelog: it describes what the app can do today, organized by functional area/module, not a chronological list of changes/fixes. In either of the two cases below, if what was implemented extends or modifies a feature that already has its own entry, **edit it in place** so it keeps faithfully describing the current behavior (never add a new entry for the same thing), adding this entry's `xxxx` to its **Code** field; if it's a new feature, create an entry in the matching functional area (create the area if it doesn't exist yet) with this entry's `xxxx` in **Code**.
+  - **Functional diagrams.** If this entry's `description.md` contains a **functional** Mermaid diagram (the ones generated in `pv-new`/`extend-entry.md`'s step 2), or the entry's folder has one or more `design_navigation_*.md` (UI navigation diagrams — `pv-new` may have generated several, one per distinct use case), and any of those diagrams represents a flow of the feature you're documenting here, carry it over to the feature entry too — as-is, without rewriting it. If two or more of those diagrams reference each other (e.g. one says "see diagram 1" or names a state/node defined in another file), always carry them over together, all or none — never include a diagram that references another without that other one too, to avoid leaving a broken reference in the feature documentation. **Never** carry over technical diagrams (`plan.md`'s: technical flow, technical sequence, nor `docs.tech.architectureDocDir`'s) — those are internal implementation, not user-facing. If the feature entry already had its own diagrams from a previous version of the feature, keep them unless this change leaves them outdated (in that case, replace them with the new ones instead of accumulating both).
+  - **If `featuresDocPathDir` is a folder** (the recommended convention — check by seeing whether it exists as a directory, or if it doesn't exist yet but the value doesn't end in `.md`): invoke the `pv-internal-doc-features` skill (Skill tool) with `action=find` and a brief description of the implemented feature, to know whether it already has its own file. Draft the final content (body, functional diagrams per the previous point, `Available in`, full `Code` list) yourself with the criteria above, and save it by invoking `pv-internal-doc-features` with `action=upsert` (passing `diagrams` only if there's one to include) — passing `existing_file` if `find` returned a match, or omitting it if it's a new entry.
+  - **If `featuresDocPathDir` is a single file** (projects that haven't migrated to a folder yet): edit it yourself with the same criteria (including functional diagrams), using this skill's [`FEATURES.template.md`](FEATURES.template.md) as the template for a new entry; create it from that template if it doesn't exist yet.
+  - If `docs.functional.featuresDocPathDir` isn't configured, skip this point without asking anything.
+- **`docs.tech.styleBibleDocDir`** — if configured, review the matching file(s) in that folder and update them if what was implemented introduces or modifies style conventions (visual, interaction, writing, etc.) relevant to the project. Same as with `architectureDocDir`, if the topic doesn't fit any existing file create a new one with the next free number and add it to `INDEX.md`'s index table. If not configured, or what was implemented doesn't affect any style convention, skip this point without asking anything.
 
-## 3. Mover la carpeta a `implemented`
+## 3. Move the folder to `implemented`
 
-Invoca la skill `pv-internal-workflow` (herramienta Skill) con `action=move`, `xxxx`, `from=inProgress` y `to=implemented` — no muevas la carpeta tú mismo.
+Invoke the `pv-internal-workflow` skill (Skill tool) with `action=move`, `xxxx`, `from=inProgress` and `to=implemented` — don't move the folder yourself.
 
-## 4. Confirmar al usuario
+## 4. Confirm to the user
 
-Indica qué se ha implementado, qué documentación se ha actualizado (`docs.tech.architectureDocDir`/`docs.functional.featuresDocPathDir`/`docs.tech.styleBibleDocDir`, según aplicara), y que la carpeta se movió a `{changesDir}/implemented/{xxxx}/`.
+State what was implemented, which documentation was updated (`docs.tech.architectureDocDir`/`docs.functional.featuresDocPathDir`/`docs.tech.styleBibleDocDir`, as applicable), and that the folder was moved to `{changesDir}/implemented/{xxxx}/`.

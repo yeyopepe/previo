@@ -171,7 +171,7 @@ Reglas de traducción (sin cambios respecto al plan anterior, salvo la nueva vi�
 
 ### Scripts Python (docstrings, comentarios, mensajes de error/consola → inglés)
 
-- `pv-init/scripts/check-context.py`, `sync-skill-models.py`
+- `pv-init/scripts/check-context.py`, `sync-skill-models.py`, `assets/pv.py` (**hallazgo durante la implementación**, no estaba en el inventario original: es el lanzador de terminal que `pv-init` copia a la raíz del repo, con texto de UI en español — incluye su propio `NOMBRE_RE` que también había que actualizar a `**Name**` para seguir el rename de etiquetas de campo)
 - `pv-how/scripts/get-max-change-codes.py`
 - `pv-do/` — sin scripts propios
 - `pv-status/scripts/collect_status.py`, `filter_status.py`, `render_status.py`, `list_todo.py`, `terminal_output.py`

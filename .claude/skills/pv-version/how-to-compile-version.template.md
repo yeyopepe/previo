@@ -1,17 +1,17 @@
-# Cómo compilar el entregable de este proyecto
+# How to compile this project's deliverable
 
-Fichero propio de `pv-version` (no forma parte de `.claude/pv-context.json`): describe el procedimiento de shell/build concreto de este repo para generar el entregable jugable. Lo rellena `pv-version` la primera vez que se invoca y no existe todavía, preguntando al usuario; en invocaciones siguientes se lee y se sigue tal cual, sin volver a preguntar. También se actualiza cada vez que el usuario informa de un cambio en este procedimiento.
+`pv-version`'s own file (not part of `.claude/pv-context.json`): describes this repo's specific shell/build procedure for generating the playable deliverable. Filled in by `pv-version` the first time it's invoked and the file doesn't exist yet, by asking the user; on later invocations it's read and followed as-is, without asking again. Also updated whenever the user reports a change to this procedure.
 
-Si el entregable se genera con un único comando, describe directamente "Comando(s) a ejecutar" y "Fichero(s) generado(s)" como en el ejemplo de abajo. Si el proceso consta de **varios pasos independientes que generan artefactos distintos** (todos ellos parte del mismo entregable completo, p.ej. build del juego + build de un PDF de reglas), documenta cada uno como un "Paso N: {nombre}" separado, cada uno con su propio "Comando(s) a ejecutar" y "Fichero(s) generado(s)" — en ese caso, todos los artefactos resultantes se copian a `files/`, uno por paso.
+If the deliverable is generated with a single command, directly describe "Command(s) to run" and "Generated file(s)" as in the example below. If the process consists of **several independent steps that generate distinct artifacts** (all part of the same complete deliverable, e.g. building the game + building a rules PDF), document each one as a separate "Step N: {name}", each with its own "Command(s) to run" and "Generated file(s)" — in that case, all resulting artifacts are copied to `files/`, one per step.
 
-## Comando(s) a ejecutar
+## Command(s) to run
 
-[Comando o secuencia de comandos exactos, en el orden en que hay que ejecutarlos, desde la raíz del repo. Incluye el intérprete/herramienta (p.ej. `python`, `npm run`) y cualquier flag necesario.]
+[Exact command or sequence of commands, in the order they need to run, from the repo root. Include the interpreter/tool (e.g. `python`, `npm run`) and any needed flags.]
 
-## Fichero(s) generado(s)
+## Generated file(s)
 
-[Ruta (o patrón de ruta, si el nombre incluye una versión autoincremental) donde queda el entregable tras ejecutar el/los comando(s) de arriba, y cómo identificar cuál es el más reciente si hay varios candidatos.]
+[Path (or path pattern, if the name includes an auto-incrementing version) where the deliverable ends up after running the command(s) above, and how to identify the most recent one if there are several candidates.]
 
-## Notas
+## Notes
 
-[Cualquier detalle adicional relevante: requisitos previos, efectos secundarios del build (ficheros que también se actualizan), advertencias sobre qué NO tocar manualmente, etc. Sección opcional — omítela si no hay nada que anotar.]
+[Any other relevant detail: prerequisites, side effects of the build (files that also get updated), warnings about what NOT to touch manually, etc. Optional section — omit it if there's nothing to note.]

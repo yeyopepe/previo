@@ -1,28 +1,27 @@
 #!/usr/bin/env python3
-"""Menú interactivo del framework pv-*, para uso directo desde terminal.
+"""Interactive menu for the pv-* framework, for direct use from a terminal.
 
-Este fichero lo genera/actualiza la skill pv-init en la raíz del repo — no
-lo edites a mano, tus cambios se perderían la próxima vez que se
-re-inicialice el framework (ficha maestra en
+This file is generated/updated by the pv-init skill at the repo root — don't
+edit it by hand, your changes would be lost the next time the framework is
+re-initialized (master copy at
 .claude/skills/pv-init/assets/pv.py).
 
-Pensado para un usuario avanzado que quiere consultar o cerrar cambios del
-framework pv-* sin pasar por Claude Code ni tener que recordar nombres de
-scripts, rutas o parámetros: ejecuta este fichero y elige una opción del
-menú.
+Meant for an advanced user who wants to check or close pv-* framework
+changes without going through Claude Code or having to remember script
+names, paths, or parameters: run this file and choose a menu option.
 
-La mayoría de las opciones son de solo lectura y delegan en los scripts de
-la skill pv-status. Dos opciones modifican algo:
-- "Cerrar una entrada implementada": mueve la carpeta de
-  changes/implemented/{xxxx} a changes/closed/{xxxx} (delegando en
-  move-change.py de pv-internal-workflow, que no toca el contenido de
-  ningún fichero, solo la carpeta), y siempre pide confirmación explícita
-  antes de mover nada.
-- "Actualizar modelos de las skills según pv-context.json": delega en
-  sync-skill-models.py de pv-init, que propaga skillModels de
-  pv-context.json al frontmatter (model/effort) de cada SKILL.md 'pv-*'.
+Most options are read-only and delegate to the pv-status skill's scripts.
+Two options modify something:
+- "Close an implemented entry": moves the folder from
+  changes/implemented/{xxxx} to changes/closed/{xxxx} (delegating to
+  pv-internal-workflow's move-change.py, which doesn't touch any file's
+  content, only the folder), and always asks for explicit confirmation
+  before moving anything.
+- "Sync skill models per pv-context.json": delegates to pv-init's
+  sync-skill-models.py, which propagates pv-context.json's skillModels to
+  each 'pv-*' SKILL.md's frontmatter (model/effort).
 
-Uso:
+Usage:
   python3 pv.py
 """
 
@@ -45,9 +44,9 @@ COLOR_RESET = "\033[0m"
 GOLD = "\033[38;5;220m"
 DARK_GRAY = "\033[38;5;238m"
 
-# Degradado por densidad de carácter, calcado del anillo unico real: del
-# brillo dorado palido de los trazos sueltos (".", ":", "-") a la sombra
-# marron/granate del metal en las zonas mas densas ("#", "%").
+# Gradient by character density, modeled on the actual One Ring: from the
+# pale golden glow of the loose strokes (".", ":", "-") to the brown/maroon
+# shadow of the metal in the densest areas ("#", "%").
 RING_CHAR_COLORS = {
     ".": 223,
     ":": 220,
@@ -59,7 +58,7 @@ RING_CHAR_COLORS = {
     "%": 52,
 }
 
-NOMBRE_RE = re.compile(r"\*\*Nombre\*\*\s*[:—-]\s*(.+)")
+NAME_RE = re.compile(r"\*\*Name\*\*\s*[:—-]\s*(.+)")
 
 
 def supports_color() -> bool:
@@ -127,19 +126,19 @@ def wrap(text: str, indent: str = "") -> str:
     )
 
 RING_ART = r"""
-     ........                 
-  :=. . ..:::::----:          
- -*:.:..:---=---:-====-.      
-:*#-.       .:=*+==--==+=:    
-++#*:            :-+*+==**+.  
-++*##=              :+**==**: 	Previo: el framework de desarrollo
-*+=*##*:              :**=+#*.	rápido y visual dirigido 100% por IA.
+     ........
+  :=. . ..:::::----:
+ -*:.:..:---=---:-====-.
+:*#-.       .:=*+==--==+=:
+++#*:            :-+*+==**+.
+++*##=              :+**==**: 	Previo: the AI-driven, visual,
+*+=*##*:              :**=+#*.	rapid-development framework.
  *++***#*-.             +*=**:
-  +*+******+-.           ***= 	Un script
-   -**+++*####*+-:.      --:. 	para gobernarlos a todos.
-     -++++**#*##***++===---:  
-       .=*###+#****+**+--:    
-           :=+*###%#*=:.   
+  +*+******+-.           ***= 	One script
+   -**+++*####*+-:.      --:. 	to rule them all.
+     -++++**#*##***++===---:
+       .=*###+#****+**+--:
+           :=+*###%#*=:.
 """
 
 
@@ -164,24 +163,24 @@ def list_states() -> list[str]:
 def show_filtered_status() -> None:
     states = list_states()
     if not states:
-        print(wrap(f"No hay carpetas de estado en {CHANGES_DIR}."))
+        print(wrap(f"No state folders in {CHANGES_DIR}."))
         return
 
     print()
     hr("-")
-    print("Estados disponibles:")
+    print("Available states:")
     for i, state in enumerate(states, start=1):
         print(wrap(f"{i}. {state}", indent="  "))
     hr("-")
 
-    choice = input("Elige un estado (número, o vacío para cancelar): ").strip()
+    choice = input("Choose a state (number, or empty to cancel): ").strip()
     if not choice:
         return
 
     try:
         state = states[int(choice) - 1]
     except (ValueError, IndexError):
-        print("Opción no válida.")
+        print("Invalid option.")
         return
 
     run_script(STATUS_SCRIPTS / "filter_status.py", state, "--terminal")
@@ -194,41 +193,41 @@ def list_implemented_entries() -> list[tuple[str, str]]:
 
     entries = []
     for entry_dir in sorted(p for p in implemented_dir.iterdir() if p.is_dir()):
-        nombre = "(sin nombre)"
+        name = "(no name)"
         description_path = entry_dir / "description.md"
         if description_path.is_file():
-            match = NOMBRE_RE.search(description_path.read_text(encoding="utf-8"))
+            match = NAME_RE.search(description_path.read_text(encoding="utf-8"))
             if match:
-                nombre = match.group(1).splitlines()[0].strip().strip("` ")
-        entries.append((entry_dir.name, nombre))
+                name = match.group(1).splitlines()[0].strip().strip("` ")
+        entries.append((entry_dir.name, name))
     return entries
 
 
 def close_entry() -> None:
     entries = list_implemented_entries()
     if not entries:
-        print(wrap("No hay ninguna entrada en changes/implemented/ pendiente de cerrar."))
+        print(wrap("There's no entry in changes/implemented/ pending closure."))
         return
 
     print()
     hr("-")
-    print("Entradas implementadas, pendientes de cerrar:")
-    for i, (code, nombre) in enumerate(entries, start=1):
-        print(wrap(f"{i}. {code} — {nombre}", indent="  "))
-    print(wrap("t. Cerrar todos", indent="  "))
+    print("Implemented entries, pending closure:")
+    for i, (code, name) in enumerate(entries, start=1):
+        print(wrap(f"{i}. {code} — {name}", indent="  "))
+    print(wrap("a. Close all", indent="  "))
     hr("-")
 
     choice = input(
-        "Elige una entrada a cerrar (número, 't' para cerrar todas, o vacío para cancelar): "
+        "Choose an entry to close (number, 'a' to close all, or empty to cancel): "
     ).strip().lower()
     if not choice:
         return
 
-    if choice == "t":
-        print(wrap(f"¿Confirmas mover las {len(entries)} entradas listadas a changes/closed/?"))
-        confirm = input("(s/N): ").strip().lower()
-        if confirm not in ("s", "si", "sí"):
-            print("Cancelado.")
+    if choice == "a":
+        print(wrap(f"Confirm moving the {len(entries)} listed entries to changes/closed/?"))
+        confirm = input("(y/N): ").strip().lower()
+        if confirm not in ("y", "yes"):
+            print("Cancelled.")
             return
 
         for code, _ in entries:
@@ -236,15 +235,15 @@ def close_entry() -> None:
         return
 
     try:
-        code, nombre = entries[int(choice) - 1]
+        code, name = entries[int(choice) - 1]
     except (ValueError, IndexError):
-        print("Opción no válida.")
+        print("Invalid option.")
         return
 
-    print(wrap(f"¿Confirmas mover '{code} — {nombre}' a changes/closed/?"))
-    confirm = input("(s/N): ").strip().lower()
-    if confirm not in ("s", "si", "sí"):
-        print("Cancelado.")
+    print(wrap(f"Confirm moving '{code} — {name}' to changes/closed/?"))
+    confirm = input("(y/N): ").strip().lower()
+    if confirm not in ("y", "yes"):
+        print("Cancelled.")
         return
 
     close_change(code)
@@ -264,11 +263,11 @@ def sync_skill_models() -> None:
 
 
 MENU: list[tuple[str, "callable"]] = [
-    ("Estado general del proyecto", show_general_status),
-    ("Listado filtrado por estado (todo, inProgress, implemented...)", show_filtered_status),
-    ("Ideas en todo/", show_todo_ideas),
-    ("Cerrar una entrada implementada (mover a changes/closed/)", close_entry),
-    ("Actualizar modelos de las skills según pv-context.json", sync_skill_models),
+    ("General project status", show_general_status),
+    ("Listing filtered by state (todo, inProgress, implemented...)", show_filtered_status),
+    ("Ideas in todo/", show_todo_ideas),
+    ("Close an implemented entry (move to changes/closed/)", close_entry),
+    ("Sync skill models per pv-context.json", sync_skill_models),
 ]
 
 
@@ -279,30 +278,30 @@ def main() -> None:
     enable_windows_ansi()
 
     if not CONTEXT_PATH.is_file():
-        print(wrap("Este proyecto no tiene el framework pv-* inicializado."))
-        print(wrap("Ejecuta primero /pv-init desde Claude Code."))
+        print(wrap("This project doesn't have the pv-* framework initialized."))
+        print(wrap("Run /pv-init first from Claude Code."))
         return
 
     print(colorize_ring_art(RING_ART))
-    
+
     exit_index = len(MENU) + 1
 
     while True:
         print()
-        print_header("Previo: acciones")
+        print_header("Previo: actions")
         for i, (label, _) in enumerate(MENU, start=1):
             print(wrap(f"{i}. {label}", indent="  "))
-        print(wrap(f"{exit_index}. Salir", indent="  "))
+        print(wrap(f"{exit_index}. Exit", indent="  "))
         hr()
 
-        choice = input("Elige una opción: ").strip()
+        choice = input("Choose an option: ").strip()
         if choice == "":
             continue
 
         try:
             index = int(choice)
         except ValueError:
-            print("Opción no válida.")
+            print("Invalid option.")
             continue
 
         if index == exit_index:
@@ -311,12 +310,12 @@ def main() -> None:
         try:
             _, action = MENU[index - 1]
         except IndexError:
-            print("Opción no válida.")
+            print("Invalid option.")
             continue
 
         print()
         action()
-        input("\nPulsa Enter para volver al menú...")
+        input("\nPress Enter to return to the menu...")
 
 
 if __name__ == "__main__":

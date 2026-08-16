@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
-"""Localiza la version anterior en {workFolder}/versions/ (skill pv-internal-changelog).
+"""Locates the previous version in {workFolder}/versions/ (pv-internal-changelog skill).
 
-Recorre las subcarpetas directas de {workFolder}/versions/, excluye la que
-se esta generando (--xxxx), y devuelve la de fecha de creacion mas reciente
-segun el mtime de la propia carpeta -- no del xxxx (que es texto libre, no
-ordenable cronologicamente). Quien invoca debe confirmar con el usuario que
-la candidata devuelta es realmente la version anterior correcta antes de
-usarla, por si hubiera ambiguedad.
+Walks {workFolder}/versions/'s direct subfolders, excludes the one being
+generated (--xxxx), and returns the most recently created one per the
+folder's own mtime -- not the xxxx (which is free text, not chronologically
+sortable). The caller must confirm with the user that the returned candidate
+is really the correct previous version before using it, in case of
+ambiguity.
 
-workFolder se lee de .claude/pv-context.json (seccion framework) salvo que
-se pase explicitamente por parametro.
+workFolder is read from .claude/pv-context.json (framework section) unless
+passed explicitly as a parameter.
 
-Imprime UNICAMENTE un JSON en stdout:
+Prints ONLY a JSON on stdout:
 
   {"found": true, "xxxx": "00001", "changelogPath": "versions/00001/changelog.md", "changelogExists": true}
   {"found": false, "xxxx": null, "changelogPath": null, "changelogExists": false}
 
-"found": false si no hay ninguna otra carpeta en versions/ aparte de la que
-se esta generando. "changelogExists": false si la carpeta encontrada no
-tiene changelog.md todavia (p.ej. una version a medio preparar).
+"found": false if there's no other folder in versions/ besides the one
+being generated. "changelogExists": false if the folder found doesn't have
+a changelog.md yet (e.g. a version half-prepared).
 
-Uso:
+Usage:
   python find-previous-version.py --xxxx 00002
 """
 
@@ -31,7 +31,7 @@ from pathlib import Path
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/pv-internal-changelog/scripts/
+    # This script lives at {repo}/.claude/skills/pv-internal-changelog/scripts/
     return Path(__file__).resolve().parents[4]
 
 
@@ -39,16 +39,16 @@ def load_work_folder(root: Path) -> str:
     context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
-            "buscar la version anterior."
+            f"Cannot find {context_path}. Run the pv-init skill before "
+            "looking for the previous version."
         )
 
     context = json.loads(context_path.read_text(encoding="utf-8"))
     framework = context.get("framework")
     if not framework:
         raise SystemExit(
-            f"{context_path} no tiene la seccion 'framework'. Ejecuta la skill "
-            "pv-init para completarla."
+            f"{context_path} has no 'framework' section. Run the pv-init "
+            "skill to complete it."
         )
     return framework.get("workFolder", "/")
 
@@ -61,11 +61,11 @@ def resolve_versions_dir(root: Path, work_folder_rel: str) -> Path:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--xxxx", required=True, help="Codigo de la version que se esta generando (se excluye de la busqueda).")
+    parser.add_argument("--xxxx", required=True, help="Code of the version being generated (excluded from the search).")
     parser.add_argument(
         "--work-folder",
-        help="Ruta a workFolder relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/pv-context.json (default '/').",
+        help="Path to workFolder relative to the repo root. If not given, "
+        "read from .claude/pv-context.json (default '/').",
     )
     args = parser.parse_args()
 

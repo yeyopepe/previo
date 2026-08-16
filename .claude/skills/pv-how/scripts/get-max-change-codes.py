@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
-"""Obtiene el codigo (xxxx) mas alto existente en cada estado del framework pv-*.
+"""Gets the highest existing code (xxxx) in each pv-* framework state.
 
-Busca, por separado, el numero mas alto entre las subcarpetas puramente
-numericas de {workFolder}/changes/inProgress, {workFolder}/changes/implemented
-y {workFolder}/changes/closed. Se usa como verificacion previa de pv-how: si
-el xxxx que se va a planificar es menor que el maximo de cualquiera de estos
-tres estados, significa que se ha creado despues de otro cambio/fix mas
-reciente y conviene reanalizarlo antes de planificar.
+Separately finds the highest number among the purely numeric subfolders of
+{workFolder}/changes/inProgress, {workFolder}/changes/implemented and
+{workFolder}/changes/closed. Used as a pre-check by pv-how: if the xxxx
+about to be planned is lower than the max of any of these three states, it
+means it was created before another, more recent change/fix, and it should
+be re-analyzed before planning.
 
-workFolder y numberWidth se leen de .claude/pv-context.json (seccion
-framework) salvo que se pasen explicitamente por parametro. workFolder es
-opcional (default "/", la raiz del repo); la subcarpeta "changes" dentro de
-el es siempre de nombre fijo, no configurable.
+workFolder and numberWidth are read from .claude/pv-context.json (framework
+section) unless passed explicitly as parameters. workFolder is optional
+(default "/", the repo root); the "changes" subfolder inside it always has
+a fixed name, not configurable.
 
-Imprime UNICAMENTE un JSON en stdout con los tres codigos ya formateados con
-numberWidth digitos y ceros a la izquierda, o null si ese estado no tiene
-ninguna carpeta numerada:
+Prints ONLY a JSON on stdout with the three codes already formatted with
+numberWidth digits and leading zeros, or null if that state has no
+numbered folder:
 
   {"inProgress": "00003", "implemented": "00002", "closed": null}
 
-Uso:
+Usage:
   python get-max-change-codes.py
 """
 
@@ -31,12 +31,12 @@ from pathlib import Path
 
 NUMERIC_NAME = re.compile(r"^\d+$")
 STATES = ("inProgress", "implemented", "closed")
-# "todo" (usada por la skill pv-todo) queda deliberadamente fuera: no forma
-# parte del flujo de change/fix.
+# "todo" (used by the pv-todo skill) is deliberately left out: it's not
+# part of the change/fix flow.
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/pv-how/scripts/
+    # This script lives at {repo}/.claude/skills/pv-how/scripts/
     return Path(__file__).resolve().parents[4]
 
 
@@ -44,16 +44,16 @@ def load_framework_defaults(root: Path) -> dict:
     context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
-            "comprobar los codigos existentes."
+            f"Cannot find {context_path}. Run the pv-init skill before "
+            "checking existing codes."
         )
 
     context = json.loads(context_path.read_text(encoding="utf-8"))
     framework = context.get("framework")
     if not framework:
         raise SystemExit(
-            f"{context_path} no tiene la seccion 'framework'. Ejecuta la skill "
-            "pv-init para completarla."
+            f"{context_path} has no 'framework' section. Run the pv-init "
+            "skill to complete it."
         )
     return framework
 
@@ -81,13 +81,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--work-folder",
-        help="Ruta a workFolder, relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/pv-context.json (default '/').",
+        help="Path to workFolder, relative to the repo root. If not given, "
+        "read from .claude/pv-context.json (default '/').",
     )
     parser.add_argument(
         "--number-width",
         type=int,
-        help="Numero de digitos para el padding. Si no se indica, se lee de "
+        help="Number of digits for zero-padding. If not given, read from "
         ".claude/pv-context.json.",
     )
     args = parser.parse_args()
@@ -106,8 +106,8 @@ def main() -> None:
 
     if not number_width:
         raise SystemExit(
-            "No se ha podido determinar 'numberWidth' (ni por parametro ni desde "
-            "pv-context.json)."
+            "Could not determine 'numberWidth' (neither via parameter nor "
+            "from pv-context.json)."
         )
 
     changes_dir = resolve_changes_dir(root, work_folder_rel)

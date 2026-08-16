@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
-"""Lista las entradas pendientes de changelog en {workFolder}/changes/closed/.
+"""Lists the entries pending changelog inclusion in {workFolder}/changes/closed/.
 
-Recorre las subcarpetas directas de {workFolder}/changes/closed/ y devuelve,
-por cada una, su xxxx (nombre de la carpeta) y la ruta a su description.md
-(relativa a la raiz del repo). No lee ni interpreta el contenido de esos
-description.md -- eso lo hace la skill pv-internal-changelog, que necesita
-juicio real para clasificar cada entrada (Nuevo/Cambios/Eliminado).
+Walks {workFolder}/changes/closed/'s direct subfolders and returns, for
+each one, its xxxx (folder name) and the path to its description.md
+(relative to the repo root). Doesn't read or interpret those
+description.md's content -- that's the pv-internal-changelog skill's job,
+which needs real judgment to classify each entry (New/Changed/Removed).
 
-workFolder se lee de .claude/pv-context.json (seccion framework) salvo que
-se pase explicitamente por parametro.
+workFolder is read from .claude/pv-context.json (framework section) unless
+passed explicitly as a parameter.
 
-Imprime UNICAMENTE un JSON en stdout:
+Prints ONLY a JSON on stdout:
 
   {"entries": [{"xxxx": "00001", "descriptionPath": "changes/closed/00001/description.md"}, ...]}
 
-Si closed/ no existe o esta vacia, "entries" es una lista vacia (no es un
+If closed/ doesn't exist or is empty, "entries" is an empty list (not an
 error).
 
-Uso:
+Usage:
   python list-closed-entries.py
 """
 
@@ -28,7 +28,7 @@ from pathlib import Path
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/pv-internal-changelog/scripts/
+    # This script lives at {repo}/.claude/skills/pv-internal-changelog/scripts/
     return Path(__file__).resolve().parents[4]
 
 
@@ -36,16 +36,16 @@ def load_work_folder(root: Path) -> str:
     context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
-            "listar entradas de closed."
+            f"Cannot find {context_path}. Run the pv-init skill before "
+            "listing entries from closed."
         )
 
     context = json.loads(context_path.read_text(encoding="utf-8"))
     framework = context.get("framework")
     if not framework:
         raise SystemExit(
-            f"{context_path} no tiene la seccion 'framework'. Ejecuta la skill "
-            "pv-init para completarla."
+            f"{context_path} has no 'framework' section. Run the pv-init "
+            "skill to complete it."
         )
     return framework.get("workFolder", "/")
 
@@ -60,8 +60,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--work-folder",
-        help="Ruta a workFolder relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/pv-context.json (default '/').",
+        help="Path to workFolder relative to the repo root. If not given, "
+        "read from .claude/pv-context.json (default '/').",
     )
     args = parser.parse_args()
 

@@ -1,7 +1,7 @@
-"""Regenera INDEX.md a partir de todos los ficheros de funcionalidad de la carpeta.
+"""Regenerates INDEX.md from all the feature files in the folder.
 
-Nunca edites INDEX.md a mano -- este script es la unica fuente de verdad de su contenido,
-para que no se desincronice de los ficheros reales. Uso:
+Never edit INDEX.md by hand -- this script is the only source of truth for
+its content, so it never drifts out of sync with the real files. Usage:
 
     python rebuild-index.py --folder design/docs/features
 """
@@ -12,14 +12,14 @@ from pathlib import Path
 
 def parse_feature(path):
     title = None
-    area = "Sin área"
+    area = "No area"
     for line in path.read_text(encoding="utf-8").splitlines():
         if title is None:
             m = re.match(r"#\s+(.+)", line)
             if m:
                 title = m.group(1).strip()
                 continue
-        m = re.match(r"\*\*Área\*\*:\s*(.+)", line)
+        m = re.match(r"\*\*Area\*\*:\s*(.+)", line)
         if m:
             area = m.group(1).strip()
             break
@@ -51,7 +51,7 @@ def main():
 
     (folder / "INDEX.md").write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
     total = sum(len(v) for v in by_area.values())
-    print(f"INDEX.md regenerado: {total} funcionalidades en {len(by_area)} áreas.")
+    print(f"INDEX.md regenerated: {total} features across {len(by_area)} areas.")
 
 
 if __name__ == "__main__":

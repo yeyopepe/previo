@@ -1,7 +1,7 @@
 ---
 name: pv-how
-description: Analiza y planifica la solución técnica de un change/fix ya documentado en {changesDir}/inProgress — genera un plan.md con la solución técnica (o lo re-analiza si ya existe), y si el usuario confirma, encadena la skill pv-do para implementarlo. Parte del framework pv-*. Trigger: /pv-how <xxxx>, o cuando el usuario pide planificar/analizar la solución técnica de un cambio o fix ya documentado por pv-new/pv-fix.
-argument-hint: <xxxx o descripción del cambio/fix a planificar>
+description: Analyzes and plans the technical solution for a change/fix already documented in {changesDir}/inProgress — generates a plan.md with the technical solution (or re-analyzes it if one already exists), and if the user confirms, chains the pv-do skill to implement it. Part of the pv-* framework. Trigger: /pv-how <xxxx>, or when the user asks to plan/analyze the technical solution for a change or fix already documented by pv-new/pv-fix.
+argument-hint: <xxxx or description of the change/fix to plan>
 model: claude-sonnet-5
 effort: medium
 metadata:
@@ -11,118 +11,120 @@ metadata:
 
 # pv-how
 
-Toma una entrada ya documentada por `pv-new`/`pv-fix` en `{changesDir}/inProgress/{xxxx}/` y analiza su solución técnica, dejándola escrita en `plan.md`. Si el usuario confirma que quiere implementarla ya, encadena directamente la skill `pv-do`, que es quien edita el código y mueve la carpeta a `{changesDir}/implemented/{xxxx}/`.
+Takes an entry already documented by `pv-new`/`pv-fix` at `{changesDir}/inProgress/{xxxx}/` and analyzes its technical solution, writing it down in `plan.md`. If the user confirms they want to implement it now, chains directly to the `pv-do` skill, which is the one that edits the code and moves the folder to `{changesDir}/implemented/{xxxx}/`.
 
-**Fuente de la verdad.** La documentación técnica (`docs.tech.*`) y el código real son la única fuente de verdad sobre cómo funciona hoy el proyecto — no lo que `description.md` asuma implícitamente sobre la implementación, ni memoria de conversaciones anteriores. Reúne ese contexto siempre invocando la skill `pv-internal-tech-analysis` (nunca leyendo tú mismo `framework.docs.tech` a pelo o explorando código a ciegas) al analizar la causa raíz y diseñar la solución (paso 3), incluso si ya tienes una idea de cómo funciona algo por contexto previo. Tampoco cuenta como fuente de verdad el `description.md` o `plan.md` de **otros** cambios/fixes bajo `{changesDir}/**` (en `inProgress`, `implemented` o `closed`): son intención o análisis de otra entrada, no el estado real del proyecto — el único documento de otra entrada que sí es relevante aquí es el que consulta explícitamente el paso 0.1 (los `xxxx` máximos, para la verificación de orden). Si la entrada `{xxxx}` tiene un `history.md`, ignóralo por completo: es historial de prompts de uso exclusivo de `pv-new`/`pv-fix` (puede ser incompleto o contradictorio a propósito), nunca una fuente a tener en cuenta aquí — lo vigente es siempre `description.md`.
+**Language.** Use `framework.interaction.language` (default English) for everything you say to the user in this conversation. `plan.md` follows `framework.changes.language` (default `interaction.language`, English if neither is configured) — write its whole structure (headings, field labels like **Creation date**/**Risk**, section titles) in that language, not just the free-text content, since no script parses `plan.md`'s field labels. The one exception is `pv-internal-tech-risks`' 9 risk factor names: it returns them in English as internal framework vocabulary (see the note in step 3.1) — translate them to `changes.language` yourself when writing section (f), don't leave them in English. When asking `pv-internal-tech-mermaid` for a diagram for `plan.md`, pass it `changes.language` as the target language. If `language` is not configured anywhere, everything is English.
 
-## Formato de la documentación: diagramas antes que prosa
+**Source of truth.** The technical documentation (`docs.tech.*`) and the real code are the only source of truth for how the project works today — not what `description.md` implicitly assumes about the implementation, nor memory of previous conversations. Gather that context always by invoking the `pv-internal-tech-analysis` skill (never by reading `framework.docs.tech` yourself raw or exploring code blindly) when analyzing the root cause and designing the solution (step 3), even if you already have an idea of how something works from prior context. The `description.md` or `plan.md` of **other** changes/fixes under `{changesDir}/**` (in `inProgress`, `implemented` or `closed`) also don't count as a source of truth: they're another entry's intent or analysis, not the project's real state — the only other entry's document that's actually relevant here is the one step 0.1 explicitly consults (the max `xxxx` codes, for order verification). If entry `{xxxx}` has a `history.md`, ignore it entirely: it's prompt history for the exclusive use of `pv-new`/`pv-fix` (it can be incomplete or contradictory on purpose), never a source to take into account here — what's current is always `description.md`.
 
-Al escribir o actualizar `plan.md`, si lo que hay que describir es un flujo, un proceso con pasos/decisiones, una secuencia de interacciones o una relación entre estados o componentes, invoca (herramienta Skill) la skill de diagramas configurada en `framework.skills.diagrams` de `.claude/pv-context.json` (si no está configurado, `pv-internal-tech-mermaid`), pidiéndole un diagrama de tipo `flujo-técnico` (proceso interno con pasos/decisiones) o `secuencia-técnica` (comunicación entre componentes/actores) según lo que toque representar — pide los dos por separado si el caso tiene ambas dimensiones. Incluye el/los diagrama(s) que te devuelva, acompañados de las notas imprescindibles, en lugar de un párrafo largo explicando lo mismo en prosa. Reserva la prosa para lo que el diagrama no pueda expresar (matices, motivos, excepciones puntuales) o para contenido sin estructura de flujo/relación clara que representar. No redactes tú mismo el código Mermaid.
+## Documentation format: diagrams before prose
 
-## 0. Cargar el contexto del proyecto
+When writing or updating `plan.md`, if what needs describing is a flow, a process with steps/decisions, a sequence of interactions, or a relationship between states or components, invoke (Skill tool) the diagrams skill configured in `.claude/pv-context.json`'s `framework.skills.diagrams` (if not configured, `pv-internal-tech-mermaid`), asking it for a `technical-flow`-type diagram (internal process with steps/decisions) or `technical-sequence`-type (communication between components/actors) depending on what needs representing — ask for both separately if the case has both dimensions. Include the diagram(s) it returns, accompanied by the essential notes, instead of a long paragraph explaining the same thing in prose. Reserve prose for what the diagram can't express (nuances, reasons, one-off exceptions) or for content with no clear flow/relationship structure to represent. Don't draft the Mermaid code yourself.
 
-Lee `.claude/pv-context.json` en la raíz del repo. Si no existe, o le falta la sección `framework`, no continúes: dile al usuario que primero debe ejecutar la skill `pv-init` para inicializar/completar el framework en este proyecto, y detente ahí. El esquema completo está en [`../pv-init/schema.json`](../pv-init/schema.json) (léelo primero si no lo has hecho ya en esta sesión).
+## 0. Load the project context
+
+Read `.claude/pv-context.json` at the repo root. If it doesn't exist, or is missing the `framework` section, don't continue: tell the user they must first run the `pv-init` skill to initialize/complete the framework in this project, and stop there. The full schema is at [`../pv-init/schema.json`](../pv-init/schema.json) (read it first if you haven't already this session).
 
 ```
-Este proyecto todavía no tiene el framework `pv-*` inicializado (o le falta configuración). Ejecuta primero `/pv-init` antes de volver a invocarme.
+This project doesn't have the `pv-*` framework initialized yet (or is missing configuration). Run `/pv-init` first before invoking me again.
 ```
 
-`docs.tech.architectureDocDir`, `docs.functional.featuresDocPathDir`, `docs.tech.styleBibleDocDir` y `sourcecodeDir` son opcionales y se usan como contexto en el paso 3; si no están configurados, sigue adelante sin ellos (usa el repo en general como contexto de respaldo).
+`docs.tech.architectureDocDir`, `docs.functional.featuresDocPathDir`, `docs.tech.styleBibleDocDir` and `sourcecodeDir` are optional and used as context in step 3; if not configured, proceed without them (use the repo in general as fallback context).
 
-## 0.1 Verificación previa de orden
+## 0.1 Pre-check for ordering
 
-Antes de identificar el cambio/fix, comprueba **siempre** que no se haya colado por delante de otro más reciente:
+Before identifying the change/fix, **always** check that it hasn't slipped ahead of a more recent one:
 
-1. Ejecuta [`scripts/get-max-change-codes.py`](scripts/get-max-change-codes.py) desde la raíz del repo:
+1. Run [`scripts/get-max-change-codes.py`](scripts/get-max-change-codes.py) from the repo root:
 
    ```
    python .claude/skills/pv-how/scripts/get-max-change-codes.py
    ```
 
-   Devuelve un JSON con el `xxxx` más alto existente en cada uno de `inProgress`, `implemented` y `closed` (o `null` si ese estado no tiene ninguna carpeta numerada todavía).
+   Returns a JSON with the highest existing `xxxx` in each of `inProgress`, `implemented` and `closed` (or `null` if that state has no numbered folder yet).
 
-2. Compara esos tres códigos con el `xxxx` que se va a planificar en esta invocación. Si el `xxxx` actual es **menor** que cualquiera de los otros tres (ignorando los `null`), significa que este cambio/fix se creó antes que otro que ya avanzó más en el flujo (implementado o cerrado) — avisa de ello al usuario.
-   - Reanaliza inmediatamente la entrada según el resto de esta skill (pasos 1 en adelante), sin dar por válido sin más lo que ya hubiera en `plan.md` si existía.
-3. Si el `xxxx` actual no es menor que ninguno de los tres, continúa con la planificación normalmente desde el paso 1.
+2. Compare those three codes against the `xxxx` about to be planned in this invocation. If the current `xxxx` is **lower** than any of the other three (ignoring `null`s), it means this change/fix was created before another one that has already moved further along the flow (implemented or closed) — warn the user about it.
+   - Immediately re-analyze the entry per the rest of this skill (steps 1 onward), without simply accepting whatever was already in `plan.md` if it existed.
+3. If the current `xxxx` isn't lower than any of the three, continue with planning normally from step 1.
 
-## 1. Identificar el cambio/fix
+## 1. Identify the change/fix
 
-Si el usuario, al invocar esta skill, indica un `xxxx`, un nombre de carpeta o una descripción del cambio/fix, resuélvelo buscando **únicamente** dentro de `{changesDir}/inProgress/`.
+If the user, when invoking this skill, gives an `xxxx`, a folder name, or a description of the change/fix, resolve it by searching **only** within `{changesDir}/inProgress/`.
 
-**Si no indica nada** (p.ej. invoca `/pv-how` sin argumentos): no asumas que se refiere al último cambio/fix mencionado en la conversación ni a ningún otro dato del contexto de chat — la única fuente de verdad es `{changesDir}/inProgress/`. Lista las carpetas que haya ahí (su `xxxx` y, si lo tiene, el nombre/resumen de su `description.md`) y pregunta explícitamente al usuario cuál quiere planificar. Si no hay ninguna, dile que no hay ningún cambio/fix pendiente y detente ahí.
+**If they give nothing** (e.g. they invoke `/pv-how` with no arguments): don't assume it refers to the last change/fix mentioned in the conversation nor any other piece of chat context — the only source of truth is `{changesDir}/inProgress/`. List the folders there (their `xxxx` and, if it has one, its `description.md`'s name/summary) and explicitly ask the user which one they want to plan. If there are none, tell them there's no pending change/fix and stop there.
 
 ```
-Estos son los cambios/fixes pendientes en `{changesDir}/inProgress/`:
-- {xxxx} — {nombre/resumen}
+These are the pending changes/fixes in `{changesDir}/inProgress/`:
+- {xxxx} — {name/summary}
 - ...
 
-¿Cuál quieres que planifique?
+Which one do you want me to plan?
 ```
 
 ```
-No hay ningún cambio/fix pendiente en `{changesDir}/inProgress/`.
+There's no pending change/fix in `{changesDir}/inProgress/`.
 ```
 
-- Si no encuentras ninguna carpeta que corresponda dentro de `{changesDir}/inProgress/`, **no hagas nada más**: si existe con ese `xxxx` en `{changesDir}/implemented/`, dile al usuario que ese cambio/fix ya está implementado; si no existe en ningún sitio, dile que no lo encuentras y pregunta el `xxxx` o la carpeta correctos. No busques ni operes sobre carpetas fuera de `{changesDir}/inProgress/`.
-- Si la encuentras, esa es `{xxxx}` y su carpeta `{changesDir}/inProgress/{xxxx}/` para el resto del proceso.
+- If you don't find a matching folder within `{changesDir}/inProgress/`, **do nothing further**: if it exists with that `xxxx` under `{changesDir}/implemented/`, tell the user that change/fix is already implemented; if it doesn't exist anywhere, tell them you can't find it and ask for the correct `xxxx` or folder. Don't search or operate on folders outside `{changesDir}/inProgress/`.
+- If you find it, that's `{xxxx}` and its folder `{changesDir}/inProgress/{xxxx}/` for the rest of the process.
 
-## 1.1 Validar los documentos del cambio antes de analizar
+## 1.1 Validate the change's documents before analyzing
 
-Antes de reunir contexto técnico o escribir `plan.md`, lee `description.md` (y, si existen, los `design_*.html`/`design_*.txt`/`design_navigation_*.md`/`design_data_*.md`) de `{changesDir}/inProgress/{xxxx}/` en busca de incoherencias o problemas: requisitos que se contradicen entre sí, información contradictoria entre `description.md` y las maquetas/tablas de datos, pasos o criterios de aceptación ambiguos, referencias a elementos que las maquetas no muestran (o viceversa), datos que description.md menciona pero que ninguna tabla `design_data_*.md` recoge (o viceversa), huecos que impiden saber qué se pide.
+Before gathering technical context or writing `plan.md`, read `{changesDir}/inProgress/{xxxx}/`'s `description.md` (and, if they exist, its `design_*.html`/`design_*.txt`/`design_navigation_*.md`/`design_data_*.md`) looking for inconsistencies or problems: requirements that contradict each other, contradictory information between `description.md` and the mockups/data tables, ambiguous steps or acceptance criteria, references to elements the mockups don't show (or vice versa), data `description.md` mentions but no `design_data_*.md` table records (or vice versa), gaps that prevent knowing what's being asked.
 
-- **Si no encuentras nada**: continúa directamente con el paso 2.
-- **Si encuentras algo**: no lo resuelvas por tu cuenta ni sigas adelante con el análisis. Expón el problema al usuario con claridad (qué documentos están implicados y en qué consisten la incoherencia o el hueco) y pregúntale cómo resolverlo.
+- **If you find nothing**: continue directly to step 2.
+- **If you find something**: don't resolve it on your own nor proceed with the analysis. Lay out the problem to the user clearly (which documents are involved and what the inconsistency or gap consists of) and ask them how to resolve it.
 
   ```
-  Antes de analizar la solución técnica, he encontrado lo siguiente en los documentos de `{xxxx}`:
-  - {incoherencia o problema 1}
+  Before analyzing the technical solution, I found the following in `{xxxx}`'s documents:
+  - {inconsistency or problem 1}
   - ...
 
-  ¿Cómo lo resolvemos?
+  How should we resolve it?
   ```
 
-  Con la respuesta del usuario, actualiza tú mismo el/los documento(s) de definición afectados (`description.md` y/o los `design_*`) para que queden coherentes antes de continuar. Si la corrección requiere generar o editar una maqueta visual, invoca (herramienta Skill) la skill configurada en `framework.skills.mockups` de `.claude/pv-context.json` (si no está configurado, `pv-internal-mockups-html`) en vez de editar tú mismo el HTML/ASCII de la maqueta. Repite esta validación sobre los documentos ya corregidos antes de dar el paso por bueno.
+  With the user's answer, update the affected definition document(s) yourself (`description.md` and/or the `design_*` ones) so they're consistent before continuing. If the fix requires generating or editing a visual mockup, invoke (Skill tool) the skill configured in `.claude/pv-context.json`'s `framework.skills.mockups` (if not configured, `pv-internal-mockups-html`) instead of editing the mockup's HTML/ASCII yourself. Repeat this validation on the now-corrected documents before considering the step done.
 
-## 2. Comprobar si ya existe `plan.md`
+## 2. Check whether `plan.md` already exists
 
-- **Si `{changesDir}/inProgress/{xxxx}/plan.md` ya existe**: usa `AskUserQuestion` para preguntar al usuario si quiere volver a analizar la solución (regenerar `plan.md` desde cero, sobrescribiéndolo — ve al paso 3) o implementar directamente lo que ya dice el `plan.md` actual (ve al paso 3.1 sin regenerarlo).
-- **Si no existe**: ve al paso 3.
+- **If `{changesDir}/inProgress/{xxxx}/plan.md` already exists**: use `AskUserQuestion` to ask the user whether they want to re-analyze the solution (regenerate `plan.md` from scratch, overwriting it — go to step 3) or implement directly what the current `plan.md` already says (go to step 3.1 without regenerating it).
+- **If it doesn't exist**: go to step 3.
 
-## 3. Analizar y escribir `plan.md`
+## 3. Analyze and write `plan.md`
 
-1. Lee el documento funcional de la entrada (`{changesDir}/inProgress/{xxxx}/description.md`, generado por `pv-internal-workflow`) para entender qué se pide. El campo **Tipo** de ese documento indica si es un `fix` o un `change`.
-   - **Si es un `fix`**: el análisis y la solución deben limitarse estrictamente a corregir el bug documentado — identifica la causa raíz mínima y el cambio más pequeño que la corrige. No amplíes alcance, no refactorices ni toques código no relacionado con la causa raíz, aunque lo veas mejorable de paso. Si al analizar detectas que hace falta o convendría algo más amplio, anótalo como fuera de alcance en la sección (a) del plan en vez de incluirlo en la solución.
-   - **Si es un `change`**: no aplica esta restricción; la solución puede tener el alcance que el cambio requiera.
-2. Si hay ficheros `{changesDir}/inProgress/{xxxx}/design_*.html` (propuesta visual generada por `pv-new`/`pv-fix`), ábrelos, pero trátalos **solo como referencia visual** — de ellos toma únicamente el aspecto que ilustran (maquetación, estilos, iconografía) para los elementos que cubren. La solución técnica **no debe basarse en ellos** en ningún otro sentido: no reutilices ni traduzcas literalmente su HTML/CSS/SVG, sus clases o su estructura de marcado, ni los tomes como referencia de arquitectura, componentes a crear/reutilizar o cualquier otra decisión de implementación — todo eso lo decides tú a partir del código real del proyecto (paso 5 de este apartado), igual que si esos ficheros no existieran.
-3. Si hay ficheros `{changesDir}/inProgress/{xxxx}/design_data_*.md` (definición funcional de datos generada por `pv-new`/`pv-fix`), trátalos como **fuente de la verdad sobre qué datos hacen falta** (qué propiedades o campos, no cómo se representan hoy en código): son el punto de partida obligatorio para decidir la estructura técnica real (tipos, dónde se guardan, cómo se manipulan) al diseñar la solución — decisión que sí te corresponde a ti, a diferencia del aspecto visual de los `design_*.html`.
-4. Si hay dudas técnicas sobre cómo abordarlo, resuélvelas con el usuario antes de escribir el plan.
-5. Reúne contexto adicional invocando la skill `pv-internal-tech-analysis` (herramienta Skill), pasándole un resumen de la causa raíz o del cambio a diseñar: ella lee primero la documentación técnica configurada en `framework.docs.tech` y solo explora código (`sourcecodeDir`) si hace falta completar información, devolviéndote el contexto reunido y cualquier incongruencia detectada entre documentación y código (recuerda: en ese caso el código manda). Si reporta alguna incongruencia, tenla en cuenta al diseñar la solución y al escribir las secciones (c)/(d) del plan (paso 6) para que quede reflejada en la actualización de documentación que hará `pv-do` tras implementar.
-6. Escribe `{changesDir}/inProgress/{xxxx}/plan.md` siguiendo la plantilla [`PLAN.template.md`](PLAN.template.md) de esta skill, empezando con el campo **Fecha creación** (formato `YYYY-MM-DD`, la fecha actual en el momento de crear este `plan.md` — si ya existe porque se está regenerando, actualízala a la fecha de esta regeneración), seguido de estas secciones. **No escribas todavía el campo `**Riesgo**` de la cabecera en este guardado** (ni con un valor provisional tipo "pending"/"TBD") — se añade en el paso 3.1, inmediatamente después, porque `pv-internal-tech-risks` necesita este mismo `plan.md` ya escrito como entrada:
-   - **(a) Anotaciones funcionales** — qué queda explícitamente fuera de alcance, y las dudas que se han resuelto con el usuario (pregunta y respuesta, en breve).
-   - **(b) Solución técnica** — checklist (`- [ ]`) de tareas concretas y explicadas (qué hay que tocar, dónde, y por qué), en el orden en que se deberían implementar, todas sin marcar al escribir el plan. No mezcles aquí pasos de comprobación manual — esos van en (e).
-   - **(c) Cambios de arquitectura** — *solo si aplica*: si `docs.tech.architectureDocDir` está configurado y esta solución modifica la arquitectura básica del proyecto, indica **qué fichero(s) concretos** de esa carpeta hay que actualizar (puede haber varios candidatos) y qué hay que cambiar en cada uno. Si no aplica (no hay `docs.tech.architectureDocDir`, o la solución no toca arquitectura), omite esta sección por completo — no la dejes vacía ni con "N/A".
-   - **(d) Cambios en estilo** — *solo si aplica*: si `docs.tech.styleBibleDocDir` está configurado y esta solución modifica o amplia el estilo visual del proyecto, indica **qué fichero(s) concretos** de esa carpeta hay que actualizar y qué hay que cambiar en cada uno. Si no aplica, omite esta sección — no la dejes vacía ni con "N/A".
-   - **(e) Verificación** — checklist (`- [ ]`) de resultados observables del sistema ya cambiado, a comprobar *después* de completar toda la sección (b). Cada ítem se redacta de forma autocontenida (qué hacer y qué se debería ver), sin remitir a un número de tarea de (b) — una comprobación puede depender de varias tareas a la vez, o compartirse entre varias. Inclúyela siempre salvo que la solución no tenga ningún comportamiento observable que comprobar.
+1. Read the entry's functional document (`{changesDir}/inProgress/{xxxx}/description.md`, generated by `pv-internal-workflow`) to understand what's being asked. That document's **Type** field indicates whether it's a `fix` or a `change`.
+   - **If it's a `fix`**: the analysis and solution must be strictly limited to correcting the documented bug — identify the minimal root cause and the smallest change that fixes it. Don't broaden scope, refactor, or touch code unrelated to the root cause, even if you see it could be improved along the way. If while analyzing you spot something broader that's needed or would help, note it as out of scope in the plan's section (a) instead of including it in the solution.
+   - **If it's a `change`**: this restriction doesn't apply; the solution can have whatever scope the change requires.
+2. If there are `{changesDir}/inProgress/{xxxx}/design_*.html` files (visual proposal generated by `pv-new`/`pv-fix`), open them, but treat them **only as visual reference** — take from them only the look they illustrate (layout, styles, iconography) for the elements they cover. The technical solution **must not be based on them** in any other sense: don't reuse or literally translate their HTML/CSS/SVG, their classes, or their markup structure, nor take them as a reference for architecture, components to create/reuse, or any other implementation decision — you decide all of that from the project's real code (step 5 in this section), exactly as if those files didn't exist.
+3. If there are `{changesDir}/inProgress/{xxxx}/design_data_*.md` files (functional data definition generated by `pv-new`/`pv-fix`), treat them as **the source of truth for what data is needed** (which properties or fields, not how they're represented in code today): they're the mandatory starting point for deciding the real technical structure (types, where it's stored, how it's manipulated) when designing the solution — a decision that is indeed yours to make, unlike `design_*.html`'s visual look.
+4. If there are technical doubts about how to approach it, resolve them with the user before writing the plan.
+5. Gather additional context by invoking the `pv-internal-tech-analysis` skill (Skill tool), passing it a summary of the root cause or the change to design: it reads the technical documentation configured in `framework.docs.tech` first and only explores code (`sourcecodeDir`) if more information is needed to fill gaps, returning the gathered context and any inconsistency it detects between documentation and code (remember: in that case the code rules). If it reports any inconsistency, take it into account when designing the solution and when writing the plan's sections (c)/(d) (step 6) so it's reflected in the documentation update `pv-do` will do after implementing.
+6. Write `{changesDir}/inProgress/{xxxx}/plan.md` following this skill's [`PLAN.template.md`](PLAN.template.md) template, starting with the **Creation date** field (`YYYY-MM-DD` format, today's date at the moment this `plan.md` is created — if it already exists because it's being regenerated, update it to this regeneration's date), followed by these sections. **Don't write the header's `**Risk**` field yet in this save** (not even with a placeholder value like "pending"/"TBD") — it's added in step 3.1, right after, because `pv-internal-tech-risks` needs this same `plan.md` already written as input:
+   - **(a) Functional notes** — what's explicitly left out of scope, and the doubts resolved with the user (question and answer, briefly).
+   - **(b) Technical solution** — a checklist (`- [ ]`) of concrete, explained tasks (what needs to be touched, where, and why), in the order they should be implemented, all unchecked when the plan is written. Don't mix manual verification steps in here — those go in (e).
+   - **(c) Architecture changes** — *only if applicable*: if `docs.tech.architectureDocDir` is configured and this solution modifies the project's core architecture, state **which specific file(s)** in that folder need updating (there may be several candidates) and what needs to change in each. If it doesn't apply (no `docs.tech.architectureDocDir`, or the solution doesn't touch architecture), omit this section entirely — don't leave it empty or with "N/A".
+   - **(d) Style changes** — *only if applicable*: if `docs.tech.styleBibleDocDir` is configured and this solution modifies or extends the project's visual style, state **which specific file(s)** in that folder need updating and what needs to change in each. If it doesn't apply, omit this section — don't leave it empty or with "N/A".
+   - **(e) Verification** — a checklist (`- [ ]`) of observable results from the already-changed system, to check *after* completing all of section (b). Each item is written self-contained (what to do and what you should see), without referring back to a task number from (b) — a check may depend on several tasks at once, or be shared among several. Always include it unless the solution has no observable behavior to check.
 
-## 3.1 Evaluar el riesgo del cambio
+## 3.1 Assess the change's risk
 
-**Paso obligatorio, no lo saltes ni lo pospongas.** Inmediatamente después de escribir `plan.md` en el paso anterior (todavía sin el campo `**Riesgo**`), invoca la skill `pv-internal-tech-risks` (herramienta Skill) en este mismo turno, pasándole `plan.md` y `description.md` de la entrada — solo se invoca en este punto, nunca antes de tener la solución técnica decidida, porque es entonces cuando hay información suficiente para valorar el riesgo. Te devuelve la lista de los 9 factores puntuados (0-10) y la mediana final.
+**Mandatory step, don't skip or postpone it.** Immediately after writing `plan.md` in the previous step (still without the `**Risk**` field), invoke the `pv-internal-tech-risks` skill (Skill tool) in this same turn, passing it the entry's `plan.md` and `description.md` — it's only invoked at this point, never before the technical solution is decided, because that's when there's enough information to assess risk. It returns the list of the 9 factors scored (0-10) and the final median.
 
-Edita ahora la cabecera de `plan.md` para añadir, justo debajo de **Fecha creación**, el campo `**Riesgo**: {mediana}/10 — {descripción}`, donde `{descripción}` es el texto de "Significado" que le corresponde a esa mediana según la tabla de la plantilla (p.ej. `5/10 — Riesgo moderado`). No muestres ni escribas el detalle de los 9 factores en este momento — solo la mediana y su descripción.
+Now edit `plan.md`'s header to add, right below **Creation date**, the field `**Risk**: {median}/10 — {description}`, where `{description}` is the "Meaning" text matching that median per the template's table (e.g. `5/10 — Moderate risk`). Don't show or write the 9 factors' detail at this point — only the median and its description.
 
-**Verificación antes de continuar:** no des el `plan.md` por terminado, ni pases al paso 3.2, sin haber confirmado que la cabecera tiene ya el campo `**Riesgo**` con un valor real (nunca un placeholder, "pending", "TBD" o similar, y nunca la cabecera sin ese campo).
+**Check before continuing:** don't consider `plan.md` finished, nor move to step 3.2, without having confirmed the header already has the `**Risk**` field with a real value (never a placeholder, "pending", "TBD" or similar, and never the header without that field).
 
-Si en cualquier momento posterior (en esta misma conversación o al retomar la entrada) el usuario pide el detalle del riesgo, muéstraselo en el chat (la lista de los 9 factores con su valor, más la mediana) y además añade esa misma tabla a `plan.md` en una nueva sección **(f) Análisis de riesgo**, al final del documento — reutiliza el resultado de `pv-internal-tech-risks` si todavía lo tienes en contexto de esta misma conversación; si no, vuelve a invocar la skill.
+If at any later point (in this same conversation or when resuming the entry) the user asks for the risk detail, show it to them in chat (the list of the 9 factors with their value, plus the median) and also add that same table to `plan.md` in a new **(f) Risk analysis** section, at the end of the document — reuse `pv-internal-tech-risks`' result if you still have it in this same conversation's context; if not, invoke the skill again.
 
-## 3.2 Preguntar si se quiere implementar
+## 3.2 Ask whether to implement
 
-Con el `plan.md` ya escrito, pregunta al usuario si quiere implementarlo ahora.
+With `plan.md` already written, ask the user if they want to implement it now.
 
 ```
-El plan queda escrito en `{changesDir}/inProgress/{xxxx}/plan.md`. ¿Quieres que lo implemente ahora?
+The plan is written at `{changesDir}/inProgress/{xxxx}/plan.md`. Do you want me to implement it now?
 ```
 
-- Si dice que sí, invoca directamente la skill `pv-do` (herramienta Skill) sobre ese mismo `xxxx` — no le pidas al usuario que la invoque por separado: continúa tú mismo encadenando ese flujo (implementación → actualización de documentación → mover a `implemented`), tal como lo define `pv-do`.
-- Si dice que no, termina aquí: el cambio/fix queda documentado y planificado en `{changesDir}/inProgress/{xxxx}/`, pendiente de implementar más adelante (se puede retomar invocando `pv-do` directamente sobre ese `xxxx`, o volviendo a invocar esta misma skill si antes conviene revisar el plan).
+- If they say yes, invoke the `pv-do` skill (Skill tool) directly on that same `xxxx` — don't ask the user to invoke it separately: continue chaining that flow yourself (implementation → documentation update → move to `implemented`), as `pv-do` defines it.
+- If they say no, stop here: the change/fix stays documented and planned at `{changesDir}/inProgress/{xxxx}/`, pending implementation later (it can be resumed by invoking `pv-do` directly on that `xxxx`, or by invoking this same skill again if it's worth reviewing the plan first).
 
-No implementes nada tú mismo ni toques código directamente — eso lo hace siempre `pv-do`, para mantener un único sitio con esa lógica.
+Don't implement anything yourself nor touch code directly — `pv-do` always does that, to keep a single place with that logic.

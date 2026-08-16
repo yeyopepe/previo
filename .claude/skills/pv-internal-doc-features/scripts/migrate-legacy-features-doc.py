@@ -1,14 +1,14 @@
-"""Divide un FEATURES.md monolitico (formato '## Area' / '### Funcionalidad') en un
-fichero por funcionalidad dentro de una carpeta, reescribiendo los enlaces cruzados
-internos (anclas '#...') a enlaces relativos entre ficheros, asigna a cada una un numero
-identificador secuencial (segun el orden en que aparecen en el documento original) y genera
-el INDEX.md final.
+"""Splits a monolithic FEATURES.md ('## Area' / '### Feature' format) into one
+file per feature inside a folder, rewriting internal cross-links ('#...'
+anchors) into relative links between files, assigns each one a sequential
+identifying number (per the order they appear in the original document), and
+generates the final INDEX.md.
 
-Uso (desde la raiz del repo):
+Usage (from the repo root):
     python migrate-legacy-features-doc.py --source design/docs/FEATURES.md --dest design/docs/features
 
-No es una skill invocable -- utilidad de un solo uso para adoptar la convencion de carpeta
-en un proyecto que ya tenia un FEATURES.md como fichero unico.
+Not an invocable skill -- a one-off utility to adopt the folder convention
+in a project that already had a FEATURES.md as a single file.
 """
 import argparse
 import re
@@ -50,7 +50,7 @@ def parse_sections(text):
         elif area is None:
             preamble.append(line)
         elif line.strip():
-            raise SystemExit(f"Contenido huérfano bajo el área '{area}' sin funcionalidad: {line!r}")
+            raise SystemExit(f"Orphan content under area '{area}' with no feature: {line!r}")
     flush()
     return sections
 
@@ -69,8 +69,8 @@ def main():
 
     width = max(len(str(len(sections))), 3)
 
-    # el nombre de fichero lleva el numero delante (mismo orden que el indice); el numero ya
-    # garantiza unicidad, así que el slug del título no necesita ser colision-safe por si mismo.
+    # the filename carries the number up front (same order as the index); the number
+    # already guarantees uniqueness, so the title's slug doesn't need to be collision-safe itself.
     feature_ids = [str(n).zfill(width) for n in range(1, len(sections) + 1)]
     filenames = [f"{fid}-{slugify(title) or 'feature'}" for fid, (_, title, _) in zip(feature_ids, sections)]
 
@@ -88,33 +88,33 @@ def main():
                 return f"]({target}.md)"
             if anchor in area_anchors:
                 return f"](INDEX.md#{anchor})"
-            print(f"  aviso: no se encontró destino para el enlace #{anchor}", file=sys.stderr)
+            print(f"  warning: no target found for link #{anchor}", file=sys.stderr)
             return m.group(0)
         return re.sub(r"\]\(#([^)]+)\)", repl, body)
 
     for feature_id, filename, (area, title, body) in zip(feature_ids, filenames, sections):
-        # separa el bloque final "- **Disponible en**: ... / - **Código**: ..." del resto del cuerpo
+        # splits the final "- **Available in**: ... / - **Code**: ..." block from the rest of the body
         body = rewrite_links(body)
         lines = [ln for ln in body.splitlines()]
         tail = []
         while lines and (lines[-1].strip() == "" or lines[-1].lstrip().startswith("- **")):
             tail.insert(0, lines.pop())
-        disponible_en = next((ln.split(":", 1)[1].strip() for ln in tail if "**Disponible en**" in ln), "")
-        codigo = next((ln.split(":", 1)[1].strip() for ln in tail if "**Código**" in ln), "")
+        available_in = next((ln.split(":", 1)[1].strip() for ln in tail if "**Available in**" in ln), "")
+        code = next((ln.split(":", 1)[1].strip() for ln in tail if "**Code**" in ln), "")
         prose = "\n".join(lines).strip()
 
         content = (
             f"# {feature_id} — {title}\n\n"
-            f"**Área**: {area}\n\n"
+            f"**Area**: {area}\n\n"
             f"{prose}\n\n"
-            f"- **Disponible en**: {disponible_en}\n"
-            f"- **Código**: {codigo}\n"
-            f"- **Desde**: (pendiente de rellenar)\n"
-            f"- **Última modificación**: (pendiente de rellenar)\n"
+            f"- **Available in**: {available_in}\n"
+            f"- **Code**: {code}\n"
+            f"- **Since**: (pending)\n"
+            f"- **Last modified**: (pending)\n"
         )
         (dest / f"{filename}.md").write_text(content, encoding="utf-8")
 
-    print(f"{len(sections)} funcionalidades migradas a {dest}/")
+    print(f"{len(sections)} features migrated to {dest}/")
 
     subprocess.run(
         [sys.executable, str(Path(__file__).parent / "rebuild-index.py"), "--folder", str(dest)],

@@ -1,10 +1,10 @@
-# Estado del proyecto — {estado}
+# Project status — {state}
 
-*Generado: {fechaGeneracion}*
+*Generated: {generatedDate}*
 
-| Código | Tipo | Descripción | Fecha |
+| Code | Type | Description | Date |
 | --- | --- | --- | --- |
-{filas}
+{rows}
 
-<!-- ROW_TEMPLATE: | {código} | {tipo} | {descripción} | {fecha} | -->
-<!-- EMPTY_TEMPLATE: *(No hay ninguna entrada en el estado "{estado}".)* -->
+<!-- ROW_TEMPLATE: | {code} | {type} | {description} | {date} | -->
+<!-- EMPTY_TEMPLATE: *(There are no entries in the "{state}" state.)* -->

@@ -1,6 +1,6 @@
 ---
 name: pv-internal-workflow
-description: Proceso compartido, agnóstico al proyecto, con dos acciones internas del framework pv-*: (1) crear una entrada nueva en {changesDir}/inProgress documentando la intención de un fix o change, y (2) mover una entrada existente entre los subestados del flujo (inProgress/implemented) cuando otra skill del framework produce esa transición. Uso interno de las skills pv-new, pv-fix y pv-do.
+description: Shared, project-agnostic process with two internal pv-* framework actions — (1) create a new entry under {changesDir}/inProgress documenting the intent of a fix or change, and (2) move an existing entry between workflow substates (inProgress/implemented) when another framework skill produces that transition. Internal use by the pv-new, pv-fix and pv-do skills.
 user-invocable: false
 model: claude-sonnet-5
 effort: medium
@@ -11,89 +11,91 @@ metadata:
 
 # pv-internal-workflow
 
-Proceso genérico y único punto donde el framework `pv-*` sabe crear y mover las carpetas de `{changesDir}`. Solo lo invocan otras skills del framework — no está pensado para invocación directa por el usuario.
+Generic process and single point where the `pv-*` framework knows how to create and move `{changesDir}` folders. Only invoked by other framework skills — not meant for direct invocation by the user.
 
-Tiene dos acciones independientes, cada una invocada con un parámetro `action`:
+**Language.** Use `framework.interaction.language` (default English) for the guardrail message to the user in the section below. `description.md`/`history.md` (action `create`) follow `framework.changes.language` (default `interaction.language`, English if neither is configured). If `language` is not configured anywhere, everything is English.
 
-- **`action=create`** — la invocan `pv-new` y `pv-fix`, con `type` (`change`/`fix`/`fast`), la descripción de lo que se pide y el prompt original del usuario tal cual (`promptOriginal`). Dimensiona el alcance funcional y crea la entrada en `{changesDir}/inProgress/`, con `description.md` (información vigente) y `history.md` (historial de prompts, ver más abajo) como ficheros separados. Para `type=fast` (atajo de `pv-fix` para cambios triviales), quien invoca típicamente encadena a continuación `action=move` hacia `implemented` en la misma invocación, sin pasar por `plan.md`.
-- **`action=move`** — la invoca `pv-do`, con `xxxx`, `from` y `to` (nombres de subcarpeta de `{changesDir}`: `inProgress` o `implemented`). Mueve la carpeta `{xxxx}` entre esos subestados.
+It has two independent actions, each invoked with an `action` parameter:
 
-Ninguna de las dos acciones implementa ni analiza técnicamente nada, ni decide **si** debe producirse la transición o confirmación con el usuario — eso ya lo ha resuelto la skill llamante antes de invocar `pv-internal-workflow`. Esta skill solo ejecuta la mecánica de fichero (numerar+crear, o mover) de forma consistente en un único sitio.
+- **`action=create`** — invoked by `pv-new` and `pv-fix`, with `type` (`change`/`fix`/`fast`), the description of what's being asked, and the user's original prompt verbatim (`promptOriginal`). Sizes the functional scope and creates the entry under `{changesDir}/inProgress/`, with `description.md` (current information) and `history.md` (prompt history, see below) as separate files. For `type=fast` (a `pv-fix` shortcut for trivial changes), the caller typically chains an `action=move` to `implemented` in the same invocation, without going through `plan.md`.
+- **`action=move`** — invoked by `pv-do`, with `xxxx`, `from` and `to` (subfolder names under `{changesDir}`: `inProgress` or `implemented`). Moves the `{xxxx}` folder between those substates.
 
-## Guardarraíl de invocación — leer antes que nada
+Neither action implements or technically analyzes anything, nor decides **whether** the transition should happen or needs user confirmation — the calling skill has already resolved that before invoking `pv-internal-workflow`. This skill only executes the file mechanics (numbering+creating, or moving) consistently in a single place.
 
-Esta skill **no se ejecuta si se ha invocado directamente** (p.ej. el usuario ha escrito `/pv-internal-workflow`, o ha pedido "ejecuta/invoca pv-internal-workflow" en texto plano). Solo debe ejecutarse cuando el propio contenido de `pv-new`, `pv-fix` o `pv-do` te ha instruido a invocarla como parte de su proceso, con la `action` y los parámetros correspondientes ya resueltos por esa skill.
+## Invocation guardrail — read before anything else
 
-Si te han invocado sin ese contexto (el usuario ha tecleado el comando directamente, o no venías de ninguna de esas tres skills), **detente aquí** y dile al usuario que `pv-internal-workflow` es de uso interno del framework: para documentar o implementar un cambio/fix debe usar la skill correspondiente. No hagas nada más en ese caso.
+This skill **does not run if invoked directly** (e.g. the user typed `/pv-internal-workflow`, or asked in plain text to "run/invoke pv-internal-workflow"). It should only run when the content of `pv-new`, `pv-fix` or `pv-do` itself has instructed you to invoke it as part of its process, with the `action` and corresponding parameters already resolved by that skill.
+
+If you were invoked without that context (the user typed the command directly, or you didn't come from one of those three skills), **stop here** and tell the user that `pv-internal-workflow` is for internal framework use: to document or implement a change/fix they should use the corresponding skill. Do nothing else in that case.
 
 ```
-`/pv-internal-workflow` es de uso interno del framework `pv-*` y no se invoca directamente. Para documentar un cambio/fix usa `pv-new`/`pv-fix`, y para implementarlo `/pv-how`/`/pv-do`.
+`/pv-internal-workflow` is for internal use by the `pv-*` framework and isn't invoked directly. To document a change/fix use `pv-new`/`pv-fix`, and to implement it `/pv-how`/`/pv-do`.
 ```
 
-## 0. Cargar el contexto del proyecto
+## 0. Load the project context
 
-Lee `.claude/pv-context.json` en la raíz del repo. Si no existe, o le falta la sección `framework` (o campos suyos que esta acción necesita), no continúes: dile al usuario que primero debe ejecutar la skill `pv-init` para inicializar/completar el framework en este proyecto, y detente ahí — no reimplementes el bootstrap aquí. El esquema completo está en [`../pv-init/schema.json`](../pv-init/schema.json) (léelo primero si no lo has hecho ya en esta sesión, para saber qué campos comprobar).
+Read `.claude/pv-context.json` at the repo root. If it doesn't exist, or is missing the `framework` section (or fields this action needs), don't continue: tell the user they must first run the `pv-init` skill to initialize/complete the framework in this project, and stop there — don't reimplement the bootstrap here. The full schema is at [`../pv-init/schema.json`](../pv-init/schema.json) (read it first if you haven't already this session, to know which fields to check).
 
-A partir de aquí, `changesDir` es notación abreviada para `{workFolder}/changes` (subcarpeta de nombre fijo dentro de `framework.workFolder`, que por defecto es `"/"`, la raíz del repo — no un campo propio en `pv-context.json`), y `numberWidth` se refiere al valor de `framework` en ese fichero.
+From here on, `changesDir` is shorthand for `{workFolder}/changes` (a fixed-name subfolder inside `framework.workFolder`, which defaults to `"/"`, the repo root — not its own field in `pv-context.json`), and `numberWidth` refers to that field's value under `framework` in that file.
 
-Continúa con la sección de abajo que corresponda a la `action` recibida.
+Continue with whichever section below matches the received `action`.
 
-**Formato de la documentación:** al redactar `description.md` (acción `create`), si quien invoca te ha pasado uno o varios diagramas Mermaid ya generados (obtenidos de la skill configurada en `framework.skills.diagrams`, ver `pv-new`/`pv-fix`), insértalos junto con las notas imprescindibles en el punto que corresponda, en vez de repetir en prosa lo que el diagrama ya deja claro. Esta skill no genera diagramas por sí misma ni decide si hacen falta — eso ya lo resolvió quien invoca antes de llamarte.
+**Documentation format:** when writing `description.md` (action `create`), if the caller passed you one or more already-generated Mermaid diagrams (obtained from the skill configured in `framework.skills.diagrams`, see `pv-new`/`pv-fix`), insert them along with the essential notes at the corresponding point, instead of repeating in prose what the diagram already makes clear. This skill doesn't generate diagrams itself nor decide whether they're needed — the caller already resolved that before calling you.
 
-## Acción `create`
+## Action `create`
 
-### create.1 Calcular el código de cambio `xxxx`
+### create.1 Compute the change code `xxxx`
 
-Cada cambio/fix vive en una subcarpeta numerada bajo alguno de los subárboles de `{changesDir}` (`inProgress/`, `implemented/`, o cualquier otro que exista): un mismo `xxxx` no puede repetirse en ninguno de ellos. La excepción es `{changesDir}/todo/`, que usa la skill `pv-todo` para ideas sueltas ajenas a este flujo: sus carpetas nunca cuentan aquí, ni aunque tuvieran nombre numérico. Para calcularlo sin errores, ejecuta el script [`scripts/next-change-number.py`](scripts/next-change-number.py) (requiere Python 3) desde la raíz del repo:
+Every change/fix lives in a numbered subfolder under one of `{changesDir}`'s subtrees (`inProgress/`, `implemented/`, or any other that exists): the same `xxxx` cannot repeat in any of them. The exception is `{changesDir}/todo/`, used by the `pv-todo` skill for loose ideas outside this flow: its folders never count here, even if they had a numeric name. To compute it without errors, run the [`scripts/next-change-number.py`](scripts/next-change-number.py) script (requires Python 3) from the repo root:
 
 ```
 python .claude/skills/pv-internal-workflow/scripts/next-change-number.py
 ```
 
-El script lee `workFolder` y `numberWidth` de `.claude/pv-context.json`, recorre **todas** las subcarpetas de `{changesDir}` (no solo `inProgress`/`implemented`, pero siempre ignorando `todo/`) buscando nombres puramente numéricos, y devuelve por stdout el siguiente `xxxx` ya formateado con `numberWidth` dígitos y ceros a la izquierda (p.ej. `0002`, o `1` si no hubiera ninguna carpeta numerada todavía). Usa ese valor tal cual como `xxxx` — no lo recalcules a mano ni mires solo `inProgress`/`implemented`.
+The script reads `workFolder` and `numberWidth` from `.claude/pv-context.json`, walks **all** subfolders of `{changesDir}` (not just `inProgress`/`implemented`, but always ignoring `todo/`) looking for purely numeric names, and prints on stdout the next `xxxx` already formatted with `numberWidth` digits and leading zeros (e.g. `0002`, or `1` if there's no numbered folder yet). Use that value as-is for `xxxx` — don't recompute it by hand nor look only at `inProgress`/`implemented`.
 
-### create.2 Generar el documento de intención del cambio/fix
+### create.2 Generate the change/fix intent document
 
-Si hay dudas relevantes sobre el alcance de lo que se pide que no se puedan resolver con lo que ya sabes, pregúntalas antes de escribir el documento — no hace falta que sean dudas técnicas de implementación (eso lo resuelve `pv-how` más adelante), solo las de alcance funcional. Guarda esas preguntas junto con las respuestas del usuario: van incluidas en el documento (ver más abajo).
+If there are relevant doubts about the scope of what's being asked that can't be resolved with what you already know, ask them before writing the document — they don't need to be technical implementation doubts (that's `pv-how`'s job later), just functional scope ones. Keep those questions along with the user's answers: they go into the document (see below).
 
-Crea (creando `{changesDir}/inProgress/` si no existe) dos ficheros separados:
+Create (creating `{changesDir}/inProgress/` if it doesn't exist) two separate files:
 
 ```
 {changesDir}/inProgress/{xxxx}/description.md
 {changesDir}/inProgress/{xxxx}/history.md
 ```
 
-**`description.md`** sigue exactamente la plantilla [`description.template.md`](description.template.md) de esta misma carpeta, con estas reglas por sección:
+**`description.md`** follows exactly the [`description.template.md`](description.template.md) template in this same folder, with these rules per section:
 
-- **Nombre** — nombre corto y descriptivo del cambio/fix.
-- **Código** — el `xxxx` calculado en el paso anterior.
-- **Tipo** — `fix`, `change` o `fast`, según corresponda.
-- **Fecha creación** — la fecha actual (formato `YYYY-MM-DD`) en el momento de crear este `description.md`.
-- **Descripción completa** — resumen funcional de lo que se ha analizado que pide, entendible por cualquier persona no técnica, sin entrar en solución técnica ni mencionar ficheros, funciones, clases o estructuras de datos:
-  - Para un `fix`: qué comportamiento está roto, cómo reproducirlo o identificarlo, y qué se espera que pase en su lugar.
-  - Para un `change`: qué se pide añadir o modificar, por qué, y cómo debería comportarse el resultado.
-  - Incluye aquí también, si las ha habido, las preguntas de alcance que se le han hecho al usuario junto con sus respuestas.
-- **Apuntes técnicos** — cualquier detalle técnico visto durante el análisis (ficheros, funciones, clases, patrones ya existentes en el código relevantes para esta entrada, restricciones técnicas detectadas) que convenga dejar anotado para cuando `pv-how` diseñe la solución. Sección opcional: si el análisis funcional no ha tocado código ni ha encontrado nada técnico relevante, omítela por completo en vez de dejarla vacía.
+- **Name** — short, descriptive name for the change/fix.
+- **Code** — the `xxxx` computed in the previous step.
+- **Type** — `fix`, `change` or `fast`, as applicable.
+- **Creation date** — today's date (`YYYY-MM-DD` format) at the moment this `description.md` is created.
+- **Full description** — functional summary of what's been analyzed as requested, understandable by anyone non-technical, without going into technical solution or mentioning files, functions, classes or data structures:
+  - For a `fix`: what behavior is broken, how to reproduce or identify it, and what should happen instead.
+  - For a `change`: what's being asked to add or modify, why, and how the result should behave.
+  - Also include here, if there were any, the scope questions asked of the user along with their answers.
+- **Technical notes** — any technical detail seen during analysis (files, functions, classes, existing code patterns relevant to this entry, detected technical constraints) worth noting for when `pv-how` designs the solution. Optional section: if the functional analysis didn't touch code or find anything technically relevant, omit it entirely instead of leaving it empty.
 
-Esta separación es estricta: cualquier mención a ficheros, funciones, clases CSS u otros detalles de implementación va siempre en **Apuntes técnicos**, nunca en **Descripción completa**, aunque haya surgido de forma natural durante el análisis. El análisis técnico en profundidad y la solución en sí los sigue haciendo `plan.md`, que genera `pv-how`.
+This separation is strict: any mention of files, functions, CSS classes or other implementation details always goes in **Technical notes**, never in **Full description**, even if it came up naturally during analysis. The in-depth technical analysis and the solution itself are still `plan.md`'s job, generated by `pv-how`.
 
-**`history.md`** sigue exactamente la plantilla [`history.template.md`](history.template.md): un único encabezado `## {fecha de hoy} — sesión inicial` seguido del `promptOriginal` recibido, tal cual, sin reformular. Es información histórica, de uso exclusivo de `pv-new`/`pv-fix` (ver la propia plantilla) — nunca mezcles su contenido dentro de `description.md`.
+**`history.md`** follows exactly the [`history.template.md`](history.template.md) template: a single `## {today's date} — initial session` heading followed by the received `promptOriginal`, verbatim, without rephrasing. It's historical information, for the exclusive use of `pv-new`/`pv-fix` (see the template itself) — never mix its content into `description.md`.
 
-### create.3 Confirmar a quien invoca
+### create.3 Confirm to the caller
 
-Indica los ficheros creados (`{changesDir}/inProgress/{xxxx}/description.md` y `.../history.md`) y el `xxxx` resuelto, para que la skill llamante (`pv-new`/`pv-fix`) continúe su propio proceso.
+Report the created files (`{changesDir}/inProgress/{xxxx}/description.md` and `.../history.md`) and the resolved `xxxx`, so the calling skill (`pv-new`/`pv-fix`) can continue its own process.
 
-## Acción `move`
+## Action `move`
 
-Recibida con `xxxx`, `from` y `to` ya resueltos por quien invoca (`pv-do`: `inProgress`→`implemented`).
+Received with `xxxx`, `from` and `to` already resolved by the caller (`pv-do`: `inProgress`→`implemented`).
 
-La mecánica de fichero (comprobar origen, crear destino si falta, mover) la hace de forma determinista y gratis en tokens el script [`scripts/move-change.py`](scripts/move-change.py) (Python estándar, sin dependencias externas) — no la reimplementes a mano. Ejecuta desde la raíz del repo:
+The file mechanics (check source, create destination if missing, move) are done deterministically and for free in tokens by the [`scripts/move-change.py`](scripts/move-change.py) script (standard Python, no external dependencies) — don't reimplement it by hand. Run from the repo root:
 
 ```
 python .claude/skills/pv-internal-workflow/scripts/move-change.py --xxxx <xxxx> --from <from> --to <to>
 ```
 
-- Si `{changesDir}/{from}/{xxxx}/` no existe, o ya hay algo en `{changesDir}/{to}/{xxxx}/`, el script termina con error y no mueve nada — es un error de quien invoca (esa skill ya debería haber identificado y verificado la carpeta antes de llamar a `pv-internal-workflow`). Repórtaselo a quien invoca tal cual, sin improvisar una solución.
-- Si va bien, el script imprime en stdout la ruta destino relativa a la raíz del repo (p.ej. `changes/implemented/0002`).
+- If `{changesDir}/{from}/{xxxx}/` doesn't exist, or something already exists at `{changesDir}/{to}/{xxxx}/`, the script exits with an error and moves nothing — this is an error on the caller's part (that skill should have already identified and verified the folder before calling `pv-internal-workflow`). Report it back to the caller as-is, without improvising a fix.
+- If it succeeds, the script prints the destination path on stdout, relative to the repo root (e.g. `changes/implemented/0002`).
 
-Confirma a quien invoca esa ruta destino, para que la skill llamante continúe su propio proceso (mensaje al usuario, pasos siguientes como generar versión o actualizar el grafo, etc. — eso lo gestiona ella, no `pv-internal-workflow`).
+Confirm that destination path to the caller, so the calling skill can continue its own process (message to the user, next steps like generating a version or updating the graph, etc. — that's handled by it, not `pv-internal-workflow`).

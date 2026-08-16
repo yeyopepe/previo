@@ -1,21 +1,27 @@
 #!/usr/bin/env python3
-"""Valida .claude/pv-context.json contra los campos obligatorios de schema.json.
+"""Validates .claude/pv-context.json against schema.json's required fields.
 
-'framework' ya no tiene ningun campo obligatorio propio (ver schema.json):
-'workFolder' es opcional con default "/". Por tanto lo unico que determina
-si el framework esta inicializado es que la seccion 'framework' exista --
-la crea pv-init, nunca otra skill.
+'framework' no longer has any required field of its own (see schema.json):
+'workFolder' is optional with default "/". So the only thing that determines
+whether the framework is initialized is that the 'framework' section
+exists -- created by pv-init, never any other skill.
 
-No decide nada por si mismo (no crea ni completa el fichero) -- solo
-determina que campos obligatorios faltan, para que pv-init sepa si debe
-preguntar el cuestionario completo, solo lo que falta, o nada.
+Doesn't decide anything on its own (doesn't create or complete the file) --
+only determines which required fields are missing, so pv-init knows whether
+to ask the full questionnaire, only what's missing, or nothing.
 
-Imprime UNICAMENTE un JSON en stdout:
+Also reports 'hasLanguage': true if framework.interaction.language exists in
+the file (regardless of its content) -- it's the only field whose absence
+triggers the unconditional language question in pv-init; the other language
+fields (changes/versions/docs.*) are optional refinements on top of that
+default and don't gate this flag.
 
-  {"exists": true, "hasFramework": true, "missingRequired": [], "complete": true}
-  {"exists": false, "hasFramework": false, "missingRequired": [], "complete": false}
+Prints ONLY a JSON on stdout:
 
-Uso:
+  {"exists": true, "hasFramework": true, "missingRequired": [], "complete": true, "hasLanguage": true}
+  {"exists": false, "hasFramework": false, "missingRequired": [], "complete": false, "hasLanguage": false}
+
+Usage:
   python check-context.py
 """
 
@@ -28,7 +34,7 @@ ALWAYS_REQUIRED = ()
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/pv-init/scripts/
+    # This script lives at {repo}/.claude/skills/pv-init/scripts/
     return Path(__file__).resolve().parents[4]
 
 
@@ -36,7 +42,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--context-path",
-        help="Ruta a pv-context.json relativa a la raiz del repo. Por defecto "
+        help="Path to pv-context.json relative to the repo root. Defaults to "
         ".claude/pv-context.json.",
     )
     args = parser.parse_args()
@@ -53,6 +59,7 @@ def main() -> None:
             "hasFramework": False,
             "missingRequired": list(ALWAYS_REQUIRED),
             "complete": False,
+            "hasLanguage": False,
         }
         json.dump(result, sys.stdout, ensure_ascii=False)
         print()
@@ -63,14 +70,16 @@ def main() -> None:
     has_framework = bool(context.get("framework"))
 
     missing = [field for field in ALWAYS_REQUIRED if field not in framework]
+    has_language = "language" in (framework.get("interaction") or {})
 
     result = {
         "exists": True,
         "hasFramework": has_framework,
         "missingRequired": missing,
-        # Sin campos obligatorios propios en 'framework' (workFolder tiene
-        # default), "completo" significa que la seccion 'framework' existe.
+        # No required fields of its own in 'framework' (workFolder has a
+        # default), so "complete" means the 'framework' section exists.
         "complete": has_framework and not missing,
+        "hasLanguage": has_language,
     }
     json.dump(result, sys.stdout, ensure_ascii=False)
     print()

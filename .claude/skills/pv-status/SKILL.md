@@ -1,7 +1,7 @@
 ---
 name: pv-status
-description: Recopila y presenta el estado actual del proyecto según el framework pv-* — totales de elementos por tipo (todo/change/fix/fast) y por estado (carpetas de {changesDir}). Devuelve el informe como respuesta de chat; no escribe ningún fichero salvo que el usuario lo pida explícitamente. Trigger: /pv-status, o cuando el usuario pide un resumen/vista general del estado del proyecto, cuántos changes/fixes hay pendientes, etc. Acepta argumentos opcionales para listados filtrados: `todo` (solo ideas de `{changesDir}/todo/`) o el nombre de cualquier otra carpeta de estado existente (p.ej. `closed`, `implemented`, `inProgress`).
-argument-hint: "[todo|<estado>]"
+description: Collects and presents the current project status per the pv-* framework — totals by item type (todo/change/fix/fast) and by state ({changesDir} folders). Returns the report as a chat reply; writes no file unless the user explicitly asks. Trigger: /pv-status, or when the user asks for a summary/overview of the project's status, how many changes/fixes are pending, etc. Accepts optional arguments for filtered listings: `todo` (only ideas from `{changesDir}/todo/`) or the name of any other existing state folder (e.g. `closed`, `implemented`, `inProgress`).
+argument-hint: "[todo|<state>]"
 model: claude-haiku-4-5
 effort: medium
 metadata:
@@ -11,78 +11,80 @@ metadata:
 
 # pv-status
 
-Da una vista general del estado del proyecto dentro del framework `pv-*`, basada exclusivamente en el contenido de `{changesDir}` (sus subcarpetas de estado: `todo`, `inProgress`, `implemented`, `closed`, o cualquier otra que exista).
+Gives an overview of the project's status within the `pv-*` framework, based exclusively on `{changesDir}`'s content (its state subfolders: `todo`, `inProgress`, `implemented`, `closed`, or any other that exists).
 
-Esta skill es de solo lectura: no crea, mueve ni modifica ninguna carpeta o fichero de `{changesDir}`. El informe se entrega como respuesta de chat; **no se escribe en ningún fichero salvo que el usuario lo pida explícitamente** (ver paso 4).
+**Language.** Use `framework.interaction.language` (default English) for everything you say to the user in this conversation — including the "not initialized" message in step 0. **The report itself always stays in English**, regardless of `interaction.language` (see the note in step 2) — it's produced by deterministic Python scripts, not the LLM, precisely so it costs no tokens and stays consistent; only the sentence introducing it (if you add one, which step 3 says not to) would ever follow `interaction.language`. If `language` is not configured anywhere, everything is English anyway.
 
-## 0. Cargar el contexto del proyecto
+This skill is read-only: it doesn't create, move, or modify any `{changesDir}` folder or file. The report is delivered as a chat reply; **nothing is written to any file unless the user explicitly asks** (see step 4).
 
-Lee `.claude/pv-context.json` en la raíz del repo. Si no existe, o le falta la sección `framework`, no continúes: dile al usuario que primero debe ejecutar la skill `pv-init` para inicializar el framework, y detente ahí.
+## 0. Load the project context
+
+Read `.claude/pv-context.json` at the repo root. If it doesn't exist, or is missing the `framework` section, don't continue: tell the user they must first run the `pv-init` skill to initialize the framework, and stop there.
 
 ```
-Este proyecto todavía no tiene el framework `pv-*` inicializado (o le falta configuración). Ejecuta primero `/pv-init` antes de volver a invocarme.
+This project doesn't have the `pv-*` framework initialized yet (or is missing configuration). Run `/pv-init` first before invoking me again.
 ```
 
-## 1. Detectar el modo de invocación
+## 1. Detect the invocation mode
 
-Antes de ejecutar ningún script, mira cómo se invocó la skill — cada modo usa un script distinto y **solo uno** se ejecuta:
+Before running any script, look at how the skill was invoked — each mode uses a different script and **only one** runs:
 
-- Argumento `todo` (`/pv-status todo`, o "solo las ideas de todo"/"lista los todos") → ve a **1.b**.
-- Argumento con el nombre de una carpeta de estado existente en `{changesDir}` distinta de `todo` (p.ej. `/pv-status closed`, `/pv-status implemented`, `/pv-status inProgress`, o "la lista completa de lo que está en `<estado>`") → ve a **1.c**.
-- Sin argumento, o cualquier otro caso (informe general) → ve a **2**.
+- `todo` argument (`/pv-status todo`, or "just the todo ideas"/"list the todos") → go to **1.b**.
+- Argument naming an existing state folder in `{changesDir}` other than `todo` (e.g. `/pv-status closed`, `/pv-status implemented`, `/pv-status inProgress`, or "the full list of what's in `<state>`") → go to **1.c**.
+- No argument, or any other case (general report) → go to **2**.
 
-No ejecutes `collect_status.py` directamente en ningún modo: es un módulo interno que `list_todo.py` y `render_status.py` importan y reutilizan por su cuenta, no un script pensado para invocarse desde la skill — su salida JSON no aporta nada que la skill deba mostrar o reformatear.
+Don't run `collect_status.py` directly in any mode: it's an internal module that `list_todo.py` and `render_status.py` import and reuse on their own, not a script meant to be invoked from the skill — its JSON output brings nothing the skill needs to show or reformat.
 
-Los tres scripts (`list_todo.py`, `filter_status.py`, `render_status.py`) aceptan también un flag `--terminal` que cambia la salida a texto plano sin markdown, ajustado a 70 columnas. Es de uso exclusivo de `pv.py` (el menú de terminal del framework); esta skill, invocada desde el chat, **nunca** debe pasar `--terminal` — el markdown por defecto es siempre el formato correcto para una respuesta de chat.
+All three scripts (`list_todo.py`, `filter_status.py`, `render_status.py`) also accept a `--terminal` flag that switches the output to plain text without markdown, fitted to 70 columns. It's for the exclusive use of `pv.py` (the framework's terminal menu); this skill, invoked from chat, must **never** pass `--terminal` — the default markdown is always the right format for a chat reply.
 
-## 1.b Modo `todo`: solo listar ideas
+## 1.b `todo` mode: list ideas only
 
-Ejecuta directamente [`scripts/list_todo.py`](scripts/list_todo.py) — no ejecutes `collect_status.py` para este modo, no hace falta:
+Run [`scripts/list_todo.py`](scripts/list_todo.py) directly — don't run `collect_status.py` for this mode, it's not needed:
 
 ```
 python .claude/skills/pv-status/scripts/list_todo.py
 ```
 
-El script ya aplica internamente la plantilla [`STATUS.todo.template.md`](STATUS.todo.template.md) e imprime por stdout el listado en markdown listo para mostrar (código + texto completo sin truncar de la sección `## Idea` de cada `description.md`, marcando explícitamente las ideas sin esa sección, o el mensaje de "sin ideas" si `todo/` está vacía) — no es JSON, no vuelvas a aplicar la plantilla tú ni reformatees nada.
+The script already applies the [`STATUS.todo.template.md`](STATUS.todo.template.md) template internally and prints the ready-to-show markdown listing on stdout (code + full untruncated text of each `description.md`'s `## Idea` section, explicitly flagging ideas without that section, or the "no ideas" message if `todo/` is empty) — it's not JSON, don't reapply the template yourself or reformat anything.
 
-Tu respuesta en el chat debe ser **exactamente** el stdout del script, sin añadir nada antes ni después (nada de "Aquí tienes el listado:", resúmenes, ni comentarios propios). No lo guardes en fichero salvo que el usuario lo pida (paso 4).
+Your chat reply must be **exactly** the script's stdout, with nothing added before or after (no "Here's the listing:", summaries, or comments of your own). Don't save it to a file unless the user asks (step 4).
 
-## 1.c Modo `<estado>`: listado filtrado de una carpeta de estado
+## 1.c `<state>` mode: filtered listing of one state folder
 
-Ejecuta directamente [`scripts/filter_status.py`](scripts/filter_status.py) con el nombre de esa carpeta como argumento — no ejecutes `collect_status.py` para este modo, no hace falta:
+Run [`scripts/filter_status.py`](scripts/filter_status.py) directly with that folder's name as argument — don't run `collect_status.py` for this mode, it's not needed:
 
 ```
-python .claude/skills/pv-status/scripts/filter_status.py <estado>
+python .claude/skills/pv-status/scripts/filter_status.py <state>
 ```
 
-Si el estado indicado no existe como carpeta de `{changesDir}`, el script falla con un mensaje que lista los estados disponibles — tu respuesta debe ser exactamente ese mensaje de error, tal cual, sin improvisar una lista propia.
+If the given state doesn't exist as a `{changesDir}` folder, the script fails with a message listing the available states — your reply must be exactly that error message, as-is, without improvising your own list.
 
-El script ya aplica internamente la plantilla [`STATUS.filtered.template.md`](STATUS.filtered.template.md) e imprime por stdout el informe en markdown listo para mostrar (tabla Código/Tipo/Descripción/Fecha, o el mensaje de "sin entradas" si el estado está vacío) — no es JSON, no vuelvas a aplicar la plantilla tú ni reformatees nada.
+The script already applies the [`STATUS.filtered.template.md`](STATUS.filtered.template.md) template internally and prints the ready-to-show markdown report on stdout (Code/Type/Description/Date table, or the "no entries" message if the state is empty) — it's not JSON, don't reapply the template yourself or reformat anything.
 
-Tu respuesta en el chat debe ser **exactamente** el stdout del script, sin añadir nada antes ni después (nada de "Aquí tienes el informe:", resúmenes, ni comentarios propios). No lo guardes en fichero salvo que el usuario lo pida (paso 4).
+Your chat reply must be **exactly** the script's stdout, with nothing added before or after (no "Here's the report:", summaries, or comments of your own). Don't save it to a file unless the user asks (step 4).
 
-## 2. Generar el informe
+## 2. Generate the report
 
-Toda la mecánica de recopilar y mapear los datos a la plantilla [`STATUS.template.md`](STATUS.template.md) (tabla de totales, las tres listas de "En progreso", cambios fast, ideas de `todo/`, avisos) la hace, de forma determinista y gratis en tokens, el script [`scripts/render_status.py`](scripts/render_status.py) — no repitas tú ese mapeo campo a campo, no redactes las listas a mano, y no ejecutes `collect_status.py` antes: `render_status.py` recopila los datos internamente por su cuenta, no depende de nada del paso 1. Ejecuta desde la raíz del repo:
+All the mechanics of collecting and mapping the data onto the [`STATUS.template.md`](STATUS.template.md) template (totals table, the three "In progress" lists, fast changes, `todo/` ideas, warnings) are handled, deterministically and for free in tokens, by the [`scripts/render_status.py`](scripts/render_status.py) script — don't repeat that field-by-field mapping yourself, don't draft the lists by hand, and don't run `collect_status.py` first: `render_status.py` collects the data internally on its own, it doesn't depend on anything from step 1. Run from the repo root:
 
 ```
 python .claude/skills/pv-status/scripts/render_status.py
 ```
 
-El script recopila los datos de `{changesDir}` por su cuenta (misma lógica que `collect_status.py`) y aplica el mapeo completo (incluida la regla de la columna Fast solo en `implemented`/`closed`, las tres listas de "En progreso" con sus casos vacíos, y omitir por completo las secciones de "Cambios fast implementados"/"Avisos" cuando no aplican) e imprime por stdout el informe en markdown ya listo — no es JSON, no vuelvas a aplicar la plantilla tú ni reformatees nada.
+The script collects `{changesDir}`'s data on its own (same logic as `collect_status.py`) and applies the full mapping (including the rule that the Fast column only appears in `implemented`/`closed`, the three "In progress" lists with their empty cases, and fully omitting the "Implemented fast changes"/"Warnings" sections when they don't apply) and prints the ready-to-show markdown report on stdout — it's not JSON, don't reapply the template yourself or reformat anything. **The report's text — headings, table columns, state labels — is always in English, regardless of `framework.interaction.language`**: paste it verbatim, don't translate it.
 
-Por defecto la sección **"Cambios fast implementados" se omite**, aunque existan entradas fast (el total de la columna Fast en la tabla sigue mostrándose). Solo inclúyela si el usuario la pide explícitamente en este turno (p.ej. "enséñame también los fast", "detalla los cambios fast"), añadiendo el flag `--show-fast`:
+By default the **"Implemented fast changes" section is omitted**, even if fast entries exist (the Fast column's total in the table still shows). Only include it if the user explicitly asks for it in this turn (e.g. "show me the fast ones too", "detail the fast changes"), by adding the `--show-fast` flag:
 
 ```
 python .claude/skills/pv-status/scripts/render_status.py --show-fast
 ```
 
-No inventes datos que no estén en la salida del script (p.ej. no le asignes un tipo a una entrada `unknown` solo por adivinarlo del nombre de la carpeta).
+Don't invent data that isn't in the script's output (e.g. don't assign a type to an `unknown` entry just by guessing it from the folder name).
 
-## 3. Presentar el informe
+## 3. Present the report
 
-Tu respuesta en el chat debe ser **exactamente** el stdout del script ejecutado en el paso 2, sin añadir nada antes ni después (nada de "Aquí tienes el informe:", resúmenes, comentarios propios, ni texto adicional fuera del markdown que imprimió el script). No lo guardes en ningún fichero en este paso.
+Your chat reply must be **exactly** the stdout of the script run in step 2, with nothing added before or after (no "Here's the report:", summaries, comments of your own, or extra text outside the markdown the script printed). Don't save it to any file at this step.
 
-## 4. Guardar en fichero (solo si el usuario lo pide)
+## 4. Save to a file (only if the user asks)
 
-Si el usuario, en este mismo turno o en uno posterior, pide explícitamente que el informe se guarde (p.ej. "guárdalo", "déjalo en un fichero"), y no ha indicado ninguna ruta concreta, pregúntale dónde quiere guardarlo (p.ej. `{changesDir}/STATUS.md` u otra ruta de su elección) antes de escribir nada — no asumas una ruta por defecto.
+If the user, in this same turn or a later one, explicitly asks for the report to be saved (e.g. "save it", "put it in a file"), and hasn't given a specific path, ask them where they want it saved (e.g. `{changesDir}/STATUS.md` or another path of their choice) before writing anything — don't assume a default path.

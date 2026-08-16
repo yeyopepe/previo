@@ -1,23 +1,22 @@
 #!/usr/bin/env python3
-"""Comprime y copia la documentacion vigente a una entrega (skill pv-version).
+"""Zips and copies the current documentation into a release (pv-version skill).
 
-Comprime en un .zip cada una de las rutas configuradas en
+Zips each of the paths configured in .claude/pv-context.json's
 framework.docs.tech.architectureDocDir, framework.docs.tech.styleBibleDocDir
-y framework.docs.functional.featuresDocPathDir de .claude/pv-context.json, y
-guarda cada .zip en {workFolder}/versions/{xxxx}/docs/. Cada ruta puede ser
-una carpeta (se comprime entera, incluido su INDEX.md si lo tiene) o un
-unico fichero .md (caso valido de featuresDocPathDir en proyectos que no
-migraron a carpeta) -- en ambos casos el .zip resultante se llama como el
-nombre base de la ruta (carpeta o fichero sin extension) + ".zip". Las que
-no esten configuradas se omiten sin error (igual que el resto del framework
-trata estos campos opcionales).
+and framework.docs.functional.featuresDocPathDir, and saves each .zip at
+{workFolder}/versions/{xxxx}/docs/. Each path can be a folder (zipped whole,
+including its INDEX.md if it has one) or a single .md file (a valid case for
+featuresDocPathDir in projects that haven't migrated to a folder) -- in both
+cases the resulting .zip is named after the path's base name (folder or file
+without extension) + ".zip". Ones not configured are skipped without error
+(same as the rest of the framework treats these optional fields).
 
-Imprime UNICAMENTE un JSON en stdout con lo copiado, para que la skill lo
-use al confirmar al usuario:
+Prints ONLY a JSON on stdout with what was copied, for the skill to use when
+confirming to the user:
 
   {"copied": ["design/docs/architecture", "design/docs/style"], "skipped": ["featuresDocPathDir"]}
 
-Uso:
+Usage:
   python copy-docs.py --xxxx 00001
 """
 
@@ -29,7 +28,7 @@ from pathlib import Path
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/pv-version/scripts/
+    # This script lives at {repo}/.claude/skills/pv-version/scripts/
     return Path(__file__).resolve().parents[4]
 
 
@@ -37,16 +36,16 @@ def load_framework(root: Path) -> dict:
     context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
-            "copiar documentacion."
+            f"Cannot find {context_path}. Run the pv-init skill before "
+            "copying documentation."
         )
 
     context = json.loads(context_path.read_text(encoding="utf-8"))
     framework = context.get("framework")
     if not framework:
         raise SystemExit(
-            f"{context_path} no tiene la seccion 'framework'. Ejecuta la skill "
-            "pv-init para completarla."
+            f"{context_path} has no 'framework' section. Run the pv-init "
+            "skill to complete it."
         )
     return framework
 
@@ -71,11 +70,11 @@ def zip_file(source_file: Path, dest_zip: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--xxxx", required=True, help="Codigo de la version que se esta preparando.")
+    parser.add_argument("--xxxx", required=True, help="Code of the version being prepared.")
     parser.add_argument(
         "--work-folder",
-        help="Ruta a workFolder relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/pv-context.json (default '/').",
+        help="Path to workFolder relative to the repo root. If not given, "
+        "read from .claude/pv-context.json (default '/').",
     )
     args = parser.parse_args()
 
@@ -90,8 +89,8 @@ def main() -> None:
     version_docs_dir = versions_dir / args.xxxx / "docs"
     if not version_docs_dir.is_dir():
         raise SystemExit(
-            f"No existe {version_docs_dir}. Ejecuta primero init-version-folder.py "
-            "para crear la carpeta de la version."
+            f"{version_docs_dir} doesn't exist. Run init-version-folder.py "
+            "first to create the version's folder."
         )
 
     docs = framework.get("docs") or {}
@@ -120,7 +119,7 @@ def main() -> None:
             zip_file(source_path, dest_zip)
         else:
             raise SystemExit(
-                f"'{field}' apunta a {source_path}, pero esa ruta no existe."
+                f"'{field}' points to {source_path}, but that path doesn't exist."
             )
 
         copied.append(doc_path_rel)

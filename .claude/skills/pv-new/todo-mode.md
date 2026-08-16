@@ -1,16 +1,16 @@
-# Modo `/pv-new todo <código>`
+# `/pv-new todo <code>` mode
 
-Procedimiento completo cuando la skill `pv-new` se invoca como `/pv-new todo <código>` (o el usuario pide explícitamente "convierte la idea `<código>` de todo en un change"). Esta entrada no nace de una petición nueva del usuario en el chat, sino del contenido ya apuntado por `pv-todo`.
+Full procedure when the `pv-new` skill is invoked as `/pv-new todo <code>` (or the user explicitly asks to "turn idea `<code>` from todo into a change"). This entry doesn't originate from a new request from the user in chat, but from content already noted by `pv-todo`.
 
-1. Comprueba que existe **exactamente** `{changesDir}/todo/{código}/description.md`. Si no existe, dile al usuario que no hay ninguna idea con ese código en `todo/` y detente ahí (no inventes ni asumas un código parecido).
-2. Lee ese `description.md` completo (secciones `## Idea`, `## Código` y `## Notas`) y, si los hay, sus ficheros `design_*.html` de esa misma carpeta. Este es el contenido a analizar y documentar — úsalo como si fuera la petición del usuario para el resto del proceso, en vez de esperar una descripción nueva en el chat. Si el usuario añadió también contexto adicional al invocar la skill, súmalo al análisis.
-3. Pregunta al usuario si quiere desarrollar la idea contigo antes de continuar.
+1. Check that `{changesDir}/todo/{code}/description.md` exists **exactly**. If it doesn't exist, tell the user there's no idea with that code in `todo/` and stop there (don't invent or assume a similar code).
+2. Read that `description.md` in full (`## Idea`, `## Code` and `## Notes` sections) and, if any, its `design_*.html` files in that same folder. This is the content to analyze and document — use it as if it were the user's request for the rest of the process, instead of waiting for a new description in chat. If the user also added extra context when invoking the skill, add it to the analysis.
+3. Ask the user if they want to develop the idea with you before continuing.
 
 ```
-¿Quieres que refinemos esta idea ("<nombre de la idea>") antes de escribirla o documento el cambio con la información actual?
+Do you want us to refine this idea ("<idea name>") before writing it, or should I document the change with the information as it is now?
 ```
 
-Si confirma, propón ideas y charla con él hasta refinar un poco más la idea antes de continuar con el punto 4. Si no quiere, pasa al punto 4.
-4. Continúa con el proceso habitual desde el paso 1 de "Pasos" de `SKILL.md` (anticipar dudas, documentar con `pv-internal-workflow`, propuesta visual), usando ese contenido como base. Al invocar `pv-internal-workflow` en el paso 2 de "Pasos", usa como `promptOriginal` el contenido de `## Notas` de la idea (más cualquier contexto adicional que el usuario haya añadido al invocar la skill o durante el refinado del paso 3 de aquí), para que quede como historial en `history.md`. Si había `design_*.html` en la idea de `todo/`, tenlos en cuenta al construir la propuesta visual del paso 3 (no los copies tal cual sin más: son solo un boceto de partida, no una maqueta ya validada).
-5. **Solo si el paso 2 de "Pasos" termina con éxito** (la entrada ya existe en `{changesDir}/inProgress/{xxxx}/`), borra automáticamente `{changesDir}/todo/{código}/` entera (`description.md` y cualquier `design_*.html` que tuviera), sin pedir confirmación al usuario — el borrado es una limpieza automática del origen ya migrado, no una acción destructiva que requiera aprobación. Si el paso 2 no llega a completarse, deja la idea tal cual en `todo/`.
-6. En el paso 4 de "Pasos" (indicar el siguiente paso), menciona también que la idea `{código}` de `todo/` ha quedado convertida en el cambio `{xxxx}` y borrada de `todo/`.
+If they confirm, propose ideas and chat with them until the idea is a bit more refined before continuing with point 4. If they don't want to, go to point 4.
+4. Continue with the usual process from step 1 of `SKILL.md`'s "Steps" (anticipate doubts, document with `pv-internal-workflow`, visual proposal), using that content as the base. When invoking `pv-internal-workflow` in step 2 of "Steps", use the idea's `## Notes` content as `promptOriginal` (plus any extra context the user added when invoking the skill or during the refinement in point 3 here), so it's kept as history in `history.md`. If there were `design_*.html` in the `todo/` idea, take them into account when building the visual proposal in step 3 (don't just copy them as-is: they're only a starting sketch, not an already-validated mockup).
+5. **Only if step 2 of "Steps" finishes successfully** (the entry already exists at `{changesDir}/inProgress/{xxxx}/`), automatically delete the entire `{changesDir}/todo/{code}/` (`description.md` and any `design_*.html` it had), without asking the user for confirmation — deletion is automatic cleanup of an already-migrated source, not a destructive action requiring approval. If step 2 doesn't complete, leave the idea as-is in `todo/`.
+6. In step 4 of "Steps" (stating the next step), also mention that `todo/`'s idea `{code}` has been turned into change `{xxxx}` and deleted from `todo/`.

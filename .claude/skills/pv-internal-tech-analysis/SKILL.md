@@ -1,6 +1,6 @@
 ---
 name: pv-internal-tech-analysis
-description: Procedimiento compartido, agnóstico al proyecto, para reunir contexto técnico antes de analizar un change/fix o valorar si un cambio es trivial. Primero lee la documentación técnica configurada en framework.docs.tech (arquitectura, biblia de estilo), y solo si hace falta más información explora el código real. Si el tema toca alguna interfaz o estructura de datos, exige tener su definición completa (firma, entrada, retorno, campos) antes de dar el contexto por reunido, y confirma con el usuario cualquier duda de definición que no se resuelva con documentación o código. Si detecta que el código y la documentación no coinciden, señala el código como fuente de la verdad y devuelve la incongruencia como parte del análisis. Al terminar, contrasta el cambio contra la checklist de seguridad de pv-internal-tech-security y añade sus pendientes al resultado. No edita nada. Uso interno de las skills pv-new, pv-fix e pv-how.
+description: Shared, project-agnostic procedure to gather technical context before analyzing a change/fix or assessing whether a change is trivial. First reads the technical documentation configured in framework.docs.tech (architecture, style bible), and only explores the real code if more information is needed. If the topic touches any interface or data structure, requires having its complete definition (signature, input, return, fields) before considering the context gathered, and confirms with the user any definition doubt not resolved by documentation or code. If it detects that code and documentation don't match, flags the code as the source of truth and returns the inconsistency as part of the analysis. When done, checks the change against pv-internal-tech-security's security checklist and adds its pending items to the result. Edits nothing. Internal use by the pv-new, pv-fix and pv-how skills.
 user-invocable: false
 model: claude-sonnet-5
 effort: medium
@@ -11,70 +11,70 @@ metadata:
 
 # pv-internal-tech-analysis
 
-Procedimiento único y compartido para obtener contexto técnico fiable antes de tomar cualquier decisión sobre un change/fix (diseñar una solución, valorar causa raíz, o juzgar si un cambio es lo bastante trivial para el atajo `fast` de `pv-fix`). Solo lo invocan otras skills del framework `pv-*` — no está pensado para invocación directa por el usuario.
+A single, shared procedure to obtain reliable technical context before making any decision about a change/fix (designing a solution, assessing root cause, or judging whether a change is trivial enough for `pv-fix`'s `fast` shortcut). Only invoked by other `pv-*` framework skills — not meant for direct invocation by the user.
 
-**Esta skill no escribe ni edita nada.** Es puramente de análisis/lectura: reúne contexto y, si lo hay, reporta incongruencias entre documentación y código a quien la invoca. Qué hacer con esas incongruencias (actualizar el documento ya mismo, dejarlo anotado para más adelante, o usarlo como motivo para descartar una vía rápida) lo decide siempre la skill llamante, según sus propias reglas. La única excepción a no interactuar por su cuenta es puntual (ver paso 3): si queda una duda de definición que bloquea tener el contexto completo, la confirma directamente con el usuario antes de devolver el resultado.
+**This skill writes or edits nothing.** It's purely analysis/reading: it gathers context and, if any, reports inconsistencies between documentation and code to the caller. What to do with those inconsistencies (update the document right away, note it for later, or use it as a reason to rule out a fast path) is always decided by the calling skill, per its own rules. The only exception to not interacting on its own is a specific one (see step 3): if a definition doubt remains that blocks having complete context, it confirms it directly with the user before returning the result.
 
-## Entrada esperada de quien invoca
+## Expected input from the caller
 
-Quien invoca debe pasar un resumen breve de **qué se está analizando** (el change/fix/duda concreta, no la conversación entera) — se usa para acotar la exploración de código del paso 2, en vez de explorar el repo entero sin rumbo.
+The caller must pass a brief summary of **what's being analyzed** (the specific change/fix/doubt, not the whole conversation) — used to scope step 2's code exploration, instead of exploring the entire repo aimlessly.
 
-## 0. Cargar el contexto del proyecto
+## 0. Load the project context
 
-Lee `.claude/pv-context.json` en la raíz del repo (si no lo has hecho ya en esta sesión). No valides aquí que el framework está inicializado — eso ya lo ha comprobado la skill llamante antes de invocar esta; si `framework` faltara por completo, limítate a tratar todo `docs.tech` como no configurado y sigue directamente al paso 2 con `sourcecodeDir` (o el repo en general) como única fuente.
+Read `.claude/pv-context.json` at the repo root (if you haven't already this session). Don't validate here that the framework is initialized — the calling skill has already checked that before invoking this one; if `framework` were missing entirely, just treat all of `docs.tech` as unconfigured and go straight to step 2 with `sourcecodeDir` (or the repo in general) as the sole source.
 
-## 1. Leer primero la documentación técnica existente
+## 1. Read the existing technical documentation first
 
-Antes de tocar código, mira `framework.docs.tech` en `.claude/pv-context.json`:
+Before touching code, look at `framework.docs.tech` in `.claude/pv-context.json`:
 
-- **Si ya leíste un fichero concreto antes en esta sesión** y no ha cambiado desde entonces, no vuelvas a leerlo — reutiliza lo que ya tienes en contexto. Esta regla se aplica por fichero individual, no al directorio completo: los documentos de `architectureDocDir`/`styleBibleDocDir` son varios ficheros pequeños, así que en un ciclo típico (invocación desde `pv-new`/`pv-fix`, luego otra vez desde `pv-how`) solo hace falta releer `INDEX.md` la segunda vez y comprobar si los ficheros hermanos ya leídos siguen siendo los relevantes — releer solo los que falten, nunca el directorio entero de nuevo. Esto es estrictamente más eficiente que releer un fichero monolítico completo dos veces por ciclo.
-- Para cada uno de `architectureDocDir` y `styleBibleDocDir` que esté configurado **y** exista de verdad como carpeta en el repo:
-  1. Lee siempre `{dir}/INDEX.md` primero (si no lo tienes ya de esta sesión).
-  2. Con el resumen de qué se está analizando (recibido como entrada) y la tabla-índice de `INDEX.md` (qué cubre cada fichero hermano), decide qué ficheros hermanos son relevantes y lee solo esos.
-  3. En caso de duda razonable sobre si un fichero es relevante, léelo — mejor pasarse que quedarse corto.
-- Los que no estén configurados, o estén configurados pero la carpeta no exista todavía, sáltalos sin más — no es un error, simplemente esa fuente no está disponible.
-- Si `framework.docs.tech` no existe en absoluto, o ninguno de los dos campos está configurado, no hay nada que leer en este paso: pasa directamente al paso 2.
+- **If you already read a specific file earlier this session** and it hasn't changed since, don't reread it — reuse what you already have in context. This rule applies per individual file, not the whole directory: `architectureDocDir`/`styleBibleDocDir`'s documents are several small files, so in a typical cycle (invoked from `pv-new`/`pv-fix`, then again from `pv-how`) only `INDEX.md` needs rereading the second time, checking whether the already-read sibling files are still the relevant ones — reread only the missing ones, never the whole directory again. This is strictly more efficient than rereading a full monolithic file twice per cycle.
+- For each of `architectureDocDir` and `styleBibleDocDir` that's configured **and** really exists as a folder in the repo:
+  1. Always read `{dir}/INDEX.md` first (if you don't already have it from this session).
+  2. With the summary of what's being analyzed (received as input) and `INDEX.md`'s index table (what each sibling file covers), decide which sibling files are relevant and read only those.
+  3. When in reasonable doubt about whether a file is relevant, read it — better to overshoot than fall short.
+- Skip the ones not configured, or configured but whose folder doesn't exist yet — it's not an error, that source is simply unavailable.
+- If `framework.docs.tech` doesn't exist at all, or neither field is configured, there's nothing to read in this step: go straight to step 2.
 
-Devuelve al usuario la lista de documentos que tienes en `.claude/pv-context.json` y cuáles has encontrado y cuáles no.
+Return to the user the list of documents you have in `.claude/pv-context.json` and which you found and which you didn't.
 
-Con esto construye un contexto preliminar (arquitectura/capas, convenciones de estilo, mapa de ficheros y símbolos) antes de leer una sola línea de código fuente.
+With this, build preliminary context (architecture/layers, style conventions, file and symbol map) before reading a single line of source code.
 
-## 2. Completar con código real solo si hace falta
+## 2. Fill in with real code only if needed
 
-Si el contexto del paso 1 ya resuelve lo que quien invoca necesita saber, no exploraciones código de más. Si falta información (no hay documentación configurada, la que hay no cubre el tema, o quien invoca necesita confirmar un detalle concreto de implementación), explora **solo la parte del código relevante al tema indicado** — usando `framework.sourcecodeDir` como punto de partida si está configurado, o el repo en general si no.
+If step 1's context already resolves what the caller needs to know, don't explore any more code. If information is missing (no documentation configured, what's there doesn't cover the topic, or the caller needs to confirm a specific implementation detail), explore **only the part of the code relevant to the given topic** — using `framework.sourcecodeDir` as the starting point if configured, or the repo in general if not.
 
-## 3. Completitud de interfaces y estructuras de datos
+## 3. Completeness of interfaces and data structures
 
-Si el tema analizado implica alguna **interfaz** (endpoint HTTP, función/método público, evento, mensaje entre componentes, contrato entre capas) o **estructura de datos** (modelo, esquema, tabla, DTO, tipo), el contexto no está completo con un resumen genérico — hace falta la definición exacta:
+If the analyzed topic involves any **interface** (HTTP endpoint, public function/method, event, message between components, contract between layers) or **data structure** (model, schema, table, DTO, type), the context isn't complete with a generic summary — the exact definition is needed:
 
-- **Interfaz**: ruta/nombre exacto, verbo o forma de invocación, cada parámetro de entrada (nombre, tipo, si es obligatorio/opcional), forma completa de la salida/retorno (campos y tipos), y códigos de error o casos de fallo relevantes si los hay.
-- **Estructura de datos**: todos sus campos, el tipo de cada uno, restricciones (nulidad, claves, valores por defecto) y relación con otras estructuras, en la medida en que sean relevantes al tema analizado.
+- **Interface**: exact path/name, verb or invocation form, every input parameter (name, type, whether required/optional), the complete shape of the output/return (fields and types), and relevant error codes or failure cases if any.
+- **Data structure**: all its fields, each one's type, constraints (nullability, keys, defaults) and relation to other structures, to the extent relevant to the analyzed topic.
 
-Esta es la única excepción a "no explores de más" del paso 2: si lo leído en los pasos 1-2 deja una interfaz o estructura relevante a medias, vuelve a explorar el código puntualmente (o la documentación, si la tiene) hasta tener la definición completa — una descripción aproximada no es contexto suficiente para diseñar sobre ella.
+This is the only exception to step 2's "don't over-explore": if what was read in steps 1-2 leaves a relevant interface or structure half-defined, go back and explore the code (or the documentation, if it has one) specifically until you have the complete definition — an approximate description isn't enough context to design against.
 
-### Dudas que ni la documentación ni el código resuelven
+### Doubts neither documentation nor code resolve
 
-Si tras esto queda una duda genuina de definición (p.ej. qué representa un campo ambiguo, qué formato exacto espera un parámetro, por qué una interfaz tiene una forma que no está documentada ni es evidente por el código) que ni `framework.docs.tech` ni el código aclaran, no la des por buena con una suposición silenciosa: formula la solución que te parezca más razonable y confírmala con el usuario antes de dar el contexto por reunido. Esto aplica solo a dudas puntuales de definición que bloquean tener contexto completo — no a decisiones de diseño de la solución en sí, que siguen siendo responsabilidad de quien invoca esta skill.
+If after this a genuine definition doubt remains (e.g. what an ambiguous field represents, what exact format a parameter expects, why an interface has a shape that's neither documented nor evident from the code) that neither `framework.docs.tech` nor the code clarify, don't accept it with a silent assumption: formulate the solution that seems most reasonable to you and confirm it with the user before considering the context gathered. This applies only to specific definition doubts blocking complete context — not to design decisions about the solution itself, which remain the responsibility of whoever invokes this skill.
 
-## 4. Detectar incongruencias: el código manda
+## 4. Detecting inconsistencies: the code rules
 
-Al leer código durante el paso 2, compara lo que encuentras con lo que decía la documentación leída en el paso 1 (si la había). Si algo no coincide (una capa que ya no funciona como describe algún fichero de `architectureDocDir`, o una convención de `styleBibleDocDir` que el código ya no sigue):
+While reading code during step 2, compare what you find against what step 1's documentation said (if any). If something doesn't match (a layer that no longer works as some `architectureDocDir` file describes, or a `styleBibleDocDir` convention the code no longer follows):
 
-- El código real es siempre la fuente de la verdad, nunca lo que diga el documento.
-- No corrijas tú el documento aquí. Añade la incongruencia al resultado que devuelves a quien invoca (ver más abajo) como un cambio de documentación pendiente, para que sea esa skill quien decida cómo y cuándo aplicarlo (p.ej. `pv-how` lo integra en las secciones (c)/(d) de su `plan.md`, que `pv-do` aplicará en su paso de actualización de documentación; `pv-new`/`pv-fix` pueden anotarlo en **Apuntes técnicos**; `pv-fix` puede tomarlo como motivo para no calificar como trivial en su atajo `fast`).
+- The real code is always the source of truth, never what the document says.
+- Don't fix the document yourself here. Add the inconsistency to the result you return to the caller (see below) as a pending documentation change, so that skill decides how and when to apply it (e.g. `pv-how` integrates it into its `plan.md`'s sections (c)/(d), which `pv-do` will apply in its documentation-update step; `pv-new`/`pv-fix` can note it in **Technical notes**; `pv-fix` can take it as a reason not to qualify as trivial for its `fast` shortcut).
 
-## 5. Contrastar contra la checklist de seguridad
+## 5. Check against the security checklist
 
-Antes de devolver el resultado, invoca la skill `pv-internal-tech-security` (herramienta Skill) pasándole el resumen de qué se está analizando (la misma entrada recibida) y el contexto ya reunido en los pasos 1-4. Esa skill no explora nada por su cuenta ni decide diseño: solo contrasta el cambio contra su checklist de categorías de seguridad y devuelve cuáles son aplicables y, de esas, cuáles quedan pendientes de revisar.
+Before returning the result, invoke the `pv-internal-tech-security` skill (Skill tool) passing it the summary of what's being analyzed (the same input received) and the context already gathered in steps 1-4. That skill explores nothing on its own nor decides design: it only checks the change against its security category checklist and returns which ones apply and, of those, which are still pending review.
 
-Este paso se ejecuta siempre, no solo cuando el tema analizado "suene" a seguridad — cambios aparentemente ajenos (UI, textos, configuración) pueden tocar de refilón una categoría de la checklist (p.ej. un formulario nuevo que sí implica validación de entrada). Es la propia `pv-internal-tech-security` quien decide qué categorías aplican, no esta skill.
+This step always runs, not only when the analyzed topic "sounds" security-related — apparently unrelated changes (UI, text, configuration) can incidentally touch a checklist category (e.g. a new form that does imply input validation). It's `pv-internal-tech-security` itself that decides which categories apply, not this skill.
 
-## 6. Devolver el resultado a quien invoca
+## 6. Return the result to the caller
 
-No redactes ningún fichero. Devuelve a la skill llamante, en el mismo turno:
+Don't draft any file. Return to the calling skill, in the same turn:
 
-- **Contexto reunido** — el resumen relevante para el tema indicado, ya sintetizado (no pegues los documentos enteros ni el código tal cual), incluyendo la definición completa de cualquier interfaz o estructura de datos relevante del paso 3.
-- **Incongruencias detectadas** — lista (vacía si no hay ninguna) con, por cada una: qué documento la contiene, qué decía, qué muestra el código realmente, y el cambio de documentación sugerido.
-- **Puntos de seguridad pendientes** — la lista de "Categorías pendientes de revisar" devuelta por `pv-internal-tech-security` en el paso 5 (vacía si no hay ninguna). No incluyas aquí las categorías que esa skill haya marcado como ya cubiertas — esas no necesitan acción de quien invoca.
+- **Gathered context** — the relevant summary for the given topic, already synthesized (don't paste the entire documents or the raw code), including the complete definition of any relevant interface or data structure from step 3.
+- **Detected inconsistencies** — a list (empty if none) with, for each one: which document contains it, what it said, what the code actually shows, and the suggested documentation change.
+- **Pending security points** — the "Categories pending review" list returned by `pv-internal-tech-security` in step 5 (empty if none). Don't include here the categories that skill marked as already covered — those need no action from the caller.
 
-Quien invoca decide qué hacer con cada incongruencia y con cada punto de seguridad pendiente (resolverlo con el usuario, anotarlo en `plan.md`, usarlo como motivo para no calificar de trivial); esta skill no vuelve a intervenir sobre eso.
+The caller decides what to do with each inconsistency and each pending security point (resolve it with the user, note it in `plan.md`, use it as a reason not to qualify as trivial); this skill doesn't intervene on that again.

@@ -1,9 +1,9 @@
-# Historial de prompts — {xxxx}
+# Prompt history — {xxxx}
 
-Información histórica del proceso de análisis, no información vigente. Recoge, tal cual y sin reformular, los prompts sucesivos con los que el usuario ha ido planteando y ampliando esta entrada — pueden ser incompletos o contradictorios entre sí, ya que reflejan cómo evolucionó la petición sesión a sesión, no el resultado final (eso vive en `description.md`).
+Historical information about the analysis process, not current information. Records, verbatim and without rephrasing, the successive prompts with which the user raised and expanded this entry — they can be incomplete or contradictory with each other, since they reflect how the request evolved session by session, not the final result (that lives in `description.md`).
 
-**Uso exclusivo de `pv-new` y `pv-fix`.** Ninguna otra skill del framework (`pv-how`, `pv-do`, `pv-status`, etc.) debe leer este fichero ni tenerlo en cuenta: la fuente de la verdad sobre qué se pide es siempre `description.md`.
+**Exclusive use of `pv-new` and `pv-fix`.** No other skill in the framework (`pv-how`, `pv-do`, `pv-status`, etc.) should read this file or take it into account: the source of truth for what's being asked is always `description.md`.
 
-## {fecha} — sesión inicial
+## {date} — initial session
 
-<prompt original del usuario, tal cual, sin reformular>
+<user's original prompt, verbatim, without rephrasing>

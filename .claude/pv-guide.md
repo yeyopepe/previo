@@ -10,6 +10,7 @@ Todas las skills viven bajo `.claude/skills/pv-*` y comparten un único fichero 
   - [1. Herramientas necesarias](#1-herramientas-necesarias)
   - [2. Inicializar el framework: `/pv-init`](#2-inicializar-el-framework-pv-init)
     - [Elegir el modelo/esfuerzo de cada skill: `skillModels`](#elegir-el-modeloesfuerzo-de-cada-skill-skillmodels)
+    - [Configurar el idioma: `interaction`/`changes`/`versions`/`docs.*.language`](#configurar-el-idioma-interactionchangesversionsdocslanguage)
 - [Guía de uso rápida: el flujo natural](#guía-de-uso-rápida-el-flujo-natural)
   - [Paso 0 (opcional) — Apuntar ideas sueltas: `/pv-todo`](#paso-0-opcional--apuntar-ideas-sueltas-pv-todo)
   - [Paso 1 — Definir el cambio: dos maneras](#paso-1--definir-el-cambio-dos-maneras)
@@ -63,13 +64,18 @@ Ejemplo de `.claude/pv-context.json` ya configurado:
     "sourcecodeDir": "src",
     "workFolder": "/",
     "numberWidth": 5,
+    "interaction": { "language": "en" },
+    "changes": { "language": "es" },
+    "versions": { "language": "es" },
     "docs": {
       "functional": {
-        "featuresDocPathDir": "design/docs/features"
+        "featuresDocPathDir": "design/docs/features",
+        "language": "es"
       },
       "tech": {
         "architectureDocDir": "design/docs/architecture",
-        "styleBibleDocDir": "design/docs/style"
+        "styleBibleDocDir": "design/docs/style",
+        "language": "en"
       }
     }
   }
@@ -99,6 +105,34 @@ Después de editar `default` u `overrides`, hay que sincronizar el framework par
 - Ejecuta el script `.claude/skills/pv-init/scripts/sync-skill-models.py`.
 
 Es un proceso automático que no gasta tokens; puede repetirse en cualquier momento tras editar `skillModels` a mano, o pedirle a `pv-init` que lo haga por ti la próxima vez que lo invoques.
+
+#### Configurar el idioma: `interaction`/`changes`/`versions`/`docs.*.language`
+
+Las instrucciones propias de cada skill `pv-*` (cada `SKILL.md`, sus plantillas, sus scripts) están siempre en inglés, sea cual sea la configuración — es el idioma en el que estas skills están mejor probadas, y lo que hace fiable seguir instrucciones complejas. Lo que controla `language` es solo el idioma de lo que una skill produce *hacia fuera*: lo que te dice en el chat, y el contenido de los documentos que escribe. Si nunca configuras `language` en ningún sitio, todo funciona en inglés por defecto.
+
+`framework` puede llevar hasta cinco campos `language` independientes, todos opcionales:
+
+```json
+"framework": {
+  "interaction": { "language": "en" },
+  "changes": { "language": "es" },
+  "versions": { "language": "es" },
+  "docs": {
+    "functional": { "language": "es" },
+    "tech": { "language": "en" }
+  }
+}
+```
+
+- **`interaction.language`** — idioma en el que las skills hablan contigo en el chat (preguntas, confirmaciones, resúmenes). Es también el valor de respaldo de todos los campos siguientes cuando no están configurados.
+- **`changes.language`** — idioma de los documentos de un change/fix en curso: `description.md`, `plan.md`, `history.md`, y el texto de ejemplo de las maquetas `design_*.html`/`design_*.txt`.
+- **`versions.language`** — idioma de `changelog.md`, generado por `pv-version`/`pv-internal-changelog` a partir de `changes/closed`. Es una familia distinta de `changes.language`: un changelog que publiques hacia fuera puede razonablemente estar en un idioma distinto del que tu equipo usa para documentar los cambios internamente.
+- **`docs.functional.language`** — idioma de `docs.functional.featuresDocPathDir`.
+- **`docs.tech.language`** — idioma compartido por `docs.tech.architectureDocDir` y `docs.tech.styleBibleDocDir`.
+
+`pv-init` siempre pregunta por el idioma en una inicialización desde cero, proponiendo inglés por defecto para `interaction` y ofreciendo reutilizar el mismo valor para el resto salvo que quieras algo distinto. Si inicializaste este proyecto antes de que existiera el soporte de idioma, la próxima vez que ejecutes `pv-init` te preguntará solo esto, sin repetir el resto del cuestionario.
+
+Dos cosas se quedan siempre en inglés, se configure lo que se configure: la tabla del informe de `pv-status` (la generan scripts deterministas, no el modelo, para que sea gratis en tokens y consistente — solo la frase que la introduce sigue `interaction.language`), y las etiquetas de campo markdown que los scripts parsean literalmente en `description.md` (`**Type**`, `**Name**`, `## Idea`, `## Notes`...) — solo el texto que sigue a cada etiqueta sigue el idioma configurado.
 
 ## Guía de uso rápida: el flujo natural
 

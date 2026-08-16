@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-"""Calcula el siguiente numero de change/fix (xxxx) del framework pv-*.
+"""Computes the next change/fix number (xxxx) for the pv-* framework.
 
-Busca el numero mas alto entre TODAS las subcarpetas puramente numericas
-que existan bajo cualquier subarbol de {workFolder}/changes (inProgress,
-implemented, closed, o cualquier otro que se anada en el futuro) y devuelve
-ese numero + 1, formateado con numberWidth digitos y ceros a la izquierda.
+Finds the highest number among ALL purely numeric subfolders that exist
+under any subtree of {workFolder}/changes (inProgress, implemented, closed,
+or any other added in the future) and returns that number + 1, formatted
+with numberWidth digits and leading zeros.
 
-Excepcion: {workFolder}/changes/todo/ (usada por la skill pv-todo, ajena al
-flujo de change/fix) se ignora siempre, aunque contenga subcarpetas
-numericas.
+Exception: {workFolder}/changes/todo/ (used by the pv-todo skill, outside
+the change/fix flow) is always ignored, even if it contains numeric
+subfolders.
 
-workFolder y numberWidth se leen de .claude/pv-context.json (seccion
-framework) salvo que se pasen explicitamente por parametro. workFolder es
-opcional (default "/", la raiz del repo); la subcarpeta "changes" dentro de
-el es siempre de nombre fijo, no configurable.
+workFolder and numberWidth are read from .claude/pv-context.json (framework
+section) unless passed explicitly as parameters. workFolder is optional
+(default "/", the repo root); the "changes" subfolder inside it always has
+a fixed name, not configurable.
 
-Imprime UNICAMENTE el numero siguiente en stdout (p.ej. "0002"), para poder
-capturarlo directamente desde otro script o skill sin parsear texto extra.
+Prints ONLY the next number on stdout (e.g. "0002"), so it can be captured
+directly from another script or skill without parsing extra text.
 
-Uso:
+Usage:
   python next-change-number.py
   0002
 """
@@ -34,7 +34,7 @@ EXCLUDED_STATE_DIRS = {"todo"}
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/pv-internal-workflow/scripts/
+    # This script lives at {repo}/.claude/skills/pv-internal-workflow/scripts/
     return Path(__file__).resolve().parents[4]
 
 
@@ -42,16 +42,16 @@ def load_framework_defaults(root: Path) -> dict:
     context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
-            "calcular el siguiente numero."
+            f"Cannot find {context_path}. Run the pv-init skill before "
+            "computing the next number."
         )
 
     context = json.loads(context_path.read_text(encoding="utf-8"))
     framework = context.get("framework")
     if not framework:
         raise SystemExit(
-            f"{context_path} no tiene la seccion 'framework'. Ejecuta la skill "
-            "pv-init para completarla."
+            f"{context_path} has no 'framework' section. Run the pv-init "
+            "skill to complete it."
         )
     return framework
 
@@ -68,9 +68,10 @@ def compute_next_number(changes_dir: Path) -> int:
     if not changes_dir.is_dir():
         return max_number + 1
 
-    # Cada subcarpeta directa de changes/ es un "estado" (inProgress,
-    # implemented, closed...). Se recorren TODOS, no solo inProgress/implemented,
-    # para no reasignar un xxxx que ya se uso en closed.
+    # Every direct subfolder of changes/ is a "state" (inProgress,
+    # implemented, closed...). ALL of them are walked, not just
+    # inProgress/implemented, so an xxxx already used in closed isn't
+    # reassigned.
     for state_dir in changes_dir.iterdir():
         if not state_dir.is_dir() or state_dir.name in EXCLUDED_STATE_DIRS:
             continue
@@ -85,13 +86,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--work-folder",
-        help="Ruta a workFolder, relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/pv-context.json (default '/').",
+        help="Path to workFolder, relative to the repo root. If not given, "
+        "read from .claude/pv-context.json (default '/').",
     )
     parser.add_argument(
         "--number-width",
         type=int,
-        help="Numero de digitos para el padding. Si no se indica, se lee de "
+        help="Number of digits for zero-padding. If not given, read from "
         ".claude/pv-context.json.",
     )
     args = parser.parse_args()
@@ -110,8 +111,8 @@ def main() -> None:
 
     if not number_width:
         raise SystemExit(
-            "No se ha podido determinar 'numberWidth' (ni por parametro ni desde "
-            "pv-context.json)."
+            "Could not determine 'numberWidth' (neither via parameter nor "
+            "from pv-context.json)."
         )
 
     changes_dir = resolve_changes_dir(root, work_folder_rel)

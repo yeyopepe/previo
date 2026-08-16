@@ -1,21 +1,21 @@
-# Versión {XXXX} — {fecha}
+# Version {XXXX} — {date}
 
-Nuevo: {N} · Cambios: {N} · Eliminado: {N} · Correcciones y ajustes: {N}
+New: {N} · Changed: {N} · Removed: {N} · Fixes: {N}
 
-<Cada entrada: nombre en negrita + un resumen funcional de una o dos frases, tono changelog (pasado), sin mencionar ficheros, funciones ni detalles técnicos. Omite una sección entera si queda vacía — no la dejes con el título y sin entradas.>
+<Each entry: bold name + a one- or two-sentence functional summary, changelog tone (past tense), without mentioning files, functions, or technical details. Omit an entire section if it's empty — don't leave it with the heading and no entries.>
 
-## Nuevo
+## New
 
-- **{Nombre}** — {resumen funcional}.
+- **{Name}** — {functional summary}.
 
-## Cambios
+## Changed
 
-- **{Nombre}** — {resumen funcional}.
+- **{Name}** — {functional summary}.
 
-## Eliminado
+## Removed
 
-- **{Nombre}** — {resumen funcional}.
+- **{Name}** — {functional summary}.
 
-## Correcciones y ajustes
+## Fixes
 
-- **{Nombre}** — {resumen funcional}.
+- **{Name}** — {functional summary}.

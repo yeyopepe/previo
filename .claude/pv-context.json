@@ -16,14 +16,26 @@
     "sourcecodeDir": "src",
     "workFolder": "/",
     "numberWidth": 5,
+    "interaction": { "language": "es" },
+    "changes": { "language": "es" },
+    "versions": { "language": "es" },
     "docs": {
       "functional": {
-        "featuresDocPathDir": "design/docs/features"
+        "featuresDocPathDir": "design/docs/features",
+        "language": "es"
       },
       "tech": {
         "architectureDocDir": "design/docs/architecture",
-        "styleBibleDocDir": "design/docs/style"
+        "styleBibleDocDir": "design/docs/style",
+        "language": "es"
       }
+    },
+    "_comments": {
+      "interaction.language": "Historico del proyecto en espanol; se confirmo explicitamente con el usuario el 2026-08-16 al implementar el plan de idioma configurable.",
+      "changes.language": "Mismo idioma que interaction: el equipo documenta el proceso de cada change/fix en espanol.",
+      "versions.language": "Mismo idioma que interaction: el changelog se redacta en espanol.",
+      "docs.functional.language": "Documentacion de features en espanol.",
+      "docs.tech.language": "Arquitectura y biblia de estilo en espanol."
     }
   }
 }
