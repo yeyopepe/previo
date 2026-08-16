@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Crea la carpeta de una entrega nueva del framework ms-* (skill ms-version).
+"""Crea la carpeta de una entrega nueva del framework pv-* (skill pv-version).
 
 Crea {workFolder}/versions/{xxxx}/ con dos subcarpetas vacias, 'files/' y
 'docs/'. Si la carpeta de la version ya existe, termina en error sin tocar
 nada (mismo criterio que move-change.py) -- quien invoca decide entonces si
 regenerar sobre lo existente o pedir otro xxxx al usuario.
 
-workFolder se lee de .claude/ms-context.json (seccion framework) salvo que
+workFolder se lee de .claude/pv-context.json (seccion framework) salvo que
 se pase explicitamente por parametro. Es opcional (default "/", la raiz del
 repo); la subcarpeta "versions" dentro de el es siempre de nombre fijo, no
 configurable, y totalmente independiente de "changes/" (numeracion xxxx de
@@ -29,15 +29,15 @@ from pathlib import Path
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/ms-version/scripts/
+    # Este script vive en {repo}/.claude/skills/pv-version/scripts/
     return Path(__file__).resolve().parents[4]
 
 
 def load_work_folder(root: Path) -> str:
-    context_path = root / ".claude" / "ms-context.json"
+    context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill ms-init antes de "
+            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
             "preparar una version."
         )
 
@@ -46,7 +46,7 @@ def load_work_folder(root: Path) -> str:
     if not framework:
         raise SystemExit(
             f"{context_path} no tiene la seccion 'framework'. Ejecuta la skill "
-            "ms-init para completarla."
+            "pv-init para completarla."
         )
     return framework.get("workFolder", "/")
 
@@ -63,7 +63,7 @@ def main() -> None:
     parser.add_argument(
         "--work-folder",
         help="Ruta a workFolder relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/ms-context.json (default '/').",
+        "se lee de .claude/pv-context.json (default '/').",
     )
     args = parser.parse_args()
 

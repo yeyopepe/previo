@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Localiza la version anterior en {workFolder}/versions/ (skill ms-internal-changelog).
+"""Localiza la version anterior en {workFolder}/versions/ (skill pv-internal-changelog).
 
 Recorre las subcarpetas directas de {workFolder}/versions/, excluye la que
 se esta generando (--xxxx), y devuelve la de fecha de creacion mas reciente
@@ -8,7 +8,7 @@ ordenable cronologicamente). Quien invoca debe confirmar con el usuario que
 la candidata devuelta es realmente la version anterior correcta antes de
 usarla, por si hubiera ambiguedad.
 
-workFolder se lee de .claude/ms-context.json (seccion framework) salvo que
+workFolder se lee de .claude/pv-context.json (seccion framework) salvo que
 se pase explicitamente por parametro.
 
 Imprime UNICAMENTE un JSON en stdout:
@@ -31,15 +31,15 @@ from pathlib import Path
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/ms-internal-changelog/scripts/
+    # Este script vive en {repo}/.claude/skills/pv-internal-changelog/scripts/
     return Path(__file__).resolve().parents[4]
 
 
 def load_work_folder(root: Path) -> str:
-    context_path = root / ".claude" / "ms-context.json"
+    context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill ms-init antes de "
+            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
             "buscar la version anterior."
         )
 
@@ -48,7 +48,7 @@ def load_work_folder(root: Path) -> str:
     if not framework:
         raise SystemExit(
             f"{context_path} no tiene la seccion 'framework'. Ejecuta la skill "
-            "ms-init para completarla."
+            "pv-init para completarla."
         )
     return framework.get("workFolder", "/")
 
@@ -65,7 +65,7 @@ def main() -> None:
     parser.add_argument(
         "--work-folder",
         help="Ruta a workFolder relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/ms-context.json (default '/').",
+        "se lee de .claude/pv-context.json (default '/').",
     )
     args = parser.parse_args()
 

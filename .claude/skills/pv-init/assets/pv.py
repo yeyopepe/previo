@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
-"""Menú interactivo del framework ms-*, para uso directo desde terminal.
+"""Menú interactivo del framework pv-*, para uso directo desde terminal.
 
-Este fichero lo genera/actualiza la skill ms-init en la raíz del repo — no
+Este fichero lo genera/actualiza la skill pv-init en la raíz del repo — no
 lo edites a mano, tus cambios se perderían la próxima vez que se
 re-inicialice el framework (ficha maestra en
-.claude/skills/ms-init/assets/ms.py).
+.claude/skills/pv-init/assets/pv.py).
 
 Pensado para un usuario avanzado que quiere consultar o cerrar cambios del
-framework ms-* sin pasar por Claude Code ni tener que recordar nombres de
+framework pv-* sin pasar por Claude Code ni tener que recordar nombres de
 scripts, rutas o parámetros: ejecuta este fichero y elige una opción del
 menú.
 
 La mayoría de las opciones son de solo lectura y delegan en los scripts de
-la skill ms-status. La única que modifica algo es "Cerrar una entrada
-implementada": mueve la carpeta de changes/implemented/{xxxx} a
-changes/closed/{xxxx} (delegando en move-change.py de ms-internal-workflow,
-que no toca el contenido de ningún fichero, solo la carpeta), y siempre
-pide confirmación explícita antes de mover nada.
+la skill pv-status. Dos opciones modifican algo:
+- "Cerrar una entrada implementada": mueve la carpeta de
+  changes/implemented/{xxxx} a changes/closed/{xxxx} (delegando en
+  move-change.py de pv-internal-workflow, que no toca el contenido de
+  ningún fichero, solo la carpeta), y siempre pide confirmación explícita
+  antes de mover nada.
+- "Actualizar modelos de las skills según pv-context.json": delega en
+  sync-skill-models.py de pv-init, que propaga skillModels de
+  pv-context.json al frontmatter (model/effort) de cada SKILL.md 'pv-*'.
 
 Uso:
-  python3 ms.py
+  python3 pv.py
 """
 
 import os
@@ -30,10 +34,11 @@ import textwrap
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-STATUS_SCRIPTS = ROOT / ".claude" / "skills" / "ms-status" / "scripts"
-WORKFLOW_SCRIPTS = ROOT / ".claude" / "skills" / "ms-internal-workflow" / "scripts"
+STATUS_SCRIPTS = ROOT / ".claude" / "skills" / "pv-status" / "scripts"
+WORKFLOW_SCRIPTS = ROOT / ".claude" / "skills" / "pv-internal-workflow" / "scripts"
+INIT_SCRIPTS = ROOT / ".claude" / "skills" / "pv-init" / "scripts"
 CHANGES_DIR = ROOT / "changes"
-CONTEXT_PATH = ROOT / ".claude" / "ms-context.json"
+CONTEXT_PATH = ROOT / ".claude" / "pv-context.json"
 
 WIDTH = 70
 COLOR_RESET = "\033[0m"
@@ -254,11 +259,16 @@ def close_change(code: str) -> None:
     )
 
 
+def sync_skill_models() -> None:
+    run_script(INIT_SCRIPTS / "sync-skill-models.py")
+
+
 MENU: list[tuple[str, "callable"]] = [
     ("Estado general del proyecto", show_general_status),
     ("Listado filtrado por estado (todo, inProgress, implemented...)", show_filtered_status),
     ("Ideas en todo/", show_todo_ideas),
     ("Cerrar una entrada implementada (mover a changes/closed/)", close_entry),
+    ("Actualizar modelos de las skills según pv-context.json", sync_skill_models),
 ]
 
 
@@ -269,8 +279,8 @@ def main() -> None:
     enable_windows_ansi()
 
     if not CONTEXT_PATH.is_file():
-        print(wrap("Este proyecto no tiene el framework ms-* inicializado."))
-        print(wrap("Ejecuta primero /ms-init desde Claude Code."))
+        print(wrap("Este proyecto no tiene el framework pv-* inicializado."))
+        print(wrap("Ejecuta primero /pv-init desde Claude Code."))
         return
 
     print(colorize_ring_art(RING_ART))

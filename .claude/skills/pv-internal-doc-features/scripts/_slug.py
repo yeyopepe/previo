@@ -1,4 +1,4 @@
-"""Helper compartido de slugs para ms-internal-doc-features. No se invoca directamente."""
+"""Helper compartido de slugs para pv-internal-doc-features. No se invoca directamente."""
 import re
 import unicodedata
 

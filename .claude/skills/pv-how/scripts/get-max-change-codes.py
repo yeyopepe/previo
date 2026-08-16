@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Obtiene el codigo (xxxx) mas alto existente en cada estado del framework ms-*.
+"""Obtiene el codigo (xxxx) mas alto existente en cada estado del framework pv-*.
 
 Busca, por separado, el numero mas alto entre las subcarpetas puramente
 numericas de {workFolder}/changes/inProgress, {workFolder}/changes/implemented
-y {workFolder}/changes/closed. Se usa como verificacion previa de ms-how: si
+y {workFolder}/changes/closed. Se usa como verificacion previa de pv-how: si
 el xxxx que se va a planificar es menor que el maximo de cualquiera de estos
 tres estados, significa que se ha creado despues de otro cambio/fix mas
 reciente y conviene reanalizarlo antes de planificar.
 
-workFolder y numberWidth se leen de .claude/ms-context.json (seccion
+workFolder y numberWidth se leen de .claude/pv-context.json (seccion
 framework) salvo que se pasen explicitamente por parametro. workFolder es
 opcional (default "/", la raiz del repo); la subcarpeta "changes" dentro de
 el es siempre de nombre fijo, no configurable.
@@ -31,20 +31,20 @@ from pathlib import Path
 
 NUMERIC_NAME = re.compile(r"^\d+$")
 STATES = ("inProgress", "implemented", "closed")
-# "todo" (usada por la skill ms-todo) queda deliberadamente fuera: no forma
+# "todo" (usada por la skill pv-todo) queda deliberadamente fuera: no forma
 # parte del flujo de change/fix.
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/ms-how/scripts/
+    # Este script vive en {repo}/.claude/skills/pv-how/scripts/
     return Path(__file__).resolve().parents[4]
 
 
 def load_framework_defaults(root: Path) -> dict:
-    context_path = root / ".claude" / "ms-context.json"
+    context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill ms-init antes de "
+            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
             "comprobar los codigos existentes."
         )
 
@@ -53,7 +53,7 @@ def load_framework_defaults(root: Path) -> dict:
     if not framework:
         raise SystemExit(
             f"{context_path} no tiene la seccion 'framework'. Ejecuta la skill "
-            "ms-init para completarla."
+            "pv-init para completarla."
         )
     return framework
 
@@ -82,13 +82,13 @@ def main() -> None:
     parser.add_argument(
         "--work-folder",
         help="Ruta a workFolder, relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/ms-context.json (default '/').",
+        "se lee de .claude/pv-context.json (default '/').",
     )
     parser.add_argument(
         "--number-width",
         type=int,
         help="Numero de digitos para el padding. Si no se indica, se lee de "
-        ".claude/ms-context.json.",
+        ".claude/pv-context.json.",
     )
     args = parser.parse_args()
 
@@ -107,7 +107,7 @@ def main() -> None:
     if not number_width:
         raise SystemExit(
             "No se ha podido determinar 'numberWidth' (ni por parametro ni desde "
-            "ms-context.json)."
+            "pv-context.json)."
         )
 
     changes_dir = resolve_changes_dir(root, work_folder_rel)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lista filtrada de un unico estado (carpeta) de {changesDir}, para /ms-status <estado>.
+"""Lista filtrada de un unico estado (carpeta) de {changesDir}, para /pv-status <estado>.
 
 A diferencia de collect_status.py (que da totales y agregados de todos los
 estados), este script devuelve el detalle completo de las entradas de UN
@@ -10,15 +10,15 @@ la salida tal cual.
 
 Para cada entrada de la carpeta de estado se calculan cuatro columnas:
   - code: nombre de la subcarpeta.
-  - tipo: 'todo' si el estado es 'todo' (ms-todo no usa campo Tipo); en
+  - tipo: 'todo' si el estado es 'todo' (pv-todo no usa campo Tipo); en
     cualquier otro estado, el campo '**Tipo**' de description.md
     ('change'/'fix'/'fast'); 'unknown' si no se encuentra o no hay
     description.md.
   - description: primeros 250 caracteres de la seccion '## Descripcion
     completa' de description.md (con "..." al final si se trunco); si esa
     seccion esta vacia o no existe, None. No se usa history.md como
-    fallback: es historial de prompts de uso exclusivo de ms-new/ms-fix,
-    ninguna otra skill (incluido ms-status) debe leerlo.
+    fallback: es historial de prompts de uso exclusivo de pv-new/pv-fix,
+    ninguna otra skill (incluido pv-status) debe leerlo.
   - fecha: el campo '**Fecha**' de description.md si existe (formato tal
     cual esta escrito); si no, la fecha de modificacion (mtime) de
     description.md formateada como YYYY-MM-DD; si no hay description.md, la
@@ -77,7 +77,7 @@ DESCRIPCION_FULL_RE = re.compile(
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/ms-status/scripts/
+    # Este script vive en {repo}/.claude/skills/pv-status/scripts/
     return Path(__file__).resolve().parents[4]
 
 
@@ -91,17 +91,17 @@ def load_changes_dir(root: Path, override: str | None) -> Path:
     if override:
         return resolve_changes_dir(root, override)
 
-    context_path = root / ".claude" / "ms-context.json"
+    context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill ms-init antes de "
+            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
             "consultar el estado."
         )
     context = json.loads(context_path.read_text(encoding="utf-8"))
     framework = context.get("framework")
     if not framework:
         raise SystemExit(
-            f"{context_path} no tiene la seccion 'framework'. Ejecuta ms-init "
+            f"{context_path} no tiene la seccion 'framework'. Ejecuta pv-init "
             "para completarlo."
         )
     return resolve_changes_dir(root, framework.get("workFolder", "/"))
@@ -265,14 +265,14 @@ def main() -> None:
     parser.add_argument(
         "--work-folder",
         help="Ruta a workFolder relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/ms-context.json (default '/').",
+        "se lee de .claude/pv-context.json (default '/').",
     )
     parser.add_argument(
         "--terminal",
         action="store_true",
         help="Salida en texto plano sin markdown, ajustada a 70 columnas, para "
-        "pegar en una terminal clasica. Uso exclusivo de ms.py: la skill "
-        "ms-status (invocada desde el chat) no debe pasar este flag.",
+        "pegar en una terminal clasica. Uso exclusivo de pv.py: la skill "
+        "pv-status (invocada desde el chat) no debe pasar este flag.",
     )
     args = parser.parse_args()
 

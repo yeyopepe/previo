@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-"""Recopila el estado actual del framework ms-* a partir de {changesDir}.
+"""Recopila el estado actual del framework pv-* a partir de {changesDir}.
 
 Recorre todas las subcarpetas directas de {changesDir} (cada una es un
 "estado": normalmente 'todo', 'inProgress', 'implemented', 'closed', pero el
 script no asume una lista fija -- cuenta cualquiera que exista). Dentro de
 cada estado, cada subcarpeta es una entrada (change/fix/idea) identificada
-por su nombre (xxxx o codigo alfanumerico de ms-todo).
+por su nombre (xxxx o codigo alfanumerico de pv-todo).
 
 Para cada entrada determina:
-  - type: 'todo' si esta bajo el estado 'todo' (ms-todo no usa campo Tipo);
+  - type: 'todo' si esta bajo el estado 'todo' (pv-todo no usa campo Tipo);
     en cualquier otro estado, se parsea '**Tipo**' dentro de description.md
-    ('change', 'fix' o 'fast' -- este ultimo es el atajo trivial de ms-fix,
+    ('change', 'fix' o 'fast' -- este ultimo es el atajo trivial de pv-fix,
     que crea la entrada en 'inProgress' y la mueve a 'implemented' en la
     misma invocacion, sin generar plan.md). Si no se encuentra o no es
     description.md, 'unknown'.
   - name: para 'todo', el texto completo (sin truncar) de la seccion
-    '## Idea' de description.md (formato propio de ms-todo); en el resto de
-    estados, el campo '**Nombre**' (formato de ms-new/ms-fix). Solo
+    '## Idea' de description.md (formato propio de pv-todo); en el resto de
+    estados, el campo '**Nombre**' (formato de pv-new/pv-fix). Solo
     informativo.
   - notas: solo para el estado 'todo' -- texto completo (sin truncar) de la
     seccion '## Notas' de description.md. Null en el resto de estados o si
@@ -42,7 +42,7 @@ from pathlib import Path
 
 TIPO_RE = re.compile(r"\*\*Tipo\*\*\s*[:—-]\s*([A-Za-z]+)", re.IGNORECASE)
 NOMBRE_RE = re.compile(r"\*\*Nombre\*\*\s*[:—-]\s*(.+)")
-# ms-todo no usa el formato "- **Campo**:" de ms-new/ms-fix; usa cabeceras
+# pv-todo no usa el formato "- **Campo**:" de pv-new/pv-fix; usa cabeceras
 # markdown ("## Idea", "## Notas") sin negrita.
 # Capturan todo el bloque de cada seccion, hasta la siguiente cabecera '##' o fin de fichero.
 IDEA_FULL_RE = re.compile(
@@ -56,7 +56,7 @@ KNOWN_TYPES = {"change", "fix", "fast"}
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/ms-status/scripts/
+    # Este script vive en {repo}/.claude/skills/pv-status/scripts/
     return Path(__file__).resolve().parents[4]
 
 
@@ -70,17 +70,17 @@ def load_changes_dir(root: Path, override: str | None) -> Path:
     if override:
         return resolve_changes_dir(root, override)
 
-    context_path = root / ".claude" / "ms-context.json"
+    context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill ms-init antes de "
+            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
             "consultar el estado."
         )
     context = json.loads(context_path.read_text(encoding="utf-8"))
     framework = context.get("framework")
     if not framework:
         raise SystemExit(
-            f"{context_path} no tiene la seccion 'framework'. Ejecuta ms-init "
+            f"{context_path} no tiene la seccion 'framework'. Ejecuta pv-init "
             "para completarlo."
         )
     return resolve_changes_dir(root, framework.get("workFolder", "/"))
@@ -108,10 +108,10 @@ def parse_description(description_path: Path) -> dict:
 
 
 def parse_todo_description(description_path: Path) -> dict:
-    """Extrae el texto completo de 'Idea' y 'Notas' de un description.md de ms-todo.
+    """Extrae el texto completo de 'Idea' y 'Notas' de un description.md de pv-todo.
 
-    ms-todo usa cabeceras markdown ('## Idea', '## Notas'), no el formato
-    '**Campo**:' de ms-new/ms-fix, asi que necesita su propio parser.
+    pv-todo usa cabeceras markdown ('## Idea', '## Notas'), no el formato
+    '**Campo**:' de pv-new/pv-fix, asi que necesita su propio parser.
     """
     result: dict[str, str | None] = {"idea": None, "notas": None}
     try:
@@ -230,7 +230,7 @@ def main() -> None:
     parser.add_argument(
         "--work-folder",
         help="Ruta a workFolder relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/ms-context.json (default '/').",
+        "se lee de .claude/pv-context.json (default '/').",
     )
     args = parser.parse_args()
 

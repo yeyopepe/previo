@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Sincroniza .claude/ms-context.json#skillModels con el frontmatter de cada SKILL.md 'ms-*'.
+"""Sincroniza .claude/pv-context.json#skillModels con el frontmatter de cada SKILL.md 'pv-*'.
 
 El harness de Claude Code decide que modelo/esfuerzo usa una skill leyendo
 los campos 'model'/'effort' del frontmatter de su propio SKILL.md, en el
-momento de cargarla -- no lee .claude/ms-context.json. Por eso la seccion
-'skillModels' de ms-context.json es solo la fuente de verdad "humana": este
+momento de cargarla -- no lee .claude/pv-context.json. Por eso la seccion
+'skillModels' de pv-context.json es solo la fuente de verdad "humana": este
 script es el que de verdad propaga esos valores al frontmatter real.
 
 Reglas:
-- Recorre .claude/skills/ms-*/SKILL.md (ignora skills que no empiecen por 'ms-').
+- Recorre .claude/skills/pv-*/SKILL.md (ignora skills que no empiecen por 'pv-').
 - Para cada skill, resuelve su modelo/esfuerzo: 'overrides[<name>]' si existe,
-  si no 'default'. Si no hay seccion 'skillModels' en ms-context.json, no toca nada.
+  si no 'default'. Si no hay seccion 'skillModels' en pv-context.json, no toca nada.
 - Inserta o actualiza (en el nivel superior del frontmatter, junto a 'name'/
   'description') las claves 'model:' y 'effort:', justo antes de 'metadata:'
   (o antes del cierre '---' si esa skill no tiene bloque 'metadata:').
@@ -19,7 +19,7 @@ Reglas:
   no toca el fichero (ni su version).
 
 Uso:
-  python .claude/skills/ms-init/scripts/sync-skill-models.py [--dry-run]
+  python .claude/skills/pv-init/scripts/sync-skill-models.py [--dry-run]
 """
 
 import argparse
@@ -30,7 +30,7 @@ from pathlib import Path
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/ms-init/scripts/
+    # Este script vive en {repo}/.claude/skills/pv-init/scripts/
     return Path(__file__).resolve().parents[4]
 
 
@@ -110,15 +110,15 @@ def main() -> None:
         sys.stdout.reconfigure(encoding="utf-8")
 
     root = repo_root()
-    context_path = root / ".claude/ms-context.json"
+    context_path = root / ".claude/pv-context.json"
     if not context_path.is_file():
-        print("No existe .claude/ms-context.json -- nada que sincronizar.")
+        print("No existe .claude/pv-context.json -- nada que sincronizar.")
         return
 
     context = json.loads(context_path.read_text(encoding="utf-8"))
     skill_models = context.get("skillModels")
     if not skill_models or "default" not in skill_models:
-        print("No hay seccion 'skillModels.default' en ms-context.json -- nada que sincronizar.")
+        print("No hay seccion 'skillModels.default' en pv-context.json -- nada que sincronizar.")
         return
 
     default = skill_models["default"]
@@ -126,7 +126,7 @@ def main() -> None:
 
     skills_dir = root / ".claude/skills"
     changed = []
-    for skill_md in sorted(skills_dir.glob("ms-*/SKILL.md")):
+    for skill_md in sorted(skills_dir.glob("pv-*/SKILL.md")):
         skill_name = skill_md.parent.name
         resolved = overrides.get(skill_name, default)
         model, effort = resolved["model"], resolved["effort"]
@@ -149,7 +149,7 @@ def main() -> None:
         for line in changed:
             print(f"  - {line}")
     else:
-        print("Todo el frontmatter ya estaba sincronizado con ms-context.json.")
+        print("Todo el frontmatter ya estaba sincronizado con pv-context.json.")
 
 
 if __name__ == "__main__":

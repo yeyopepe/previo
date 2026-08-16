@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Valida .claude/ms-context.json contra los campos obligatorios de schema.json.
+"""Valida .claude/pv-context.json contra los campos obligatorios de schema.json.
 
 'framework' ya no tiene ningun campo obligatorio propio (ver schema.json):
 'workFolder' es opcional con default "/". Por tanto lo unico que determina
 si el framework esta inicializado es que la seccion 'framework' exista --
-la crea ms-init, nunca otra skill.
+la crea pv-init, nunca otra skill.
 
 No decide nada por si mismo (no crea ni completa el fichero) -- solo
-determina que campos obligatorios faltan, para que ms-init sepa si debe
+determina que campos obligatorios faltan, para que pv-init sepa si debe
 preguntar el cuestionario completo, solo lo que falta, o nada.
 
 Imprime UNICAMENTE un JSON en stdout:
@@ -28,7 +28,7 @@ ALWAYS_REQUIRED = ()
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/ms-init/scripts/
+    # Este script vive en {repo}/.claude/skills/pv-init/scripts/
     return Path(__file__).resolve().parents[4]
 
 
@@ -36,8 +36,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--context-path",
-        help="Ruta a ms-context.json relativa a la raiz del repo. Por defecto "
-        ".claude/ms-context.json.",
+        help="Ruta a pv-context.json relativa a la raiz del repo. Por defecto "
+        ".claude/pv-context.json.",
     )
     args = parser.parse_args()
 
@@ -45,7 +45,7 @@ def main() -> None:
         sys.stdout.reconfigure(encoding="utf-8")
 
     root = repo_root()
-    context_path = root / (args.context_path or ".claude/ms-context.json")
+    context_path = root / (args.context_path or ".claude/pv-context.json")
 
     if not context_path.is_file():
         result = {

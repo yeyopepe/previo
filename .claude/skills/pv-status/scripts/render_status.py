@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Renderiza el informe completo de /ms-status a partir de STATUS.template.md.
+"""Renderiza el informe completo de /pv-status a partir de STATUS.template.md.
 
 Reutiliza collect_status.collect() para reunir todos los datos (estados,
 totales por tipo, subStatus de inProgress, avisos) y aplica el mapeo
@@ -356,7 +356,7 @@ def main() -> None:
     parser.add_argument(
         "--work-folder",
         help="Ruta a workFolder relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/ms-context.json (default '/').",
+        "se lee de .claude/pv-context.json (default '/').",
     )
     parser.add_argument(
         "--show-fast",
@@ -368,8 +368,8 @@ def main() -> None:
         "--terminal",
         action="store_true",
         help="Salida en texto plano sin markdown, ajustada a 70 columnas, para "
-        "pegar en una terminal clasica. Uso exclusivo de ms.py: la skill "
-        "ms-status (invocada desde el chat) no debe pasar este flag.",
+        "pegar en una terminal clasica. Uso exclusivo de pv.py: la skill "
+        "pv-status (invocada desde el chat) no debe pasar este flag.",
     )
     args = parser.parse_args()
 

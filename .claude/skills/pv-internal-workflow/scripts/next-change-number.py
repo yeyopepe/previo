@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Calcula el siguiente numero de change/fix (xxxx) del framework ms-*.
+"""Calcula el siguiente numero de change/fix (xxxx) del framework pv-*.
 
 Busca el numero mas alto entre TODAS las subcarpetas puramente numericas
 que existan bajo cualquier subarbol de {workFolder}/changes (inProgress,
 implemented, closed, o cualquier otro que se anada en el futuro) y devuelve
 ese numero + 1, formateado con numberWidth digitos y ceros a la izquierda.
 
-Excepcion: {workFolder}/changes/todo/ (usada por la skill ms-todo, ajena al
+Excepcion: {workFolder}/changes/todo/ (usada por la skill pv-todo, ajena al
 flujo de change/fix) se ignora siempre, aunque contenga subcarpetas
 numericas.
 
-workFolder y numberWidth se leen de .claude/ms-context.json (seccion
+workFolder y numberWidth se leen de .claude/pv-context.json (seccion
 framework) salvo que se pasen explicitamente por parametro. workFolder es
 opcional (default "/", la raiz del repo); la subcarpeta "changes" dentro de
 el es siempre de nombre fijo, no configurable.
@@ -34,15 +34,15 @@ EXCLUDED_STATE_DIRS = {"todo"}
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/ms-internal-workflow/scripts/
+    # Este script vive en {repo}/.claude/skills/pv-internal-workflow/scripts/
     return Path(__file__).resolve().parents[4]
 
 
 def load_framework_defaults(root: Path) -> dict:
-    context_path = root / ".claude" / "ms-context.json"
+    context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill ms-init antes de "
+            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
             "calcular el siguiente numero."
         )
 
@@ -51,7 +51,7 @@ def load_framework_defaults(root: Path) -> dict:
     if not framework:
         raise SystemExit(
             f"{context_path} no tiene la seccion 'framework'. Ejecuta la skill "
-            "ms-init para completarla."
+            "pv-init para completarla."
         )
     return framework
 
@@ -86,13 +86,13 @@ def main() -> None:
     parser.add_argument(
         "--work-folder",
         help="Ruta a workFolder, relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/ms-context.json (default '/').",
+        "se lee de .claude/pv-context.json (default '/').",
     )
     parser.add_argument(
         "--number-width",
         type=int,
         help="Numero de digitos para el padding. Si no se indica, se lee de "
-        ".claude/ms-context.json.",
+        ".claude/pv-context.json.",
     )
     args = parser.parse_args()
 
@@ -111,7 +111,7 @@ def main() -> None:
     if not number_width:
         raise SystemExit(
             "No se ha podido determinar 'numberWidth' (ni por parametro ni desde "
-            "ms-context.json)."
+            "pv-context.json)."
         )
 
     changes_dir = resolve_changes_dir(root, work_folder_rel)

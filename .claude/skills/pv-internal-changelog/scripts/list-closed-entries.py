@@ -4,10 +4,10 @@
 Recorre las subcarpetas directas de {workFolder}/changes/closed/ y devuelve,
 por cada una, su xxxx (nombre de la carpeta) y la ruta a su description.md
 (relativa a la raiz del repo). No lee ni interpreta el contenido de esos
-description.md -- eso lo hace la skill ms-internal-changelog, que necesita
+description.md -- eso lo hace la skill pv-internal-changelog, que necesita
 juicio real para clasificar cada entrada (Nuevo/Cambios/Eliminado).
 
-workFolder se lee de .claude/ms-context.json (seccion framework) salvo que
+workFolder se lee de .claude/pv-context.json (seccion framework) salvo que
 se pase explicitamente por parametro.
 
 Imprime UNICAMENTE un JSON en stdout:
@@ -28,15 +28,15 @@ from pathlib import Path
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/ms-internal-changelog/scripts/
+    # Este script vive en {repo}/.claude/skills/pv-internal-changelog/scripts/
     return Path(__file__).resolve().parents[4]
 
 
 def load_work_folder(root: Path) -> str:
-    context_path = root / ".claude" / "ms-context.json"
+    context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill ms-init antes de "
+            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
             "listar entradas de closed."
         )
 
@@ -45,7 +45,7 @@ def load_work_folder(root: Path) -> str:
     if not framework:
         raise SystemExit(
             f"{context_path} no tiene la seccion 'framework'. Ejecuta la skill "
-            "ms-init para completarla."
+            "pv-init para completarla."
         )
     return framework.get("workFolder", "/")
 
@@ -61,7 +61,7 @@ def main() -> None:
     parser.add_argument(
         "--work-folder",
         help="Ruta a workFolder relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/ms-context.json (default '/').",
+        "se lee de .claude/pv-context.json (default '/').",
     )
     args = parser.parse_args()
 

@@ -1,19 +1,19 @@
 ---
-name: ms-internal-doc-features
-description: Procedimiento compartido, agnóstico al proyecto, para leer y mantener actualizada la documentación funcional de `docs.functional.featuresDocPathDir` cuando esa ruta es una carpeta (un fichero por funcionalidad, cada uno con un número identificador estable delante del título, más un `INDEX.md` generado). Ofrece dos acciones: `find` (localizar si una funcionalidad ya tiene entrada propia, antes de decidir si se crea una nueva o se edita la existente) y `upsert` (escribir el fichero final de una funcionalidad, ya redactado por quien invoca, asignando número nuevo solo si es una funcionalidad nueva, y regenerar el índice). Uso interno de la skill ms-do.
+name: pv-internal-doc-features
+description: Procedimiento compartido, agnóstico al proyecto, para leer y mantener actualizada la documentación funcional de `docs.functional.featuresDocPathDir` cuando esa ruta es una carpeta (un fichero por funcionalidad, cada uno con un número identificador estable delante del título, más un `INDEX.md` generado). Ofrece dos acciones: `find` (localizar si una funcionalidad ya tiene entrada propia, antes de decidir si se crea una nueva o se edita la existente) y `upsert` (escribir el fichero final de una funcionalidad, ya redactado por quien invoca, asignando número nuevo solo si es una funcionalidad nueva, y regenerar el índice). Uso interno de la skill pv-do.
 user-invocable: false
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 1.2.0
+  version: 0.9.0
   uses: []
 ---
 
-# ms-internal-doc-features
+# pv-internal-doc-features
 
-Procedimiento único y compartido para organizar `docs.functional.featuresDocPathDir` como una carpeta con un fichero por funcionalidad, en vez de un único documento monolítico — pensado para que analizar o actualizar una única funcionalidad no requiera leer el listado completo. Solo lo invoca `ms-do` (quien escribe esta documentación tras implementar un cambio/fix) — no está pensado para invocación directa por el usuario.
+Procedimiento único y compartido para organizar `docs.functional.featuresDocPathDir` como una carpeta con un fichero por funcionalidad, en vez de un único documento monolítico — pensado para que analizar o actualizar una única funcionalidad no requiera leer el listado completo. Solo lo invoca `pv-do` (quien escribe esta documentación tras implementar un cambio/fix) — no está pensado para invocación directa por el usuario.
 
-**Esta skill no decide qué dice la documentación.** No redacta descripciones funcionales ni decide si una funcionalidad existente cambia de comportamiento — eso lo hace siempre `ms-do`, que ya conoce el cambio implementado. Esta skill solo sabe **dónde** y **cómo** debe vivir esa documentación una vez redactada: nombrar el fichero, mantener el índice consistente y devolver el fichero relevante cuando hace falta comprobar si ya existe.
+**Esta skill no decide qué dice la documentación.** No redacta descripciones funcionales ni decide si una funcionalidad existente cambia de comportamiento — eso lo hace siempre `pv-do`, que ya conoce el cambio implementado. Esta skill solo sabe **dónde** y **cómo** debe vivir esa documentación una vez redactada: nombrar el fichero, mantener el índice consistente y devolver el fichero relevante cuando hace falta comprobar si ya existe.
 
 ## Convención de la carpeta
 
@@ -33,11 +33,11 @@ Dada `docs.functional.featuresDocPathDir` (p.ej. `design/docs/features/`):
 
 ## Entrada esperada de quien invoca
 
-Quien invoca debe indicar la `action` (`find` o `upsert`) y sus parámetros propios (ver más abajo). Si `docs.functional.featuresDocPathDir` no está configurado en `.claude/ms-context.json`, dilo y detente — quien invoca decide qué hacer (normalmente, omitir el paso sin preguntar nada).
+Quien invoca debe indicar la `action` (`find` o `upsert`) y sus parámetros propios (ver más abajo). Si `docs.functional.featuresDocPathDir` no está configurado en `.claude/pv-context.json`, dilo y detente — quien invoca decide qué hacer (normalmente, omitir el paso sin preguntar nada).
 
 ## Acción `find`
 
-La invoca `ms-do` antes de redactar, para saber si la funcionalidad que va a documentar ya tiene una entrada propia (y así editarla in place) o es nueva.
+La invoca `pv-do` antes de redactar, para saber si la funcionalidad que va a documentar ya tiene una entrada propia (y así editarla in place) o es nueva.
 
 Parámetros: una descripción breve de la funcionalidad a buscar (nombre aproximado, área, o de qué trata).
 
@@ -48,7 +48,7 @@ Parámetros: una descripción breve de la funcionalidad a buscar (nombre aproxim
 
 ## Acción `upsert`
 
-La invoca `ms-do` con el contenido ya completamente redactado (esta skill no reformula nada).
+La invoca `pv-do` con el contenido ya completamente redactado (esta skill no reformula nada).
 
 Parámetros:
 - `area` — nombre del área funcional (tal cual debe aparecer en `**Área**:` y agrupar en el índice).
@@ -64,10 +64,10 @@ Pasos:
 1. Si la carpeta de `featuresDocPathDir` no existe todavía, créala.
 2. **Si hay `fichero_existente`**: usa ese mismo nombre de fichero (no lo renombres aunque el título haya cambiado ligeramente, para no romper enlaces cruzados de otras funcionalidades que ya apunten a él), **conserva el número identificador** que ya tenía en su `#` original (no lo recalcules) y **conserva su `- **Desde**:`** original tal cual. Calcula `- **Última modificación**:` como la fecha de hoy.
 3. **Si no hay `fichero_existente`** (funcionalidad nueva):
-   - Calcula el número identificador con `python .claude/skills/ms-internal-doc-features/scripts/next-feature-number.py --folder {featuresDocPathDir}`.
-   - Calcula el slug del título con `python .claude/skills/ms-internal-doc-features/scripts/slugify.py "{título}"`.
+   - Calcula el número identificador con `python .claude/skills/pv-internal-doc-features/scripts/next-feature-number.py --folder {featuresDocPathDir}`.
+   - Calcula el slug del título con `python .claude/skills/pv-internal-doc-features/scripts/slugify.py "{título}"`.
    - El nombre de fichero es `{número}-{slug}.md`.
    - Tanto `- **Desde**:` como `- **Última modificación**:` son la fecha de hoy.
 4. Escribe (crea o sobrescribe por completo) `{featuresDocPathDir}/{NNN}-{slug}.md` siguiendo [`FEATURE.template.md`](FEATURE.template.md) con los parámetros recibidos, con `# {número} — {título}` como primera línea. Si `diagramas` viene vacío u omitido, no dejes la sección de diagramas del template en el fichero final — omítela por completo.
-5. Ejecuta `python .claude/skills/ms-internal-doc-features/scripts/rebuild-index.py --folder {featuresDocPathDir}` para regenerar `INDEX.md` de forma determinista a partir de todos los ficheros de la carpeta — no edites `INDEX.md` a mano.
+5. Ejecuta `python .claude/skills/pv-internal-doc-features/scripts/rebuild-index.py --folder {featuresDocPathDir}` para regenerar `INDEX.md` de forma determinista a partir de todos los ficheros de la carpeta — no edites `INDEX.md` a mano.
 6. Devuelve a quien invoca la ruta del fichero escrito.

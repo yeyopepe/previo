@@ -1,21 +1,21 @@
 ---
-name: ms-internal-mockups-ascii
-description: Procedimiento compartido, agnóstico al proyecto, para crear o editar maquetas visuales estáticas en texto plano con caracteres ASCII (`design_*.txt`) de un change/fix. Recibe la carpeta destino y la lista de elementos visuales a maquetar (nuevos o a editar) y devuelve las rutas de los ficheros creados/editados, sin decidir por sí misma qué elementos hacen falta ni validar nada con el usuario. Uso interno de las skills ms-new y ms-fix (directamente o desde extend-entry.md), invocada por el nombre configurado en `framework.skills.mockups` de `.claude/ms-context.json` cuando el proyecto prefiere maquetas ASCII en vez de HTML.
+name: pv-internal-mockups-ascii
+description: Procedimiento compartido, agnóstico al proyecto, para crear o editar maquetas visuales estáticas en texto plano con caracteres ASCII (`design_*.txt`) de un change/fix. Recibe la carpeta destino y la lista de elementos visuales a maquetar (nuevos o a editar) y devuelve las rutas de los ficheros creados/editados, sin decidir por sí misma qué elementos hacen falta ni validar nada con el usuario. Uso interno de las skills pv-new y pv-fix (directamente o desde extend-entry.md), invocada por el nombre configurado en `framework.skills.mockups` de `.claude/pv-context.json` cuando el proyecto prefiere maquetas ASCII en vez de HTML.
 user-invocable: false
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 1.0.0
+  version: 0.9.0
   uses: []
 ---
 
-# ms-internal-mockups-ascii
+# pv-internal-mockups-ascii
 
-Procedimiento único y compartido para generar la maqueta visual (`design_*.txt`) de un elemento de UI nuevo o modificado, como arte ASCII en texto plano. Solo lo invocan otras skills del framework `ms-*` — no está pensado para invocación directa por el usuario.
+Procedimiento único y compartido para generar la maqueta visual (`design_*.txt`) de un elemento de UI nuevo o modificado, como arte ASCII en texto plano. Solo lo invocan otras skills del framework `pv-*` — no está pensado para invocación directa por el usuario.
 
-**Esta skill no decide qué elementos necesitan maqueta ni valida nada con el usuario.** Eso lo decide siempre quien invoca (típicamente `ms-new`/`ms-fix`, al detectar que el cambio tiene componente visual): esta skill solo se invoca cuando ya se sabe que hace falta generar o editar al menos una maqueta ASCII, nunca "por si acaso". Presentar el resultado al usuario para que lo confirme también es responsabilidad de quien invoca.
+**Esta skill no decide qué elementos necesitan maqueta ni valida nada con el usuario.** Eso lo decide siempre quien invoca (típicamente `pv-new`/`pv-fix`, al detectar que el cambio tiene componente visual): esta skill solo se invoca cuando ya se sabe que hace falta generar o editar al menos una maqueta ASCII, nunca "por si acaso". Presentar el resultado al usuario para que lo confirme también es responsabilidad de quien invoca.
 
-Esta skill es específicamente para maquetas en **texto ASCII**. Si un proyecto configura otra skill en `framework.skills.mockups` para usar otra tecnología (p.ej. HTML, Figma, una librería de componentes, imágenes), esa skill alternativa debe cumplir el mismo contrato de entrada/salida descrito aquí para poder sustituir a esta sin que `ms-new`/`ms-fix` necesiten cambiar nada.
+Esta skill es específicamente para maquetas en **texto ASCII**. Si un proyecto configura otra skill en `framework.skills.mockups` para usar otra tecnología (p.ej. HTML, Figma, una librería de componentes, imágenes), esa skill alternativa debe cumplir el mismo contrato de entrada/salida descrito aquí para poder sustituir a esta sin que `pv-new`/`pv-fix` necesiten cambiar nada.
 
 ## Entrada esperada de quien invoca
 

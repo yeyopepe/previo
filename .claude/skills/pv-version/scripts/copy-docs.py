@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Comprime y copia la documentacion vigente a una entrega (skill ms-version).
+"""Comprime y copia la documentacion vigente a una entrega (skill pv-version).
 
 Comprime en un .zip cada una de las rutas configuradas en
 framework.docs.tech.architectureDocDir, framework.docs.tech.styleBibleDocDir
-y framework.docs.functional.featuresDocPathDir de .claude/ms-context.json, y
+y framework.docs.functional.featuresDocPathDir de .claude/pv-context.json, y
 guarda cada .zip en {workFolder}/versions/{xxxx}/docs/. Cada ruta puede ser
 una carpeta (se comprime entera, incluido su INDEX.md si lo tiene) o un
 unico fichero .md (caso valido de featuresDocPathDir en proyectos que no
@@ -29,15 +29,15 @@ from pathlib import Path
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/ms-version/scripts/
+    # Este script vive en {repo}/.claude/skills/pv-version/scripts/
     return Path(__file__).resolve().parents[4]
 
 
 def load_framework(root: Path) -> dict:
-    context_path = root / ".claude" / "ms-context.json"
+    context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill ms-init antes de "
+            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
             "copiar documentacion."
         )
 
@@ -46,7 +46,7 @@ def load_framework(root: Path) -> dict:
     if not framework:
         raise SystemExit(
             f"{context_path} no tiene la seccion 'framework'. Ejecuta la skill "
-            "ms-init para completarla."
+            "pv-init para completarla."
         )
     return framework
 
@@ -75,7 +75,7 @@ def main() -> None:
     parser.add_argument(
         "--work-folder",
         help="Ruta a workFolder relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/ms-context.json (default '/').",
+        "se lee de .claude/pv-context.json (default '/').",
     )
     args = parser.parse_args()
 

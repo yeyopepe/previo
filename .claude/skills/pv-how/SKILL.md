@@ -1,30 +1,30 @@
 ---
-name: ms-how
-description: Analiza y planifica la solución técnica de un change/fix ya documentado en {changesDir}/inProgress — genera un plan.md con la solución técnica (o lo re-analiza si ya existe), y si el usuario confirma, encadena la skill ms-do para implementarlo. Parte del framework ms-*. Trigger: /ms-how <xxxx>, o cuando el usuario pide planificar/analizar la solución técnica de un cambio o fix ya documentado por ms-new/ms-fix.
+name: pv-how
+description: Analiza y planifica la solución técnica de un change/fix ya documentado en {changesDir}/inProgress — genera un plan.md con la solución técnica (o lo re-analiza si ya existe), y si el usuario confirma, encadena la skill pv-do para implementarlo. Parte del framework pv-*. Trigger: /pv-how <xxxx>, o cuando el usuario pide planificar/analizar la solución técnica de un cambio o fix ya documentado por pv-new/pv-fix.
 argument-hint: <xxxx o descripción del cambio/fix a planificar>
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 1.6.0
-  uses: [ms-internal-tech-analysis, ms-internal-tech-mermaid, ms-internal-mockups-html, ms-do]
+  version: 0.9.0
+  uses: [pv-internal-tech-analysis, pv-internal-tech-mermaid, pv-internal-mockups-html, pv-do]
 ---
 
-# ms-how
+# pv-how
 
-Toma una entrada ya documentada por `ms-new`/`ms-fix` en `{changesDir}/inProgress/{xxxx}/` y analiza su solución técnica, dejándola escrita en `plan.md`. Si el usuario confirma que quiere implementarla ya, encadena directamente la skill `ms-do`, que es quien edita el código y mueve la carpeta a `{changesDir}/implemented/{xxxx}/`.
+Toma una entrada ya documentada por `pv-new`/`pv-fix` en `{changesDir}/inProgress/{xxxx}/` y analiza su solución técnica, dejándola escrita en `plan.md`. Si el usuario confirma que quiere implementarla ya, encadena directamente la skill `pv-do`, que es quien edita el código y mueve la carpeta a `{changesDir}/implemented/{xxxx}/`.
 
-**Fuente de la verdad.** La documentación técnica (`docs.tech.*`) y el código real son la única fuente de verdad sobre cómo funciona hoy el proyecto — no lo que `description.md` asuma implícitamente sobre la implementación, ni memoria de conversaciones anteriores. Reúne ese contexto siempre invocando la skill `ms-internal-tech-analysis` (nunca leyendo tú mismo `framework.docs.tech` a pelo o explorando código a ciegas) al analizar la causa raíz y diseñar la solución (paso 3), incluso si ya tienes una idea de cómo funciona algo por contexto previo. Tampoco cuenta como fuente de verdad el `description.md` o `plan.md` de **otros** cambios/fixes bajo `{changesDir}/**` (en `inProgress`, `implemented` o `closed`): son intención o análisis de otra entrada, no el estado real del proyecto — el único documento de otra entrada que sí es relevante aquí es el que consulta explícitamente el paso 0.1 (los `xxxx` máximos, para la verificación de orden). Si la entrada `{xxxx}` tiene un `history.md`, ignóralo por completo: es historial de prompts de uso exclusivo de `ms-new`/`ms-fix` (puede ser incompleto o contradictorio a propósito), nunca una fuente a tener en cuenta aquí — lo vigente es siempre `description.md`.
+**Fuente de la verdad.** La documentación técnica (`docs.tech.*`) y el código real son la única fuente de verdad sobre cómo funciona hoy el proyecto — no lo que `description.md` asuma implícitamente sobre la implementación, ni memoria de conversaciones anteriores. Reúne ese contexto siempre invocando la skill `pv-internal-tech-analysis` (nunca leyendo tú mismo `framework.docs.tech` a pelo o explorando código a ciegas) al analizar la causa raíz y diseñar la solución (paso 3), incluso si ya tienes una idea de cómo funciona algo por contexto previo. Tampoco cuenta como fuente de verdad el `description.md` o `plan.md` de **otros** cambios/fixes bajo `{changesDir}/**` (en `inProgress`, `implemented` o `closed`): son intención o análisis de otra entrada, no el estado real del proyecto — el único documento de otra entrada que sí es relevante aquí es el que consulta explícitamente el paso 0.1 (los `xxxx` máximos, para la verificación de orden). Si la entrada `{xxxx}` tiene un `history.md`, ignóralo por completo: es historial de prompts de uso exclusivo de `pv-new`/`pv-fix` (puede ser incompleto o contradictorio a propósito), nunca una fuente a tener en cuenta aquí — lo vigente es siempre `description.md`.
 
 ## Formato de la documentación: diagramas antes que prosa
 
-Al escribir o actualizar `plan.md`, si lo que hay que describir es un flujo, un proceso con pasos/decisiones, una secuencia de interacciones o una relación entre estados o componentes, invoca (herramienta Skill) la skill de diagramas configurada en `framework.skills.diagrams` de `.claude/ms-context.json` (si no está configurado, `ms-internal-tech-mermaid`), pidiéndole un diagrama de tipo `flujo-técnico` (proceso interno con pasos/decisiones) o `secuencia-técnica` (comunicación entre componentes/actores) según lo que toque representar — pide los dos por separado si el caso tiene ambas dimensiones. Incluye el/los diagrama(s) que te devuelva, acompañados de las notas imprescindibles, en lugar de un párrafo largo explicando lo mismo en prosa. Reserva la prosa para lo que el diagrama no pueda expresar (matices, motivos, excepciones puntuales) o para contenido sin estructura de flujo/relación clara que representar. No redactes tú mismo el código Mermaid.
+Al escribir o actualizar `plan.md`, si lo que hay que describir es un flujo, un proceso con pasos/decisiones, una secuencia de interacciones o una relación entre estados o componentes, invoca (herramienta Skill) la skill de diagramas configurada en `framework.skills.diagrams` de `.claude/pv-context.json` (si no está configurado, `pv-internal-tech-mermaid`), pidiéndole un diagrama de tipo `flujo-técnico` (proceso interno con pasos/decisiones) o `secuencia-técnica` (comunicación entre componentes/actores) según lo que toque representar — pide los dos por separado si el caso tiene ambas dimensiones. Incluye el/los diagrama(s) que te devuelva, acompañados de las notas imprescindibles, en lugar de un párrafo largo explicando lo mismo en prosa. Reserva la prosa para lo que el diagrama no pueda expresar (matices, motivos, excepciones puntuales) o para contenido sin estructura de flujo/relación clara que representar. No redactes tú mismo el código Mermaid.
 
 ## 0. Cargar el contexto del proyecto
 
-Lee `.claude/ms-context.json` en la raíz del repo. Si no existe, o le falta la sección `framework`, no continúes: dile al usuario que primero debe ejecutar la skill `ms-init` para inicializar/completar el framework en este proyecto, y detente ahí. El esquema completo está en [`../ms-init/schema.json`](../ms-init/schema.json) (léelo primero si no lo has hecho ya en esta sesión).
+Lee `.claude/pv-context.json` en la raíz del repo. Si no existe, o le falta la sección `framework`, no continúes: dile al usuario que primero debe ejecutar la skill `pv-init` para inicializar/completar el framework en este proyecto, y detente ahí. El esquema completo está en [`../pv-init/schema.json`](../pv-init/schema.json) (léelo primero si no lo has hecho ya en esta sesión).
 
 ```
-Este proyecto todavía no tiene el framework `ms-*` inicializado (o le falta configuración). Ejecuta primero `/ms-init` antes de volver a invocarme.
+Este proyecto todavía no tiene el framework `pv-*` inicializado (o le falta configuración). Ejecuta primero `/pv-init` antes de volver a invocarme.
 ```
 
 `docs.tech.architectureDocDir`, `docs.functional.featuresDocPathDir`, `docs.tech.styleBibleDocDir` y `sourcecodeDir` son opcionales y se usan como contexto en el paso 3; si no están configurados, sigue adelante sin ellos (usa el repo en general como contexto de respaldo).
@@ -36,7 +36,7 @@ Antes de identificar el cambio/fix, comprueba **siempre** que no se haya colado 
 1. Ejecuta [`scripts/get-max-change-codes.py`](scripts/get-max-change-codes.py) desde la raíz del repo:
 
    ```
-   python .claude/skills/ms-how/scripts/get-max-change-codes.py
+   python .claude/skills/pv-how/scripts/get-max-change-codes.py
    ```
 
    Devuelve un JSON con el `xxxx` más alto existente en cada uno de `inProgress`, `implemented` y `closed` (o `null` si ese estado no tiene ninguna carpeta numerada todavía).
@@ -49,7 +49,7 @@ Antes de identificar el cambio/fix, comprueba **siempre** que no se haya colado 
 
 Si el usuario, al invocar esta skill, indica un `xxxx`, un nombre de carpeta o una descripción del cambio/fix, resuélvelo buscando **únicamente** dentro de `{changesDir}/inProgress/`.
 
-**Si no indica nada** (p.ej. invoca `/ms-how` sin argumentos): no asumas que se refiere al último cambio/fix mencionado en la conversación ni a ningún otro dato del contexto de chat — la única fuente de verdad es `{changesDir}/inProgress/`. Lista las carpetas que haya ahí (su `xxxx` y, si lo tiene, el nombre/resumen de su `description.md`) y pregunta explícitamente al usuario cuál quiere planificar. Si no hay ninguna, dile que no hay ningún cambio/fix pendiente y detente ahí.
+**Si no indica nada** (p.ej. invoca `/pv-how` sin argumentos): no asumas que se refiere al último cambio/fix mencionado en la conversación ni a ningún otro dato del contexto de chat — la única fuente de verdad es `{changesDir}/inProgress/`. Lista las carpetas que haya ahí (su `xxxx` y, si lo tiene, el nombre/resumen de su `description.md`) y pregunta explícitamente al usuario cuál quiere planificar. Si no hay ninguna, dile que no hay ningún cambio/fix pendiente y detente ahí.
 
 ```
 Estos son los cambios/fixes pendientes en `{changesDir}/inProgress/`:
@@ -81,7 +81,7 @@ Antes de reunir contexto técnico o escribir `plan.md`, lee `description.md` (y,
   ¿Cómo lo resolvemos?
   ```
 
-  Con la respuesta del usuario, actualiza tú mismo el/los documento(s) de definición afectados (`description.md` y/o los `design_*`) para que queden coherentes antes de continuar. Si la corrección requiere generar o editar una maqueta visual, invoca (herramienta Skill) la skill configurada en `framework.skills.mockups` de `.claude/ms-context.json` (si no está configurado, `ms-internal-mockups-html`) en vez de editar tú mismo el HTML/ASCII de la maqueta. Repite esta validación sobre los documentos ya corregidos antes de dar el paso por bueno.
+  Con la respuesta del usuario, actualiza tú mismo el/los documento(s) de definición afectados (`description.md` y/o los `design_*`) para que queden coherentes antes de continuar. Si la corrección requiere generar o editar una maqueta visual, invoca (herramienta Skill) la skill configurada en `framework.skills.mockups` de `.claude/pv-context.json` (si no está configurado, `pv-internal-mockups-html`) en vez de editar tú mismo el HTML/ASCII de la maqueta. Repite esta validación sobre los documentos ya corregidos antes de dar el paso por bueno.
 
 ## 2. Comprobar si ya existe `plan.md`
 
@@ -90,12 +90,12 @@ Antes de reunir contexto técnico o escribir `plan.md`, lee `description.md` (y,
 
 ## 3. Analizar y escribir `plan.md`
 
-1. Lee el documento funcional de la entrada (`{changesDir}/inProgress/{xxxx}/description.md`, generado por `ms-internal-workflow`) para entender qué se pide. El campo **Tipo** de ese documento indica si es un `fix` o un `change`.
+1. Lee el documento funcional de la entrada (`{changesDir}/inProgress/{xxxx}/description.md`, generado por `pv-internal-workflow`) para entender qué se pide. El campo **Tipo** de ese documento indica si es un `fix` o un `change`.
    - **Si es un `fix`**: el análisis y la solución deben limitarse estrictamente a corregir el bug documentado — identifica la causa raíz mínima y el cambio más pequeño que la corrige. No amplíes alcance, no refactorices ni toques código no relacionado con la causa raíz, aunque lo veas mejorable de paso. Si al analizar detectas que hace falta o convendría algo más amplio, anótalo como fuera de alcance en la sección (a) del plan en vez de incluirlo en la solución.
    - **Si es un `change`**: no aplica esta restricción; la solución puede tener el alcance que el cambio requiera.
-2. Si hay ficheros `{changesDir}/inProgress/{xxxx}/design_*.html` (propuesta visual generada por `ms-new`), ábrelos, pero trátalos **solo como referencia visual** — de ellos toma únicamente el aspecto que ilustran (maquetación, estilos, iconografía) para los elementos que cubren. La solución técnica **no debe basarse en ellos** en ningún otro sentido: no reutilices ni traduzcas literalmente su HTML/CSS/SVG, sus clases o su estructura de marcado, ni los tomes como referencia de arquitectura, componentes a crear/reutilizar o cualquier otra decisión de implementación — todo eso lo decides tú a partir del código real del proyecto (paso 4 de este apartado), igual que si esos ficheros no existieran.
+2. Si hay ficheros `{changesDir}/inProgress/{xxxx}/design_*.html` (propuesta visual generada por `pv-new`), ábrelos, pero trátalos **solo como referencia visual** — de ellos toma únicamente el aspecto que ilustran (maquetación, estilos, iconografía) para los elementos que cubren. La solución técnica **no debe basarse en ellos** en ningún otro sentido: no reutilices ni traduzcas literalmente su HTML/CSS/SVG, sus clases o su estructura de marcado, ni los tomes como referencia de arquitectura, componentes a crear/reutilizar o cualquier otra decisión de implementación — todo eso lo decides tú a partir del código real del proyecto (paso 4 de este apartado), igual que si esos ficheros no existieran.
 3. Si hay dudas técnicas sobre cómo abordarlo, resuélvelas con el usuario antes de escribir el plan.
-4. Reúne contexto adicional invocando la skill `ms-internal-tech-analysis` (herramienta Skill), pasándole un resumen de la causa raíz o del cambio a diseñar: ella lee primero la documentación técnica configurada en `framework.docs.tech` y solo explora código (`sourcecodeDir`) si hace falta completar información, devolviéndote el contexto reunido y cualquier incongruencia detectada entre documentación y código (recuerda: en ese caso el código manda). Si reporta alguna incongruencia, tenla en cuenta al diseñar la solución y al escribir las secciones (c)/(d) del plan (paso 5) para que quede reflejada en la actualización de documentación que hará `ms-do` tras implementar.
+4. Reúne contexto adicional invocando la skill `pv-internal-tech-analysis` (herramienta Skill), pasándole un resumen de la causa raíz o del cambio a diseñar: ella lee primero la documentación técnica configurada en `framework.docs.tech` y solo explora código (`sourcecodeDir`) si hace falta completar información, devolviéndote el contexto reunido y cualquier incongruencia detectada entre documentación y código (recuerda: en ese caso el código manda). Si reporta alguna incongruencia, tenla en cuenta al diseñar la solución y al escribir las secciones (c)/(d) del plan (paso 5) para que quede reflejada en la actualización de documentación que hará `pv-do` tras implementar.
 5. Escribe `{changesDir}/inProgress/{xxxx}/plan.md` siguiendo la plantilla [`PLAN.template.md`](PLAN.template.md) de esta skill, empezando con el campo **Fecha creación** (formato `YYYY-MM-DD`, la fecha actual en el momento de crear este `plan.md` — si ya existe porque se está regenerando, actualízala a la fecha de esta regeneración), seguido de estas secciones:
    - **(a) Anotaciones funcionales** — qué queda explícitamente fuera de alcance, y las dudas que se han resuelto con el usuario (pregunta y respuesta, en breve).
    - **(b) Solución técnica** — checklist (`- [ ]`) de tareas concretas y explicadas (qué hay que tocar, dónde, y por qué), en el orden en que se deberían implementar, todas sin marcar al escribir el plan. No mezcles aquí pasos de comprobación manual — esos van en (e).
@@ -111,7 +111,7 @@ Con el `plan.md` ya escrito, pregunta al usuario si quiere implementarlo ahora.
 El plan queda escrito en `{changesDir}/inProgress/{xxxx}/plan.md`. ¿Quieres que lo implemente ahora?
 ```
 
-- Si dice que sí, invoca directamente la skill `ms-do` (herramienta Skill) sobre ese mismo `xxxx` — no le pidas al usuario que la invoque por separado: continúa tú mismo encadenando ese flujo (implementación → actualización de documentación → mover a `implemented`), tal como lo define `ms-do`.
-- Si dice que no, termina aquí: el cambio/fix queda documentado y planificado en `{changesDir}/inProgress/{xxxx}/`, pendiente de implementar más adelante (se puede retomar invocando `ms-do` directamente sobre ese `xxxx`, o volviendo a invocar esta misma skill si antes conviene revisar el plan).
+- Si dice que sí, invoca directamente la skill `pv-do` (herramienta Skill) sobre ese mismo `xxxx` — no le pidas al usuario que la invoque por separado: continúa tú mismo encadenando ese flujo (implementación → actualización de documentación → mover a `implemented`), tal como lo define `pv-do`.
+- Si dice que no, termina aquí: el cambio/fix queda documentado y planificado en `{changesDir}/inProgress/{xxxx}/`, pendiente de implementar más adelante (se puede retomar invocando `pv-do` directamente sobre ese `xxxx`, o volviendo a invocar esta misma skill si antes conviene revisar el plan).
 
-No implementes nada tú mismo ni toques código directamente — eso lo hace siempre `ms-do`, para mantener un único sitio con esa lógica.
+No implementes nada tú mismo ni toques código directamente — eso lo hace siempre `pv-do`, para mantener un único sitio con esa lógica.

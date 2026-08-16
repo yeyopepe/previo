@@ -1,6 +1,6 @@
-# Cómo funciona `/ms-version`
+# Cómo funciona `/pv-version`
 
-Diagrama general del proceso de preparar una entrega, sin detalle de scripts ni nombres de parámetros — pensado para mostrarse tal cual si el usuario pregunta "¿cómo funciona `/ms-version`?" durante la invocación, o como referencia en la documentación del proyecto.
+Diagrama general del proceso de preparar una entrega, sin detalle de scripts ni nombres de parámetros — pensado para mostrarse tal cual si el usuario pregunta "¿cómo funciona `/pv-version`?" durante la invocación, o como referencia en la documentación del proyecto.
 
 ```mermaid
 flowchart LR
@@ -9,7 +9,7 @@ flowchart LR
     Folder["Crear versions/XXXX\n(files/, docs/)"]
     Compile["Generar el entregable\n(how-to-compile-version.md)"]
     Docs["Comprimir y copiar documentación\ntécnica y funcional vigente a docs/"]
-    Changelog["ms-internal-changelog\nredacta changelog.md desde closed/"]
+    Changelog["pv-internal-changelog\nredacta changelog.md desde closed/"]
     Confirm["Confirmar entrega\nal usuario"]
 
     Guard -- No --> Resolve --> Guard
@@ -25,4 +25,4 @@ flowchart LR
     class Confirm done
 ```
 
-Leyenda: rojo = guardarraíl de `implemented/` (bloquea hasta resolverse); azul = pasos mecánicos de `ms-version`; morado = delegado en `ms-internal-changelog`; verde = fin del proceso.
+Leyenda: rojo = guardarraíl de `implemented/` (bloquea hasta resolverse); azul = pasos mecánicos de `pv-version`; morado = delegado en `pv-internal-changelog`; verde = fin del proceso.

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Helpers de formato para el modo --terminal de los scripts de ms-status.
+"""Helpers de formato para el modo --terminal de los scripts de pv-status.
 
 Salida en texto plano sin markdown, ajustada a un ancho fijo de 70
 columnas para pegarse tal cual en una terminal clasica. Lo usa
-directamente ms.py (el menu de terminal del framework ms-*) al invocar
+directamente pv.py (el menu de terminal del framework pv-*) al invocar
 render_status.py / filter_status.py / list_todo.py con --terminal; la
-propia skill ms-status (uso desde el chat) nunca debe pasar ese flag,
+propia skill pv-status (uso desde el chat) nunca debe pasar ese flag,
 su salida de referencia sigue siendo el markdown por defecto.
 """
 
@@ -16,7 +16,7 @@ import unicodedata
 
 WIDTH = 70
 
-# Mismo dorado que el nucleo del anillo de ms.py (RING_CHAR_COLORS['#']),
+# Mismo dorado que el nucleo del anillo de pv.py (RING_CHAR_COLORS['#']),
 # reutilizado aqui para los titulos de seccion.
 TITLE_COLOR = "\033[38;5;220m"
 COLOR_RESET = "\033[0m"

@@ -1,21 +1,21 @@
 ---
-name: ms-internal-tech-mermaid
-description: Procedimiento compartido, agnóstico al proyecto, para generar diagramas Mermaid (funcionales o técnicos — flujo, secuencia) que representan un caso de uso, historia de usuario, flujo de trabajo o comunicación entre componentes. Recibe la lista de diagramas a generar (tipo, qué debe representar cada uno) y devuelve el código Mermaid de cada uno, sin decidir por sí misma qué diagramas hacen falta ni dónde se insertan. Uso interno de las skills ms-internal-workflow, ms-new, ms-fix y ms-how, invocada por el nombre configurado en `framework.skills.diagrams` de `.claude/ms-context.json` (por defecto, esta misma skill).
+name: pv-internal-tech-mermaid
+description: Procedimiento compartido, agnóstico al proyecto, para generar diagramas Mermaid (funcionales o técnicos — flujo, secuencia) que representan un caso de uso, historia de usuario, flujo de trabajo o comunicación entre componentes. Recibe la lista de diagramas a generar (tipo, qué debe representar cada uno) y devuelve el código Mermaid de cada uno, sin decidir por sí misma qué diagramas hacen falta ni dónde se insertan. Uso interno de las skills pv-internal-workflow, pv-new, pv-fix y pv-how, invocada por el nombre configurado en `framework.skills.diagrams` de `.claude/pv-context.json` (por defecto, esta misma skill).
 user-invocable: false
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 1.0.0
+  version: 0.9.0
   uses: []
 ---
 
-# ms-internal-tech-mermaid
+# pv-internal-tech-mermaid
 
-Procedimiento único y compartido para generar diagramas Mermaid que representan el comportamiento de un cambio/fix — nunca su aspecto visual (eso es `design_*.html`, otra skill) ni la navegación entre pantallas de UI (eso son los `design_navigation_*.md`, que escribe directamente `ms-new`). Solo lo invocan otras skills del framework `ms-*` — no está pensado para invocación directa por el usuario.
+Procedimiento único y compartido para generar diagramas Mermaid que representan el comportamiento de un cambio/fix — nunca su aspecto visual (eso es `design_*.html`, otra skill) ni la navegación entre pantallas de UI (eso son los `design_navigation_*.md`, que escribe directamente `pv-new`). Solo lo invocan otras skills del framework `pv-*` — no está pensado para invocación directa por el usuario.
 
 **Esta skill no decide qué diagramas hacen falta, ni si un diagrama es la herramienta adecuada frente a prosa, ni dónde se inserta el resultado.** Eso lo decide siempre quien invoca: esta skill solo se invoca cuando ya se sabe que hace falta generar al menos un diagrama Mermaid, nunca "por si acaso". Presentar el resultado al usuario para que lo confirme también es responsabilidad de quien invoca.
 
-Si un proyecto configura otra skill en `framework.skills.diagrams` para generar los diagramas de otra forma (otra notación, una herramienta externa), esa skill alternativa debe cumplir el mismo contrato de entrada/salida descrito aquí para poder sustituir a esta sin que `ms-internal-workflow`/`ms-new`/`ms-fix`/`ms-how` necesiten cambiar nada.
+Si un proyecto configura otra skill en `framework.skills.diagrams` para generar los diagramas de otra forma (otra notación, una herramienta externa), esa skill alternativa debe cumplir el mismo contrato de entrada/salida descrito aquí para poder sustituir a esta sin que `pv-internal-workflow`/`pv-new`/`pv-fix`/`pv-how` necesiten cambiar nada.
 
 ## Entrada esperada de quien invoca
 
@@ -44,7 +44,7 @@ Estas reglas gobiernan **qué** representar y **cómo dividir** los diagramas, i
 
 ## Reglas específicas de Mermaid
 
-Estas son las reglas de sintaxis/notación Mermaid en sí, separadas de las reglas generales de arriba para que un proyecto pueda sustituir esta skill por otra notación sin perder las reglas generales (que viven en `ms-internal-workflow`/`ms-new`/`ms-fix`/`ms-how`, no aquí).
+Estas son las reglas de sintaxis/notación Mermaid en sí, separadas de las reglas generales de arriba para que un proyecto pueda sustituir esta skill por otra notación sin perder las reglas generales (que viven en `pv-internal-workflow`/`pv-new`/`pv-fix`/`pv-how`, no aquí).
 
 ### Elegir el tipo de diagrama Mermaid
 

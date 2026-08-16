@@ -1,6 +1,6 @@
 # Cómo compilar el entregable de este proyecto
 
-Fichero propio de `ms-version` (no forma parte de `.claude/ms-context.json`): describe el procedimiento de shell/build concreto de este repo para generar el entregable jugable. Lo rellena `ms-version` la primera vez que se invoca y no existe todavía, preguntando al usuario; en invocaciones siguientes se lee y se sigue tal cual, sin volver a preguntar. También se actualiza cada vez que el usuario informa de un cambio en este procedimiento.
+Fichero propio de `pv-version` (no forma parte de `.claude/pv-context.json`): describe el procedimiento de shell/build concreto de este repo para generar el entregable jugable. Lo rellena `pv-version` la primera vez que se invoca y no existe todavía, preguntando al usuario; en invocaciones siguientes se lee y se sigue tal cual, sin volver a preguntar. También se actualiza cada vez que el usuario informa de un cambio en este procedimiento.
 
 Si el entregable se genera con un único comando, describe directamente "Comando(s) a ejecutar" y "Fichero(s) generado(s)" como en el ejemplo de abajo. Si el proceso consta de **varios pasos independientes que generan artefactos distintos** (todos ellos parte del mismo entregable completo, p.ej. build del juego + build de un PDF de reglas), documenta cada uno como un "Paso N: {nombre}" separado, cada uno con su propio "Comando(s) a ejecutar" y "Fichero(s) generado(s)" — en ese caso, todos los artefactos resultantes se copian a `files/`, uno por paso.
 

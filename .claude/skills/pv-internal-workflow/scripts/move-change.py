@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Mueve la carpeta de un change/fix entre subestados del framework ms-*.
+"""Mueve la carpeta de un change/fix entre subestados del framework pv-*.
 
 Mueve {workFolder}/changes/{from}/{xxxx}/ (con todo su contenido) a
 {workFolder}/changes/{to}/{xxxx}/, creando {workFolder}/changes/{to}/ si no
 existe.
 
-workFolder se lee de .claude/ms-context.json (seccion framework) salvo que
+workFolder se lee de .claude/pv-context.json (seccion framework) salvo que
 se pase explicitamente por parametro. Es opcional (default "/", la raiz del
 repo); la subcarpeta "changes" dentro de el es siempre de nombre fijo, no
 configurable.
@@ -29,15 +29,15 @@ from pathlib import Path
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/ms-internal-workflow/scripts/
+    # Este script vive en {repo}/.claude/skills/pv-internal-workflow/scripts/
     return Path(__file__).resolve().parents[4]
 
 
 def load_work_folder(root: Path) -> str:
-    context_path = root / ".claude" / "ms-context.json"
+    context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill ms-init antes de "
+            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
             "mover un change/fix."
         )
 
@@ -46,7 +46,7 @@ def load_work_folder(root: Path) -> str:
     if not framework:
         raise SystemExit(
             f"{context_path} no tiene la seccion 'framework'. Ejecuta la skill "
-            "ms-init para completarla."
+            "pv-init para completarla."
         )
     return framework.get("workFolder", "/")
 
@@ -75,7 +75,7 @@ def main() -> None:
     parser.add_argument(
         "--work-folder",
         help="Ruta a workFolder, relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/ms-context.json (default '/').",
+        "se lee de .claude/pv-context.json (default '/').",
     )
     args = parser.parse_args()
 
