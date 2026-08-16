@@ -8,14 +8,11 @@ REPO="yeyopepe/previo"
 REQUESTED_TAG="$1"
 
 if [ -n "$REQUESTED_TAG" ]; then
-  HTTP_STATUS=$(curl -fsSL -o /tmp/previo-release-$$.json -w '%{http_code}' "https://api.github.com/repos/${REPO}/releases/tags/${REQUESTED_TAG}" || true)
-  if [ "$HTTP_STATUS" != "200" ]; then
-    rm -f /tmp/previo-release-$$.json
+  RELEASE_JSON=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/tags/${REQUESTED_TAG}") || {
     echo "La versión '${REQUESTED_TAG}' no existe en los releases de Previo." >&2
     exit 1
-  fi
-  TAG=$(grep -m1 '"tag_name"' /tmp/previo-release-$$.json | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
-  rm -f /tmp/previo-release-$$.json
+  }
+  TAG=$(echo "$RELEASE_JSON" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
 else
   TAG=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
 fi
