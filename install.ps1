@@ -1,8 +1,6 @@
 # Instala o actualiza Previo en el proyecto actual.
 # Uso: irm https://raw.githubusercontent.com/yeyopepe/previo/main/install.ps1 | iex
-# Uso (versión concreta), una de estas dos formas:
-#   $env:PREVIO_VERSION = "v1.2.3"; irm .../install.ps1 | iex
-#   &([scriptblock]::Create((irm .../install.ps1))) -Version v1.2.3
+# Uso (versión concreta): $env:PREVIO_VERSION = "v1.2.3"; irm .../install.ps1 | iex
 param(
     [string]$Version = $env:PREVIO_VERSION
 )
