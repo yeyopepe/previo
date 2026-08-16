@@ -5,7 +5,7 @@ argument-hint: <descripción del bug o cambio a aplicar>
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.1
+  version: 0.9.2
   uses: [pv-internal-workflow, pv-internal-tech-analysis, pv-internal-mockups-html, pv-internal-tech-mermaid, pv-new, pv-how]
 ---
 

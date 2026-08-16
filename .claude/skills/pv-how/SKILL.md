@@ -5,7 +5,7 @@ argument-hint: <xxxx o descripción del cambio/fix a planificar>
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.1
+  version: 0.9.2
   uses: [pv-internal-tech-analysis, pv-internal-tech-mermaid, pv-internal-mockups-html, pv-internal-tech-risks, pv-do]
 ---
 

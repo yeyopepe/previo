@@ -5,7 +5,7 @@ argument-hint: "[xxxx | todo <código>] <descripción del cambio>"
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.1
+  version: 0.9.2
   uses: [pv-internal-workflow, pv-internal-tech-analysis, pv-internal-mockups-html, pv-internal-tech-mermaid, pv-how]
 ---
 
