@@ -8,7 +8,8 @@ Aporta el control y la trazabilidad del *spec-driven development* sin la sobreca
 
 ## Índice
 
-- [Características principales](#características-principales)
+- [Puntos fuertes](#puntos-fuertes)
+- [Puntos menos fuertes y lo que está por llegar](#puntos-menos-fuertes-y-lo-que-está-por-llegar)
 - [Instalación](#instalación)
 - [Flujo de trabajo](#flujo-de-trabajo)
   - [Flujo mínimo](#flujo-mínimo)
@@ -16,25 +17,39 @@ Aporta el control y la trazabilidad del *spec-driven development* sin la sobreca
 - [Cómo está hecho y cómo funciona en detalle](#cómo-está-hecho-y-cómo-funciona-en-detalle)
 - [Licencia](#licencia)
 
-## Características principales
-
+## Puntos fuertes
 
 - <u>**Especificación completa, formato libre.**</u> Cada entrada exige la estructura mínima necesaria para ser útil (intención, plan, estado), sin formatos de *spec* complejos que haya que aprender o mantener a mano.
-- <u>**Valida siempre el diseño.**</u> Visualiza y valida los cambios visuales y los flujos de trabajo con maquetas estáticas (HTML/CSS o personalizado) antes implementar nada, evitando el ciclo de "implementar → ver que no convence → rehacer".
+- <u>**Valida siempre sobre diseños.**</u> Visualiza y valida los cambios visuales y los flujos de trabajo con maquetas estáticas (HTML/CSS o personalizado) antes implementar nada, evitando el ciclo de "implementar → ver que no convence → rehacer".
+- <u>**Análisis detallados, riesgos claros.**</u> Cada cambio es analizado y escrito en un pan al detalle para asegurar el éxito yanticipar el riesgo que conlleva.
+- <u>**Documentación siempre al día.**</u> Previo mantiene siempre actualizada la documentación técnica y funcional del proyecto, así como los cambios entre versiones. Puedes empezar el proyecto con un diseño técnico inicial o simplemente dejar que vaya haciendo.
 - <u>**Velocidad vs. complejidad.**</u> Prioriza la velocidad y el trabajo secuencial frente al trabajo en paralelo, evitando la complejidad de coordinar varios cambios a la vez, resolver conflictos entre PRs o gestionar ramas simultáneas.
 - <u>**Adaptable y versátil.**</u> Funciona en proyectos de cualquier tamaño y se adapta al stack de cada uno; algunas de sus piezas se pueden extender o sustituir sin tocar el resto del framework.
 - <u>**Sin herramientas adicionales.**</u> No requiere más que Claude Code y Python en la máquina de desarrollo — nada de servicios externos, bases de datos ni infraestructura propia.
 - <u>**100% construido con IA y para IA.**</u> Todo el ciclo (desde la idea hasta su realización) es un proceso 100% guidado por IA, para cualquier tipo de perfil. Unos pocos tokens más, mucha complejidad menos.
 
+## Puntos menos fuertes y lo que está por llegar
+- <u>**Contextos grandes.**</u> A medida que el proyecto crezca, el contexto necesario para que Previo haga su trabajo también crecerá (y el consumo de tokens). Hemos priorizado la calidad de los resultados frente al supuesto ahorro de tokens (aunque no los hemos olvidado) porque nuestra experiencia nos dice que el retrabajo siempre sale más caro que un buen análisis previo.
+- <u>**Mejor con mejores modelos.**</u> Previo puede funcionar con cualquier modelo, aunque los resultados irán en consonancia, claro. Esto es cómo decidir qué perfil quieres contratar para hacer un trabajo: un junior (ej: Haiku) irá más rápido y te costará menos, pero el riesgo de errores y retrabajo es grande. Incluso puedes tener varios en paralelo si quieres, pero entonces ya no te sale tan barato. Un senior (ej: Sonnet) te costará un poco más, pero se lo pensará mejor y el riesgo será mucho menor. Nosotros hemos testeado Previo con ambos enfoques (Sonnet es suficiente senior) y siempre nos ha compensado el uso de un senior (porcentaje de retrabajo en el último proyecto: 5%) para todo en lugar de intentar ahorrar con juniors (retrabajo en el mismo proyecto: 40%). Son solo nuestros números, lo sabemos, así que pruébalo tú mismo.
+- <u>**Riesgo vs. testing.**</u> Como hemos priorizado la calidad del trabajo y la reducción de riesgos, hemos dejado de lado de momento la implementación de herramientas de testing más específico. Estamos pensando cómo incorporarlo de manera que no afecte a la agilidad del framework. Actualmente puedes definir cambios que sean específicamente la creación de tests sobre cambios ya implementados, pero creemos que puede haber una manera mejor en el futuro cercano.
+
 ## Instalación
 
 Desde la raíz del proyecto donde quieras usar el framework, ejecuta:
+
+**macOS / Linux / Git Bash / WSL:**
 
 ```
 curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo/main/install.sh | sh
 ```
 
-Esto instala (o actualiza) `.claude/skills` con las skills del framework, sin tocar tu configuración (`pv-context.json`, `settings.json`) ni ninguna skill propia que no empiece por `pv-`. Volver a ejecutarlo en cualquier momento actualiza el framework a la última versión: añade skills nuevas, actualiza las existentes y elimina las que ya no formen parte de Previo. Si además quieres conservar la documentación (`pv-guide.md`, `pv-design.md`), cópiala una vez a mano desde el repo — a partir de ahí el script también la mantendrá sincronizada.
+**Windows (PowerShell):**
+
+```
+irm https://raw.githubusercontent.com/yeyopepe/previo/main/install.ps1 | iex
+```
+
+Esto instala (o actualiza) `.claude/skills` y la documentación (`pv-guide.md`, `pv-design.md` y sus versiones `.en.md`) con el contenido del framework, sin tocar tu configuración (`pv-context.json`, `settings.json`) ni ninguna skill propia que no empiece por `pv-`. Volver a ejecutarlo en cualquier momento actualiza el framework a la última versión: añade skills nuevas, actualiza las existentes y elimina las que ya no formen parte de Previo.
 
 Después, desde la raíz de ese proyecto, ejecuta una vez:
 

@@ -36,7 +36,7 @@
           "type": "string",
           "default": "/",
           "description": "OPCIONAL (por defecto '/', la raiz del repo). Carpeta relativa a la raiz del repo bajo la que el framework pv-* gestiona TODO su trabajo. Dentro de workFolder, las skills crean por si mismas dos subcarpetas de nombre fijo -- '{workFolder}/changes/' y '{workFolder}/versions/' -- que el usuario no elige ni renombra, para evitar cualquier configuracion manual que pueda romper o hacer colisionar esas rutas. '{workFolder}/changes/' contiene dos subarboles con subcarpetas numeradas ({xxxx}): 'changes/inProgress/' (cambios/fixes documentados por pv-new/pv-fix, pendientes de implementar o de planificar) y 'changes/implemented/' (cambios/fixes cuyo plan.md ya se ha implementado -- los mueve ahi pv-do); un mismo {xxxx} nunca debe repetirse entre ambos. Tambien puede convivir ahi 'changes/todo/' (ideas sueltas de pv-todo, ajenas al flujo de change/fix) y 'changes/closed/' (cambios/fixes ya incorporados a una entrega, gestionados por pv-version/pv-internal-changelog). '{workFolder}/versions/' contiene una subcarpeta por cada entrega preparada con pv-version, con codigo XXXX de texto libre elegido por el usuario en cada invocacion -- espacio de numeracion totalmente independiente del {xxxx} de changes/.",
-          "examples": ["/", "_ms"]
+          "examples": ["/", "_previo"]
         },
         "sourcecodeDir": {
           "type": "string",
@@ -156,7 +156,7 @@
     },
     {
       "framework": {
-        "workFolder": "_ms"
+        "workFolder": "_previo"
       }
     }
   ]

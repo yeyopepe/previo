@@ -6,7 +6,7 @@ model: claude-sonnet-5
 effort: medium
 metadata:
   version: 0.9.0
-  uses: [pv-internal-tech-analysis, pv-internal-tech-mermaid, pv-internal-mockups-html, pv-do]
+  uses: [pv-internal-tech-analysis, pv-internal-tech-mermaid, pv-internal-mockups-html, pv-internal-tech-risks, pv-do]
 ---
 
 # pv-how
@@ -68,7 +68,7 @@ No hay ningún cambio/fix pendiente en `{changesDir}/inProgress/`.
 
 ## 1.1 Validar los documentos del cambio antes de analizar
 
-Antes de reunir contexto técnico o escribir `plan.md`, lee `description.md` (y, si existen, los `design_*.html`/`design_*.txt`) de `{changesDir}/inProgress/{xxxx}/` en busca de incoherencias o problemas: requisitos que se contradicen entre sí, información contradictoria entre `description.md` y las maquetas, pasos o criterios de aceptación ambiguos, referencias a elementos que las maquetas no muestran (o viceversa), huecos que impiden saber qué se pide.
+Antes de reunir contexto técnico o escribir `plan.md`, lee `description.md` (y, si existen, los `design_*.html`/`design_*.txt`/`design_navigation_*.md`/`design_data_*.md`) de `{changesDir}/inProgress/{xxxx}/` en busca de incoherencias o problemas: requisitos que se contradicen entre sí, información contradictoria entre `description.md` y las maquetas/tablas de datos, pasos o criterios de aceptación ambiguos, referencias a elementos que las maquetas no muestran (o viceversa), datos que description.md menciona pero que ninguna tabla `design_data_*.md` recoge (o viceversa), huecos que impiden saber qué se pide.
 
 - **Si no encuentras nada**: continúa directamente con el paso 2.
 - **Si encuentras algo**: no lo resuelvas por tu cuenta ni sigas adelante con el análisis. Expón el problema al usuario con claridad (qué documentos están implicados y en qué consisten la incoherencia o el hueco) y pregúntale cómo resolverlo.
@@ -93,17 +93,26 @@ Antes de reunir contexto técnico o escribir `plan.md`, lee `description.md` (y,
 1. Lee el documento funcional de la entrada (`{changesDir}/inProgress/{xxxx}/description.md`, generado por `pv-internal-workflow`) para entender qué se pide. El campo **Tipo** de ese documento indica si es un `fix` o un `change`.
    - **Si es un `fix`**: el análisis y la solución deben limitarse estrictamente a corregir el bug documentado — identifica la causa raíz mínima y el cambio más pequeño que la corrige. No amplíes alcance, no refactorices ni toques código no relacionado con la causa raíz, aunque lo veas mejorable de paso. Si al analizar detectas que hace falta o convendría algo más amplio, anótalo como fuera de alcance en la sección (a) del plan en vez de incluirlo en la solución.
    - **Si es un `change`**: no aplica esta restricción; la solución puede tener el alcance que el cambio requiera.
-2. Si hay ficheros `{changesDir}/inProgress/{xxxx}/design_*.html` (propuesta visual generada por `pv-new`), ábrelos, pero trátalos **solo como referencia visual** — de ellos toma únicamente el aspecto que ilustran (maquetación, estilos, iconografía) para los elementos que cubren. La solución técnica **no debe basarse en ellos** en ningún otro sentido: no reutilices ni traduzcas literalmente su HTML/CSS/SVG, sus clases o su estructura de marcado, ni los tomes como referencia de arquitectura, componentes a crear/reutilizar o cualquier otra decisión de implementación — todo eso lo decides tú a partir del código real del proyecto (paso 4 de este apartado), igual que si esos ficheros no existieran.
-3. Si hay dudas técnicas sobre cómo abordarlo, resuélvelas con el usuario antes de escribir el plan.
-4. Reúne contexto adicional invocando la skill `pv-internal-tech-analysis` (herramienta Skill), pasándole un resumen de la causa raíz o del cambio a diseñar: ella lee primero la documentación técnica configurada en `framework.docs.tech` y solo explora código (`sourcecodeDir`) si hace falta completar información, devolviéndote el contexto reunido y cualquier incongruencia detectada entre documentación y código (recuerda: en ese caso el código manda). Si reporta alguna incongruencia, tenla en cuenta al diseñar la solución y al escribir las secciones (c)/(d) del plan (paso 5) para que quede reflejada en la actualización de documentación que hará `pv-do` tras implementar.
-5. Escribe `{changesDir}/inProgress/{xxxx}/plan.md` siguiendo la plantilla [`PLAN.template.md`](PLAN.template.md) de esta skill, empezando con el campo **Fecha creación** (formato `YYYY-MM-DD`, la fecha actual en el momento de crear este `plan.md` — si ya existe porque se está regenerando, actualízala a la fecha de esta regeneración), seguido de estas secciones:
+2. Si hay ficheros `{changesDir}/inProgress/{xxxx}/design_*.html` (propuesta visual generada por `pv-new`/`pv-fix`), ábrelos, pero trátalos **solo como referencia visual** — de ellos toma únicamente el aspecto que ilustran (maquetación, estilos, iconografía) para los elementos que cubren. La solución técnica **no debe basarse en ellos** en ningún otro sentido: no reutilices ni traduzcas literalmente su HTML/CSS/SVG, sus clases o su estructura de marcado, ni los tomes como referencia de arquitectura, componentes a crear/reutilizar o cualquier otra decisión de implementación — todo eso lo decides tú a partir del código real del proyecto (paso 5 de este apartado), igual que si esos ficheros no existieran.
+3. Si hay ficheros `{changesDir}/inProgress/{xxxx}/design_data_*.md` (definición funcional de datos generada por `pv-new`/`pv-fix`), trátalos como **fuente de la verdad sobre qué datos hacen falta** (qué propiedades o campos, no cómo se representan hoy en código): son el punto de partida obligatorio para decidir la estructura técnica real (tipos, dónde se guardan, cómo se manipulan) al diseñar la solución — decisión que sí te corresponde a ti, a diferencia del aspecto visual de los `design_*.html`.
+4. Si hay dudas técnicas sobre cómo abordarlo, resuélvelas con el usuario antes de escribir el plan.
+5. Reúne contexto adicional invocando la skill `pv-internal-tech-analysis` (herramienta Skill), pasándole un resumen de la causa raíz o del cambio a diseñar: ella lee primero la documentación técnica configurada en `framework.docs.tech` y solo explora código (`sourcecodeDir`) si hace falta completar información, devolviéndote el contexto reunido y cualquier incongruencia detectada entre documentación y código (recuerda: en ese caso el código manda). Si reporta alguna incongruencia, tenla en cuenta al diseñar la solución y al escribir las secciones (c)/(d) del plan (paso 6) para que quede reflejada en la actualización de documentación que hará `pv-do` tras implementar.
+6. Escribe `{changesDir}/inProgress/{xxxx}/plan.md` siguiendo la plantilla [`PLAN.template.md`](PLAN.template.md) de esta skill, empezando con el campo **Fecha creación** (formato `YYYY-MM-DD`, la fecha actual en el momento de crear este `plan.md` — si ya existe porque se está regenerando, actualízala a la fecha de esta regeneración), seguido de estas secciones:
    - **(a) Anotaciones funcionales** — qué queda explícitamente fuera de alcance, y las dudas que se han resuelto con el usuario (pregunta y respuesta, en breve).
    - **(b) Solución técnica** — checklist (`- [ ]`) de tareas concretas y explicadas (qué hay que tocar, dónde, y por qué), en el orden en que se deberían implementar, todas sin marcar al escribir el plan. No mezcles aquí pasos de comprobación manual — esos van en (e).
    - **(c) Cambios de arquitectura** — *solo si aplica*: si `docs.tech.architectureDocDir` está configurado y esta solución modifica la arquitectura básica del proyecto, indica **qué fichero(s) concretos** de esa carpeta hay que actualizar (puede haber varios candidatos) y qué hay que cambiar en cada uno. Si no aplica (no hay `docs.tech.architectureDocDir`, o la solución no toca arquitectura), omite esta sección por completo — no la dejes vacía ni con "N/A".
    - **(d) Cambios en estilo** — *solo si aplica*: si `docs.tech.styleBibleDocDir` está configurado y esta solución modifica o amplia el estilo visual del proyecto, indica **qué fichero(s) concretos** de esa carpeta hay que actualizar y qué hay que cambiar en cada uno. Si no aplica, omite esta sección — no la dejes vacía ni con "N/A".
    - **(e) Verificación** — checklist (`- [ ]`) de resultados observables del sistema ya cambiado, a comprobar *después* de completar toda la sección (b). Cada ítem se redacta de forma autocontenida (qué hacer y qué se debería ver), sin remitir a un número de tarea de (b) — una comprobación puede depender de varias tareas a la vez, o compartirse entre varias. Inclúyela siempre salvo que la solución no tenga ningún comportamiento observable que comprobar.
 
-## 3.1 Preguntar si se quiere implementar
+## 3.1 Evaluar el riesgo del cambio
+
+Con `plan.md` ya escrito, invoca la skill `pv-internal-tech-risks` (herramienta Skill), pasándole `plan.md` y `description.md` de la entrada — solo se invoca en este punto, nunca antes de tener la solución técnica decidida, porque es entonces cuando hay información suficiente para valorar el riesgo. Te devuelve la lista de los 9 factores puntuados (0-10) y la mediana final.
+
+Escribe únicamente la mediana en la cabecera de `plan.md`, como campo `**Riesgo**: {mediana}/10` justo debajo de **Fecha creación**. No muestres ni escribas el detalle de los 9 factores en este momento — solo la mediana.
+
+Si en cualquier momento posterior (en esta misma conversación o al retomar la entrada) el usuario pide el detalle del riesgo, muéstraselo en el chat (la lista de los 9 factores con su valor, más la mediana) y además añade esa misma tabla a `plan.md` en una nueva sección **(f) Análisis de riesgo**, al final del documento — reutiliza el resultado de `pv-internal-tech-risks` si todavía lo tienes en contexto de esta misma conversación; si no, vuelve a invocar la skill.
+
+## 3.2 Preguntar si se quiere implementar
 
 Con el `plan.md` ya escrito, pregunta al usuario si quiere implementarlo ahora.
 

@@ -33,9 +33,9 @@ for dir in "$DEST_SKILLS"/pv-*; do
   fi
 done
 
-# Sincroniza la documentación solo si el usuario ya la había instalado.
+# Sincroniza la documentación del framework.
 for doc in pv-guide.md pv-guide.en.md pv-design.md pv-design.en.md; do
-  if [ -f ".claude/$doc" ] && [ -f "$TMP/.claude/$doc" ]; then
+  if [ -f "$TMP/.claude/$doc" ]; then
     cp "$TMP/.claude/$doc" ".claude/$doc"
   fi
 done

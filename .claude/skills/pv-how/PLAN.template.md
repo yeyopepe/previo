@@ -1,4 +1,5 @@
 - **Fecha creación**: [YYYY-MM-DD]
+- **Riesgo**: [mediana 0-10 devuelta por pv-internal-tech-risks]
 
 ## (a) Anotaciones funcionales
 
@@ -28,3 +29,31 @@ Ordena las tareas en el orden en que se deberían implementar. No incluyas aquí
 - [ ] [...]
 
 Incluye siempre esta sección (salvo que la solución no tenga ningún comportamiento observable que comprobar, lo cual es raro) — es lo que permite dar la implementación por terminada con confianza, incluso a quien la ejecute sin conocer más contexto que este documento. Formato checklist (`- [ ]`) obligatorio, igual que en (b).
+
+## (f) Análisis de riesgo
+
+*Solo si el usuario ha pedido el detalle del riesgo — por defecto esta sección se omite y solo queda el campo **Riesgo** de la cabecera.* Lista de los 9 factores evaluados por `pv-internal-tech-risks` con su valor 0-10, y la mediana final.
+
+| Factor | Valor |
+|---|---|
+| Uso compartido | [0-10] |
+| Alcance | [0-10] |
+| Profundidad del cambio | [0-10] |
+| Cobertura de tests | [0-10] |
+| Criticidad del flujo | [0-10] |
+| Reversibilidad | [0-10] |
+| Datos persistentes | [0-10] |
+| Superficie de seguridad | [0-10] |
+| Datos sensibles | [0-10] |
+
+**Mediana**: [0-10]
+
+| Valor | Significado |
+|---|---|
+| 0 | Sin riesgo — cambio totalmente aislado, imposible que afecte a nada más |
+| 1–2 | Riesgo mínimo — cambio local, con red de seguridad (tests) o fácilmente reversible |
+| 3–4 | Riesgo bajo — toca algo de superficie compartida o varios puntos, pero sin tocar contratos ni datos |
+| 5–6 | Riesgo moderado — comparte código con otras partes, cobertura de test parcial, o toca un contrato/firma usado por otros |
+| 7–8 | Riesgo alto — cambio profundo en código muy compartido y/o sin tests, en un flujo relevante, datos persistentes o seguridad |
+| 9 | Riesgo muy alto — cambio estructural en flujo crítico de negocio, difícil de revertir, sin tests |
+| 10 | Riesgo extremo — cambio profundo y amplio en código crítico y muy compartido, sin tests, sin reversibilidad fácil, tocando datos y/o seguridad a la vez |

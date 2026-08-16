@@ -173,8 +173,9 @@ Para el caso no trivial (`/pv-new` y el `/pv-fix` que resulta ser un bug real), 
 2. Genera `changes/inProgress/{xxxx}/description.md` con el resumen funcional (nunca solución técnica todavía).
 3. Si el cambio tiene un flujo o funcionamiento nuevo/modificado sin dimensión de UI (lógica, orden de una operación, decisiones, casos límite encadenados), incluye en el propio `description.md` un diagrama Mermaid funcional por cada caso de uso o historia de usuario distinto.
 4. Si el cambio tiene componente visual, crea maquetas estáticas `design_*.html` (solo HTML/CSS/SVG, sin lógica; skill `pv-internal-mockups-html` por defecto, configurable en `framework.skills.mockups`) como referencia visual navegable — para validar el diseño antes de escribir una sola línea de código real.
+5. Si el cambio define o usa algo que necesita una lista de propiedades o datos asociados (propiedades de un objeto, contenido de una tabla de base de datos, campos de una configuración...), escribe esa lista explícitamente en uno o varios ficheros `design_data_*.md`, generalmente como tabla(s). Es una definición **funcional** de qué datos hacen falta — la forma de guardarlos o manipularlos es una decisión técnica que toma `pv-how` después, a partir de esa tabla.
 
-Tanto los diagramas como las maquetas se te presentan para que los confirmes antes de dar el cambio por documentado — no basta con generarlos, hace falta tu validación explícita.
+Tanto los diagramas como las maquetas y las tablas de datos se te presentan para que los confirmes antes de dar el cambio por documentado — no basta con generarlos, hace falta tu validación explícita.
 
 Diferencia clave: `/pv-fix` (caso no trivial) encadena automáticamente `pv-how` (que a su vez encadena `pv-do`) al terminar (un bug se corrige de punta a punta en la misma invocación, con alcance estrictamente acotado a la causa raíz). `/pv-new` solo documenta — decides tú cuándo planificar/implementar después.
 
@@ -276,7 +277,7 @@ También puedes apuntar cualquiera de las dos a una skill propia de tu proyecto,
 
 ## Otros trucos
 
-- **Reanaliza sobre un cambio en cualquier momento**: si invocas `/pv-new {xxxx} ...` o `/pv-how {xxxx}` sobre un `xxxx` que ya existe en `inProgress`, el framework no crea una carpeta nueva — retoma esa misma entrada. `/pv-new {xxxx} <ampliación>` añade a la documentación funcional ya escrita sin perder lo anterior (útil si surgen nuevos casos límite o cambia el alcance a mitad de camino). `/pv-how {xxxx}` regenera `plan.md` desde cero con el contexto actualizado, por ejemplo tras ampliar `description.md` o tras corregir el rumbo técnico de un plan que ya no encaja. En ambos casos sigues trabajando sobre el mismo `xxxx`, sin duplicados ni pérdida de lo ya documentado.
+- **Reanaliza o pregunta cualquier cosa de un cambio en cualquier momento**: si invocas `/pv-new {xxxx} ...` o `/pv-how {xxxx}` sobre un `xxxx` que ya existe en `inProgress`, el framework no crea una carpeta nueva — retoma esa misma entrada. `/pv-new {xxxx} <ampliación>` añade a la documentación funcional ya escrita sin perder lo anterior (útil si surgen nuevos casos límite o cambia el alcance a mitad de camino). `/pv-how {xxxx}` regenera `plan.md` desde cero con el contexto actualizado, por ejemplo tras ampliar `description.md` o tras corregir el rumbo técnico de un plan que ya no encaja. En ambos casos sigues trabajando sobre el mismo `xxxx`, sin duplicados ni pérdida de lo ya documentado.
 - **Encadena varios pasos en una sola petición**: el flujo normal es turno a turno (planificar → confirmar → implementar), pero si ya sabes que quieres seguir adelante no hace falta esperar a que te pregunte. Puedes pedirlo todo de una vez, por ejemplo:
 
   ```
