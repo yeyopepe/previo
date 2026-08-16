@@ -1,13 +1,29 @@
 # Instala o actualiza Previo en el proyecto actual.
 # Uso: irm https://raw.githubusercontent.com/yeyopepe/previo/main/install.ps1 | iex
+# Uso (versión concreta), una de estas dos formas:
+#   $env:PREVIO_VERSION = "v1.2.3"; irm .../install.ps1 | iex
+#   &([scriptblock]::Create((irm .../install.ps1))) -Version v1.2.3
+param(
+    [string]$Version = $env:PREVIO_VERSION
+)
 $ErrorActionPreference = "Stop"
 
 $Repo = "yeyopepe/previo"
 
-$Release = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest"
+if ($Version) {
+    try {
+        $Release = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/tags/$Version"
+    }
+    catch {
+        throw "La versión '$Version' no existe en los releases de Previo."
+    }
+}
+else {
+    $Release = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest"
+}
 $Tag = $Release.tag_name
 if (-not $Tag) {
-    throw "No se ha podido determinar la última versión publicada de Previo."
+    throw "No se ha podido determinar la versión de Previo a instalar."
 }
 $Tarball = "https://github.com/$Repo/archive/refs/tags/$Tag.tar.gz"
 

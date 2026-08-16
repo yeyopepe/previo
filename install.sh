@@ -1,13 +1,23 @@
 #!/bin/sh
 # Instala o actualiza Previo en el proyecto actual.
 # Uso: curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo/main/install.sh | sh
+# Uso (versión concreta): curl -fsSL .../install.sh | sh -s -- v1.2.3
 set -e
 
 REPO="yeyopepe/previo"
+REQUESTED_TAG="$1"
 
-TAG=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
+if [ -n "$REQUESTED_TAG" ]; then
+  RELEASE_JSON=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/tags/${REQUESTED_TAG}") || {
+    echo "La versión '${REQUESTED_TAG}' no existe en los releases de Previo." >&2
+    exit 1
+  }
+  TAG=$(echo "$RELEASE_JSON" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
+else
+  TAG=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
+fi
 if [ -z "$TAG" ]; then
-  echo "No se ha podido determinar la última versión publicada de Previo." >&2
+  echo "No se ha podido determinar la versión de Previo a instalar." >&2
   exit 1
 fi
 TARBALL="https://github.com/${REPO}/archive/refs/tags/${TAG}.tar.gz"
