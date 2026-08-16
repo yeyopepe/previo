@@ -212,7 +212,7 @@ Ninguno estructural — traducción + extensión de schema + paso nuevo en `pv-i
 
 Este repo (`previo`) ya tiene `.claude/pv-context.json` sin campos `language`. Como parte de la implementación:
 
-1. Añadir los campos `language` (`interaction`, `changes`, `versions`, `docs.functional`, `docs.tech` — para las áreas que ya estén configuradas: hoy falta `docs.tech.styleBibleDocDir`, revisar si sigue sin configurarse), preguntando explícitamente al usuario — igual que exige el nuevo paso de `pv-init` — con español como propuesta por defecto dado el histórico de este proyecto, pero confirmando en vez de asumir.
+1. Añadir los campos `language` (`interaction`, `changes`, `versions`, `docs.functional`, `docs.tech` — para las áreas que ya estén configuradas: hoy falta `docs.tech.styleBibleDocDir`, revisar si sigue sin configurarse). **Decidido (confirmado con el usuario el 2026-08-16, no hace falta repreguntar al implementar):** los cinco campos en español (`"es"`), consistente con el histórico de este proyecto.
 2. No hace falta retraducir `changes/`/`versions/` ya existentes — el idioma configurado aplica hacia adelante.
 
 ## Plan de verificación
@@ -230,8 +230,8 @@ Este repo (`previo`) ya tiene `.claude/pv-context.json` sin campos `language`. C
 
 ## Riesgos y preguntas abiertas
 
-- **Tamaño**: sigue siendo un cambio grande (17 skills, sus scripts y plantillas, más el diseño de idioma). Conviene trocearlo en varias entradas `pv-new`/`pv-fix` reales — probablemente una por skill o grupo de skills relacionado (p.ej. `pv-internal-tech-*` juntas, `pv-version`+`pv-internal-changelog` juntas).
-- **Convención de `metadata.version`**: el plan anterior asumía semver independiente por skill (`ms-new` en `1.11.0`, etc.). Hoy **todas** las skills están en `0.9.2` de forma sincronizada, lo que sugiere una versión de framework compartida en vez de por skill. **Antes de tocar cualquier `metadata.version` al traducir, confirmar con el usuario cuál es la convención actual** (¿hay un mecanismo de bump global que no hemos localizado, o simplemente coincide que todas se subieron juntas la última vez?) en vez de asumir el patrón del plan anterior, que puede estar obsoleto.
+- **Tamaño**: sigue siendo un cambio grande (17 skills, sus scripts y plantillas, más el diseño de idioma). El plan anterior sugería trocearlo en varias entradas `pv-new`/`pv-fix` reales; **decidido (2026-08-16): se implementa por edición directa de fichero, tratando este plan.md como spec ya cerrada**, sin pasar por el ciclo `pv-new`/`pv-how`/`pv-do` — más rápido, a cambio de no dejar rastro en `changes/` ni pasar por la revisión de `pv-how`.
+- **Convención de `metadata.version`**: el plan anterior asumía semver independiente por skill (`ms-new` en `1.11.0`, etc.). Hoy **todas** las skills están en `0.9.2` de forma sincronizada, lo que sugiere una versión de framework compartida en vez de por skill. **Decidido (2026-08-16): no tocar `metadata.version` en ningún `SKILL.md` como parte de esta traducción.** Si en el futuro aparece un mecanismo de bump global, se aplicará aparte.
 - **`design_*.html`/`.txt` en `changes.language`**: si el idioma de interacción/changes difiere del idioma real de la UI del proyecto (que no tiene por qué coincidir con ninguno), el texto de ejemplo de las maquetas podría no reflejar el idioma real de la app. No hay campo hoy para "idioma de la UI del proyecto"; sería una extensión futura fuera de alcance.
 - **Traducción de `plan.md` → `docs.tech.*` cuando `changes.language` ≠ `docs.tech.language`**: `pv-do` tiene que traducir contenido, no solo copiarlo — señalarlo explícitamente en `pv-do/SKILL.md`.
 - **Granularidad de `docs.tech.language`**: comparte idioma entre `architectureDocDir` y `styleBibleDocDir`. Alternativa descartada por ahora (un `language` por campo de ruta individual) — revisar si algún caso real lo necesita antes de implementarlo.
