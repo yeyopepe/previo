@@ -1,4 +1,4 @@
-# Guía de uso — MinSDD
+# Previo: Guía de uso
 
 MinSDD (nombre provisional para el framework `ms-*`) es un conjunto de skills de Claude Code que estandariza cómo se documentan, planifican e implementan los cambios en este proyecto. Todo cambio real en el código pasa por el mismo ciclo: **documentar la intención → planificar la solución técnica → implementar**. Empaquetar una entrega (generar el entregable, copiar la documentación técnica vigente y redactar el changelog funcional) también forma parte del framework: lo hace `/ms-version` (ver [Preparar una entrega: `/ms-version`](#preparar-una-entrega-ms-version)).
 

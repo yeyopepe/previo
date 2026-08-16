@@ -1,4 +1,4 @@
-# Diseño — Framework `ms-*`
+# Previo: Documentación de diseño
 
 Mapa de las skills que componen el framework `ms-*` y cómo se invocan entre sí.
 

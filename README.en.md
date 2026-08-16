@@ -8,12 +8,12 @@ It brings the control and traceability of *spec-driven development* without the 
 
 ## Key features
 
-- **Complete spec, free-form.** Every entry requires just enough structure to be useful (intent, plan, state), without complex *spec* formats to learn or maintain by hand.
-- **Design is always validated.** Visual changes and workflows are validated with static mockups (HTML/CSS or a custom format) before anything gets implemented — avoiding the "implement → doesn't land right → redo" cycle.
-- **Speed vs. complexity.** Prioritizes speed and sequential work over parallel work, avoiding the complexity of coordinating multiple changes at once, resolving PR conflicts, or managing simultaneous branches.
-- **Adaptable and versatile.** Works on projects of any size and adapts to each project's stack; some of its pieces can be extended or swapped out without touching the rest of the framework.
-- **No extra tooling.** Requires nothing beyond Claude Code and Python on the development machine — no external services, databases, or infrastructure to maintain.
-- **100% conversational and AI-driven.** The whole cycle (from idea to delivery) is a 100% AI-guided process, for any kind of profile. A few more tokens, much less complexity.
+- <u>**Complete spec, free-form.**</u> Every entry requires just enough structure to be useful (intent, plan, state), without complex *spec* formats to learn or maintain by hand.
+- <u>**Design is always validated.**</u> Visual changes and workflows are validated with static mockups (HTML/CSS or a custom format) before anything gets implemented — avoiding the "implement → doesn't land right → redo" cycle.
+- <u>**Speed vs. complexity.**</u> Prioritizes speed and sequential work over parallel work, avoiding the complexity of coordinating multiple changes at once, resolving PR conflicts, or managing simultaneous branches.
+- <u>**Adaptable and versatile.**</u> Works on projects of any size and adapts to each project's stack; some of its pieces can be extended or swapped out without touching the rest of the framework.
+- <u>**No extra tooling.**</u> Requires nothing beyond Claude Code and Python on the development machine — no external services, databases, or infrastructure to maintain.
+- <u>**100% conversational and AI-driven.**</u> The whole cycle (from idea to delivery) is a 100% AI-guided process, for any kind of profile. A few more tokens, much less complexity.
 
 ## Installation
 
