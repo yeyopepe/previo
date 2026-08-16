@@ -1,5 +1,5 @@
 - **Fecha creación**: [YYYY-MM-DD]
-- **Riesgo**: [mediana 0-10 devuelta por pv-internal-tech-risks]
+- **Riesgo**: [mediana 0-10 devuelta por pv-internal-tech-risks] — [descripción de "Significado" correspondiente a esa mediana según la tabla de la sección (f)]
 
 ## (a) Anotaciones funcionales
 
