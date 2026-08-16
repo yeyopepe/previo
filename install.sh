@@ -4,13 +4,18 @@
 set -e
 
 REPO="yeyopepe/previo"
-BRANCH="main"
-TARBALL="https://github.com/${REPO}/archive/refs/heads/${BRANCH}.tar.gz"
+
+TAG=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
+if [ -z "$TAG" ]; then
+  echo "No se ha podido determinar la última versión publicada de Previo." >&2
+  exit 1
+fi
+TARBALL="https://github.com/${REPO}/archive/refs/tags/${TAG}.tar.gz"
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-echo "Descargando Previo (${BRANCH})..."
+echo "Descargando Previo (${TAG})..."
 curl -fsSL "$TARBALL" | tar -xz -C "$TMP" --strip-components=1
 
 SRC_SKILLS="$TMP/.claude/skills"

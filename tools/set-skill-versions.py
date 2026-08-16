@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-off: set every skill's version to 1.0.0 in its SKILL.md frontmatter.
+"""One-off: set every skill's version in its SKILL.md frontmatter.
 
 Rewrites the `  version: X.Y.Z` line under `metadata:` in every
 .claude/skills/*/SKILL.md. Run once from the repo root, then review the diff.
@@ -11,10 +11,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SKILLS_DIR = ROOT / ".claude" / "skills"
 VERSION_RE = re.compile(r"^(\s*version:\s*)\S+(\s*)$", re.MULTILINE)
-TARGET_VERSION = "0.9.0"
 
 
 def main():
+    if len(sys.argv) != 2:
+        print(f"Usage: {Path(sys.argv[0]).name} <version>")
+        return 1
+
+    TARGET_VERSION = sys.argv[1]
+
     changed = []
     skipped = []
     for skill_md in sorted(SKILLS_DIR.glob("*/SKILL.md")):

@@ -5,7 +5,7 @@ argument-hint: <xxxx del cambio/fix ya planificado>
 model: claude-haiku-4-5
 effort: medium
 metadata:
-  version: 0.9.0
+  version: 0.9.1
   uses: [pv-internal-workflow, pv-internal-doc-features]
 ---
 

@@ -3,13 +3,18 @@
 $ErrorActionPreference = "Stop"
 
 $Repo = "yeyopepe/previo"
-$Branch = "main"
-$Tarball = "https://github.com/$Repo/archive/refs/heads/$Branch.tar.gz"
+
+$Release = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest"
+$Tag = $Release.tag_name
+if (-not $Tag) {
+    throw "No se ha podido determinar la última versión publicada de Previo."
+}
+$Tarball = "https://github.com/$Repo/archive/refs/tags/$Tag.tar.gz"
 
 $Tmp = Join-Path $env:TEMP "previo-install-$([guid]::NewGuid())"
 New-Item -ItemType Directory -Path $Tmp -Force | Out-Null
 try {
-    Write-Host "Descargando Previo ($Branch)..."
+    Write-Host "Descargando Previo ($Tag)..."
     $TarPath = Join-Path $Tmp "previo.tar.gz"
     Invoke-WebRequest -Uri $Tarball -OutFile $TarPath
 

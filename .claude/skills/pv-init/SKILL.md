@@ -4,7 +4,7 @@ description: Inicializa el framework pv-* (change/fix/workflow) en el proyecto a
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.0
+  version: 0.9.1
   uses: []
 ---
 
