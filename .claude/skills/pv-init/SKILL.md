@@ -4,7 +4,7 @@ description: Inicializa el framework pv-* (change/fix/workflow) en el proyecto a
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.1
+  version: 0.9.2
   uses: []
 ---
 
@@ -75,21 +75,16 @@ Recorre **todos** los campos de `framework` descritos en `schema.json`, sección
 
 Campos a resolver — sección `framework`:
 - `workFolder` (opcional, por defecto `"/"`, pero pregúntalo/confírmalo siempre — no lo des por supuesto en silencio, igual que `sourcecodeDir`): es la única ruta que el usuario elige para todo el trabajo del framework. Propón `"/"` (raíz del repo) como opción recomendada; si el repo ya tiene una carpeta de cambios existente detectada en el paso 2 (`_changes`, `changes`...) y no coincide con la raíz, coméntaselo al usuario y ofrece migrar su contenido a `{workFolder}/changes/` en vez de crear ambas cosas por separado. Dentro de `workFolder`, las subcarpetas `changes/` y `versions/` son siempre de nombre fijo — no se preguntan ni se configuran, las crean las skills correspondientes la primera vez que hacen falta.
-- `docs.tech.architectureDocDir` y `docs.tech.styleBibleDocDir` (opcionales, pero pregúntalos siempre explícitamente — no los des por omitidos sin más, a diferencia de `numberWidth`/`skills.mockups`: la calidad de todo el análisis técnico del framework depende de que existan). Pregunta si el usuario quiere mantener sincronizados un documento de arquitectura y/o una guía de estilo:
-  - Si el usuario **ya tiene alguno de los dos como carpeta** con `INDEX.md` (o lo has detectado en el paso 2), usa esa ruta tal cual.
-  - Si el usuario tiene alguno de los dos en la **convención antigua** (fichero único, p.ej. `ARCHITECTURE.md`/`STYLE_BIBLE.md`), ofrece migrarlo: crea la carpeta con un `INDEX.md` que resuma el fichero y un único fichero de contenido (`01-contenido.md` o similar) con el resto, y borra el fichero suelto.
-  - Si al usuario **le falta alguno de los dos** y quiere que se genere, no lo generes a ciegas: hazle estas preguntas básicas en texto libre antes de crearlo (solo las que hagan falta según qué documento falte):
-    1. ¿De qué va el proyecto?
-    2. ¿Qué tecnologías quieres usar?
-    3. ¿Qué estilo tendrá o a qué se parecerá?
+- `docs.tech.architectureDocDir`, `docs.tech.styleBibleDocDir` y `docs.functional.featuresDocPathDir` (opcionales en el schema, pero **no se pregunta si se quieren** — se generan siempre las tres, sin excepción, salvo que ya exista contenido que preservar). Nunca preguntes "¿quieres documentación técnica/de estilo/de features?": la decisión ya está tomada, solo confirmas rutas y contenido.
+  - Si el usuario **ya tiene alguno como carpeta** con `INDEX.md` (o lo has detectado en el paso 2), usa esa ruta tal cual — no la regeneres.
+  - Si el usuario tiene alguno en la **convención antigua** (fichero único, p.ej. `ARCHITECTURE.md`/`STYLE_BIBLE.md`/`FEATURES.md`), ofrece migrarlo: crea la carpeta con un `INDEX.md` que resuma el fichero y un único fichero de contenido (`01-contenido.md` o similar) con el resto, y borra el fichero suelto.
+  - Si al usuario **le falta alguno de los tres**, genera directamente una **primera versión mínima** sin preguntar nada antes — usa lo que ya sepas del repo (paso 2: tipo de proyecto, stack detectado, ficheros existentes) y, si el repo está vacío o no da pistas suficientes, un placeholder genérico razonable. No bloquees la generación esperando respuestas del usuario:
+    - Arquitectura (por defecto `design/docs/architecture/`): carpeta con `INDEX.md` (tabla-índice mínima, un solo fichero hermano por ahora) y `01-overview.md` con lo que se sepa del proyecto y su stack, como punto de partida que `pv-do` irá ampliando con cada cambio implementado.
+    - Guía de estilo (por defecto `design/docs/style/`): mismo patrón `INDEX.md` + `01-overview.md`; si no hay pistas de estilo/paleta, cae en la paleta neutra en blanco, negro y tonos de grises ya prevista por defecto.
+    - Features (por defecto `design/docs/features/`): carpeta con `INDEX.md` vacío o mínimo (listado de funcionalidades implementadas, que `pv-do` irá rellenando).
 
-    Con las respuestas, genera una **primera versión reducida** (no una documentación completa) de cada documento que falte, como carpeta con `INDEX.md` + un único fichero de contenido:
-    - Arquitectura (por defecto `design/docs/architecture/`): `INDEX.md` con una tabla-índice mínima (un solo fichero hermano por ahora) y `01-overview.md` con el resumen del proyecto (respuesta 1) y stack/tecnologías elegidas (respuesta 2), como punto de partida mínimo que `pv-do` irá ampliando (nuevos ficheros numerados) con cada cambio implementado.
-    - Guía de estilo (por defecto `design/docs/style/`): mismo patrón `INDEX.md` + `01-overview.md`, a partir de la respuesta 3 sobre estilo/referencias; si el usuario no da detalles suficientes para definir una paleta, cae en la paleta neutra en blanco, negro y tonos de grises ya prevista por defecto.
-
-    Deja claro al usuario que son versiones iniciales mínimas y que se irán enriqueciendo con cada `pv-do`.
-  - Si el usuario **decide explícitamente no configurar uno de los dos (o ninguno)** ahora mismo, respeta esa decisión y deja el campo sin definir — el resto de skills lo tratan como opcional y lo omiten sin preguntar nada. No insistas ni lo generes por tu cuenta.
-- `docs.functional.featuresDocPathDir` (opcional — pregunta si quiere que `pv-do` mantenga un listado de funcionalidades implementadas, y en qué ruta; si no, se omite. Se crea vacío la primera vez que `pv-do` lo necesite).
+    Una vez creadas las tres, **avisa al usuario de que las ha generado** (rutas y qué contiene cada una) y **después** pregúntale en texto libre qué quiere aportar a la documentación **técnica** y **de estilo** (de qué va el proyecto, tecnologías, estilo/referencias visuales) para enriquecer `01-overview.md` de cada una con sus respuestas — la de features no se pregunta, se deja para que `pv-do` la vaya completando con cada cambio. Si el usuario no aporta nada, deja la versión mínima ya generada tal cual.
+  - Si el usuario **decide explícitamente no querer alguno de los tres** cuando se le muestra el resumen (p.ej. no le interesa mantener guía de estilo), respeta esa decisión: borra lo generado para ese campo y deja el campo sin definir en `pv-context.json` — el resto de skills lo tratan como opcional y lo omiten sin preguntar nada.
 - `sourcecodeDir` (opcional pero pregúntalo/confírmalo siempre — no lo des por supuesto en silencio): propón la carpeta raíz del código fuente detectada en el paso 2 y pide confirmación con `AskUserQuestion` (o el nombre correcto si la detección falló). La usa `pv-how` como contexto de respaldo cuando no hay `docs.tech.architectureDocDir`.
 - `numberWidth` (opcional, por defecto `4`, no hace falta preguntar salvo que el usuario quiera algo distinto).
 - `skills.mockups` (opcional, por defecto `pv-internal-mockups-html`, no hace falta preguntar salvo que el usuario quiera usar otra skill/tecnología para generar las maquetas `design_*.html` de `pv-new`/`pv-fix`).
@@ -114,8 +109,8 @@ Este fichero se versiona en git como cualquier otro fichero del framework (igual
 Antes de dar la inicialización por terminada:
 
 1. Vuelve a ejecutar `python .claude/skills/pv-init/scripts/check-context.py` sobre el fichero recién escrito y comprueba que devuelve `"complete": true`. Si no es así, algo se escribió mal (p.ej. la sección `framework` quedó vacía o no se llegó a escribir) — corrígelo antes de continuar, no lo des por bueno sin comprobarlo.
-2. Si `docs.tech.architectureDocDir`/`docs.tech.styleBibleDocDir` se configuraron con generación de contenido mínimo, confirma que la carpeta y sus dos ficheros (`INDEX.md` + `01-overview.md`) existen de verdad en disco.
-3. Si `docs.functional.featuresDocPathDir` se configuró, no hace falta crear nada todavía (se crea vacío la primera vez que `pv-do` lo necesite) — solo confirma que el valor quedó guardado en el JSON.
+2. Si `docs.tech.architectureDocDir`/`docs.tech.styleBibleDocDir`/`docs.functional.featuresDocPathDir` se generaron en este paso, confirma que cada carpeta y sus ficheros (`INDEX.md` + `01-overview.md`, según aplique) existen de verdad en disco.
+3. Si alguno de los tres se dejó sin definir porque el usuario lo rechazó explícitamente, confirma que no quedó rastro en disco ni en el JSON.
 4. Confirma que `{raíz del repo}/pv.py` existe y coincide con [`assets/pv.py`](assets/pv.py).
 
 Muestra al usuario un resumen completo de lo que ha quedado configurado: ruta del fichero, cada campo de `framework` resuelto (incluidos los que se dejaron sin configurar y por qué), si se definió algo en `skillModels` (con el recordatorio de ejecutar `sync-skill-models.py` si aplica), y que ya puede ejecutar `python3 pv.py` desde la raíz del repo para consultar el estado del framework sin pasar por Claude Code. Recuerda al usuario que puede volver a invocar esta skill para reconfigurar cualquier campo más adelante.
