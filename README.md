@@ -21,12 +21,13 @@ Aporta el control y la trazabilidad del *spec-driven development* sin la sobreca
 
 - <u>**Especificación completa, formato libre.**</u> Cada entrada exige la estructura mínima necesaria para ser útil (intención, plan, estado), sin formatos de *spec* complejos que haya que aprender o mantener a mano.
 - <u>**Valida siempre sobre diseños.**</u> Visualiza y valida los cambios visuales y los flujos de trabajo con maquetas estáticas (HTML/CSS o personalizado) antes implementar nada, evitando el ciclo de "implementar → ver que no convence → rehacer".
-- <u>**Análisis detallados, riesgos claros.**</u> Cada cambio es analizado y escrito en un pan al detalle para asegurar el éxito yanticipar el riesgo que conlleva.
+- <u>**Análisis detallados, riesgos claros.**</u> Cada cambio es analizado y escrito en un plan al detalle para asegurar el éxito yanticipar el riesgo que conlleva.
 - <u>**Documentación siempre al día.**</u> Previo mantiene siempre actualizada la documentación técnica y funcional del proyecto, así como los cambios entre versiones. Puedes empezar el proyecto con un diseño técnico inicial o simplemente dejar que vaya haciendo.
 - <u>**Velocidad vs. complejidad.**</u> Prioriza la velocidad y el trabajo secuencial frente al trabajo en paralelo, evitando la complejidad de coordinar varios cambios a la vez, resolver conflictos entre PRs o gestionar ramas simultáneas.
 - <u>**Adaptable y versátil.**</u> Funciona en proyectos de cualquier tamaño y se adapta al stack de cada uno; algunas de sus piezas se pueden extender o sustituir sin tocar el resto del framework.
 - <u>**Sin herramientas adicionales.**</u> No requiere más que Claude Code y Python en la máquina de desarrollo — nada de servicios externos, bases de datos ni infraestructura propia.
 - <u>**100% construido con IA y para IA.**</u> Todo el ciclo (desde la idea hasta su realización) es un proceso 100% guidado por IA, para cualquier tipo de perfil. Unos pocos tokens más, mucha complejidad menos.
+- <u>**Y muchas cosas más.**</u> Gestión y trazabilidad de cada cambio, generación de versiones (incluida documentación), histórico de prompts relacionados con cada cambio, cambios rápidos, evaluaciones de seguridad, etc.
 
 ## Puntos menos fuertes y lo que está por llegar
 - <u>**Contextos grandes.**</u> A medida que el proyecto crezca, el contexto necesario para que Previo haga su trabajo también crecerá (y el consumo de tokens). Hemos priorizado la calidad de los resultados frente al supuesto ahorro de tokens (aunque no los hemos olvidado) porque nuestra experiencia nos dice que el retrabajo siempre sale más caro que un buen análisis previo.

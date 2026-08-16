@@ -27,6 +27,7 @@ It brings the control and traceability of *spec-driven development* without the 
 - <u>**Adaptable and versatile.**</u> Works on projects of any size and adapts to each project's stack; some of its pieces can be extended or swapped out without touching the rest of the framework.
 - <u>**No extra tooling.**</u> Requires nothing beyond Claude Code and Python on the development machine — no external services, databases, or infrastructure to maintain.
 - <u>**100% made by AI, to AI.**</u> The whole cycle (from idea to delivery) is a 100% AI-guided process, for any kind of profile. A few more tokens, much less complexity.
+- <u>**And plenty more.**</u> Tracking and traceability for every change, release generation (documentation included), a prompt history tied to each change, fast changes, security reviews, and more.
 
 ## Weaknesses and what's coming next
 
