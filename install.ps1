@@ -57,7 +57,7 @@ try {
     }
 
     # Sincroniza la documentación del framework.
-    foreach ($doc in @("pv-guide.md", "pv-guide.en.md", "pv-design.md", "pv-design.en.md")) {
+    foreach ($doc in @("pv-guide.en.md", "pv-guide.es.md")) {
         $DestDoc = Join-Path ".claude" $doc
         $SrcDoc = Join-Path $Tmp ".claude\$doc"
         if (Test-Path $SrcDoc) {

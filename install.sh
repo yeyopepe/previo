@@ -49,7 +49,7 @@ for dir in "$DEST_SKILLS"/pv-*; do
 done
 
 # Sincroniza la documentación del framework.
-for doc in pv-guide.md pv-guide.en.md pv-design.md pv-design.en.md; do
+for doc in pv-guide.en.md pv-guide.es.md; do
   if [ -f "$TMP/.claude/$doc" ]; then
     cp "$TMP/.claude/$doc" ".claude/$doc"
   fi
