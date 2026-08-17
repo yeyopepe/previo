@@ -4,7 +4,7 @@ description: Initializes the pv-* framework (change/fix/workflow) in the current
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.5-beta2
+  version: 0.9.5-beta3
   uses: []
 ---
 
@@ -53,13 +53,15 @@ Only once the base tools are available (and the conditional ones that can alread
 
   It prints a single JSON on stdout: `{"exists", "hasFramework", "missingRequired", "complete", "hasLanguage"}`. `framework` no longer has any field marked `required: true` in `schema.json` (`workFolder` is optional, with default `"/"`), so `missingRequired` always comes back empty — `complete` simply reflects whether the `framework` section exists. `hasLanguage` is `true` when `framework.interaction.language` exists in the file, regardless of its value — it's the only field whose absence unconditionally triggers the language question in step 3 (see below); `changes.language`/`versions.language`/`docs.*.language` are optional refinements asked in the same round but don't gate `hasLanguage`. To know which other optionals are still unconfigured, read `.claude/pv-context.json` yourself and compare it field by field against the `framework` properties in `schema.json` (`workFolder`, `docs.tech.architectureDocDir`, `docs.tech.styleBibleDocDir`, `docs.functional.featuresDocPathDir`, `sourcecodeDir`, `skillModels`) to build your own "unconfigured optionals" list. With both lists (the script's `missingRequired` + the optionals you detected):
 
-  - **If `complete` is `true`, `hasLanguage` is `true`, and there are no other unconfigured optionals**: use `AskUserQuestion` to ask the user if they want to re-initialize the project from scratch. Make it clear that this erases the current context (`framework`) and repeats the whole question process as if it didn't exist. If they confirm, erase the current content and continue from step 2. If not, do nothing further — the framework is already ready as it stands.
+  - **If `complete` is `true`, `hasLanguage` is `true`, and there are no other unconfigured optionals**: use `AskUserQuestion` to ask the user if they want to re-initialize the project from scratch. Make it clear that this erases the current context (`framework`) and repeats the whole question process as if it didn't exist. If they confirm, erase the current content and continue from step 2. If not, skip straight to step 5 (see the rule below) and then step 6 — don't stop here without touching anything.
 
     ```
     The `pv-*` framework is already initialized in this project. Do you want to reinitialize it from scratch? This erases the current configuration (`framework`) in `.claude/pv-context.json` and repeats all the questions as if it didn't exist.
     ```
   - **If `complete` is `false`** (the `framework` section doesn't exist yet): follow the normal process from step 2 onward — there's nothing to preserve with a merge.
-  - **If `complete` is `true` but `hasLanguage` is `false` and/or there are other unconfigured optionals** (e.g. the user initialized once only confirming `workFolder` and declined the rest, or never got the language question because the project predates it): don't offer the destructive full reset up front. Ask first with `AskUserQuestion` whether they want to complete/review those specific optional fields (listing them, including language if `hasLanguage` is `false`) or leave things as they are; only if they explicitly ask to reset everything from scratch, follow the branch above. If they want to complete things, go to step 3 scoped to those fields and update in step 4 with a merge, same as with fields that were missing outright. If `hasLanguage` is already `true`, never ask about language again.
+  - **If `complete` is `true` but `hasLanguage` is `false` and/or there are other unconfigured optionals** (e.g. the user initialized once only confirming `workFolder` and declined the rest, or never got the language question because the project predates it): don't offer the destructive full reset up front. Ask first with `AskUserQuestion` whether they want to complete/review those specific optional fields (listing them, including language if `hasLanguage` is `false`) or leave things as they are; only if they explicitly ask to reset everything from scratch, follow the branch above. If they want to complete things, go to step 3 scoped to those fields and update in step 4 with a merge, same as with fields that were missing outright. If `hasLanguage` is already `true`, never ask about language again. Either way (completed now or left as-is), continue to step 5 per the rule below.
+
+  **Step 5 always runs, on every invocation of this skill, regardless of which branch above was taken** — including a run where the user declines every question and nothing in `.claude/pv-context.json` changes. This is what keeps `{repo root}/pv.py` current after installing a newer version of the framework's skill files: `scaffold-project.py` always overwrites `pv.py` unconditionally and only creates folders/placeholders that don't yet exist, so re-running it against an already-configured, unchanged project is safe and idempotent — never skip straight from step 1 to "done" without it.
 
 ## 2. Explore the repo for clues
 

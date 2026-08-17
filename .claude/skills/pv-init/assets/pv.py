@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Interactive menu for the pv-* framework, for direct use from a terminal.
 
-This file is generated/updated by the pv-init skill at the repo root — don't
-edit it by hand, your changes would be lost the next time the framework is
-re-initialized (master copy at
-.claude/skills/pv-init/assets/pv.py).
+This file is generated/updated at the repo root by install.sh/install.ps1 on
+every install or update, and also by the pv-init skill on every run — don't
+edit it by hand, your changes would be lost the next time either happens
+(master copy at .claude/skills/pv-init/assets/pv.py).
 
 Meant for an advanced user who wants to check or close pv-* framework
 changes without going through Claude Code or having to remember script

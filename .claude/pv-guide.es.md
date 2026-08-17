@@ -391,7 +391,7 @@ Para consultar el estado del proyecto o cerrar cambios sin pasar por Claude Code
 python3 pv.py
 ```
 
-`pv-init` lo genera (y lo actualiza en cada reinicialización) automáticamente, así que no hace falta crearlo ni mantenerlo a mano — es un fichero que no debes editar directamente: cualquier cambio manual se perdería la próxima vez que ejecutes `/pv-init`.
+Se genera y actualiza automáticamente — tanto al instalar/actualizar Previo con `install.sh`/`install.ps1` como en cada ejecución de `/pv-init` — así que no hace falta crearlo ni mantenerlo a mano — es un fichero que no debes editar directamente: cualquier cambio manual se perdería en la siguiente instalación o reinicialización.
 
 El menú contiene opciones para gestionar los cambios en curso:
 

@@ -65,6 +65,12 @@ try {
         }
     }
 
+    # Sincroniza el lanzador pv.py en la raíz del repo (fichero generado, se sobrescribe siempre).
+    $SrcPvPy = Join-Path $SrcSkills "pv-init\assets\pv.py"
+    if (Test-Path $SrcPvPy) {
+        Copy-Item -Path $SrcPvPy -Destination "pv.py" -Force
+    }
+
     Write-Host "Previo instalado/actualizado en .claude/skills."
     Write-Host "Si es la primera instalación, ejecuta /pv-init en tu agente para configurarlo."
 }

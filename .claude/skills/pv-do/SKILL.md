@@ -5,7 +5,7 @@ argument-hint: <xxxx of the already-planned change/fix>
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.5-beta2
+  version: 0.9.5-beta3
   uses: [pv-internal-workflow, pv-internal-doc-features, pv-internal-doc-technical]
 ---
 

@@ -55,5 +55,10 @@ for doc in pv-guide.en.md pv-guide.es.md; do
   fi
 done
 
+# Sincroniza el lanzador pv.py en la raíz del repo (fichero generado, se sobrescribe siempre).
+if [ -f "$SRC_SKILLS/pv-init/assets/pv.py" ]; then
+  cp "$SRC_SKILLS/pv-init/assets/pv.py" "pv.py"
+fi
+
 echo "Previo instalado/actualizado en .claude/skills."
 echo "Si es la primera instalación, ejecuta /pv-init en tu agente para configurarlo."

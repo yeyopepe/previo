@@ -5,7 +5,7 @@ argument-hint: <text to translate/review, or path to a file>
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.5-beta2
+  version: 0.9.5-beta3
   uses: []
 ---
 

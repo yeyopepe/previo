@@ -382,7 +382,7 @@ To check the project's status or close changes without going through Claude Code
 python3 pv.py
 ```
 
-`pv-init` generates it (and updates it on every re-initialization) automatically, so there's no need to create or maintain it by hand — it's a file you shouldn't edit directly: any manual change would be lost the next time you run `/pv-init`.
+It's generated and kept up to date automatically — both when installing/updating Previo via `install.sh`/`install.ps1` and on every `/pv-init` run — so there's no need to create or maintain it by hand — it's a file you shouldn't edit directly: any manual change would be lost on the next install or re-initialization.
 
 Running it and you will see the menu with some useful options:
 
