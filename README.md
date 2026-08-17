@@ -12,6 +12,7 @@ It brings the control and traceability of *spec-driven development* without the 
 - [Configurable and extensible](#configurable-and-extensible)
 - [Weaknesses and what's coming next](#weaknesses-and-whats-coming-next)
 - [Installation](#installation)
+  - [Full folder structure](#full-folder-structure)
 - [Workflow](#workflow)
   - [Minimal flow](#minimal-flow)
   - [Extended flow](#extended-flow)
@@ -77,6 +78,35 @@ Then, from that project's root, run once:
 ```
 
 This checks the required tools (Git, Python 3, and any conditional ones depending on the project's stack) and generates `.claude/pv-context.json` — the single configuration file the rest of the skills depend on: where changes are stored, whether the project versions deliverables, where the source code lives, which documentation to keep in sync, etc.
+
+### Full folder structure
+
+Here's what your repo will look like after installation, ready to start working with Previo:
+
+```
+{repo root}/
+├── src/                         # your app's source code (default folder)
+├── .claude/
+│   └── skills/                  # the Previo framework lives here
+│
+└── previo-sdd/                  # the framework's main working folder
+    ├── changes/                 # all your documentation and implementation work passes through here, based on its current state
+    │   ├── inProgress/          
+    │   ├── implemented/         
+    │   ├── todo/                
+    │   └── closed/              
+    │
+    ├── versions/                # each release you prepare shows up here
+    │   └── {XXXX}/              
+    │
+    ├── stuff/                   # miscellaneous material Previo uses
+    │
+    └── docs/                    # your project's documentation, kept up to date by Previo
+        ├── architecture/        
+        ├── style/               
+        └── features/            
+```
+
 
 ## 💻 Workflow
 

@@ -11,6 +11,7 @@ Aporta el control y la trazabilidad del *spec-driven development* sin la sobreca
 - [Puntos fuertes](#puntos-fuertes)
 - [Puntos menos fuertes y lo que está por llegar](#puntos-menos-fuertes-y-lo-que-está-por-llegar)
 - [Instalación](#instalación)
+  - [Estructura completa de carpetas](#estructura-completa-de-carpetas)
 - [Flujo de trabajo](#flujo-de-trabajo)
   - [Flujo mínimo](#flujo-mínimo)
   - [Flujo extendido](#flujo-extendido)
@@ -74,6 +75,35 @@ Después, desde la raíz de ese proyecto, ejecuta una vez:
 ```
 
 Esto comprueba las herramientas necesarias (Git, Python 3 y las condicionales según el stack del proyecto) y genera `.claude/pv-context.json` — el único fichero de configuración del que dependen el resto de skills: dónde se guardan los cambios, si el proyecto versiona entregables, dónde está el código fuente, qué documentación mantener sincronizada, etc.
+
+### Estructura completa de carpetas
+
+Así es cómo quedará tu repo tras la instalación, listo para empezar a trabajar con Previo:
+
+```
+{raíz del repo}/
+├── src/                         # el código fuente de tu app (carpeta por defecto)
+├── .claude/
+│   └── skills/                  # aquí está el framework de Previo
+│
+└── previo-sdd/                  # carpeta de trabajo principal del framework
+    ├── changes/                 # todo tu trabajo de documentación e implementación pasa por aquí, según su estado actual
+    │   ├── inProgress/          
+    │   ├── implemented/         
+    │   ├── todo/                
+    │   └── closed/              
+    │
+    ├── versions/                # aquí aparece cada entrega que prepares 
+    │   └── {XXXX}/              
+    │
+    ├── stuff/                   # aquí hay material diverso que usa Previo
+    │
+    └── docs/                    # la documentación de tu proyecto que Previo mantiene actualizada
+        ├── architecture/        
+        ├── style/               
+        └── features/            
+```
+
 
 ## 💻 Flujo de trabajo
 
