@@ -1,6 +1,6 @@
 # Instala o actualiza Previo en el proyecto actual.
 # Uso: irm https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.ps1 | iex
-# Uso (versión concreta): $env:PREVIO_VERSION = "v1.2.3"; irm .../install.ps1 | iex
+# Uso (versión concreta): $env:PREVIO_VERSION = "v1.2.3"; irm https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.ps1 | iex
 param(
     [string]$Version = $env:PREVIO_VERSION
 )
@@ -57,12 +57,18 @@ try {
     }
 
     # Sincroniza la documentación del framework.
-    foreach ($doc in @("pv-guide.md", "pv-guide.en.md", "pv-design.md", "pv-design.en.md")) {
+    foreach ($doc in @("pv-guide.en.md", "pv-guide.es.md")) {
         $DestDoc = Join-Path ".claude" $doc
         $SrcDoc = Join-Path $Tmp ".claude\$doc"
         if (Test-Path $SrcDoc) {
             Copy-Item -Path $SrcDoc -Destination $DestDoc -Force
         }
+    }
+
+    # Sincroniza el lanzador pv.py en la raíz del repo (fichero generado, se sobrescribe siempre).
+    $SrcPvPy = Join-Path $SrcSkills "pv-init\assets\pv.py"
+    if (Test-Path $SrcPvPy) {
+        Copy-Item -Path $SrcPvPy -Destination "pv.py" -Force
     }
 
     Write-Host "Previo instalado/actualizado en .claude/skills."
