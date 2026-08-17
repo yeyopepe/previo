@@ -9,8 +9,8 @@ Map of the skills that make up the `pv-*` framework and how they invoke each oth
   - [User-invocable](#user-invocable)
   - [Internal and support](#internal-and-support)
 - [The `pv-context.json` file](#the-pv-contextjson-file)
-  - [`skillModels` (optional)](#skillmodels-optional)
-  - [`framework` (required)](#framework-required)
+  - [skillModels](#skillmodels)
+  - [framework](#framework)
 
 ## Relationship diagram
 
@@ -70,7 +70,7 @@ Legend:
 
 ### User-invocable
 
-- **pv-init** — Initializes the framework: creates/completes `.claude/pv-context.json` (`framework.workFolder` — root relative to the repo under which the framework manages `changes/` and `versions/`, fixed-name subfolders the skills create themselves —, docs to keep in sync) and checks that the required command-line tools are installed. The single configuration point all other skills depend on. *Uses:* no other skill.
+- **pv-init** — Initializes the framework: creates/completes `.claude/pv-context.json` (`framework.workFolder` — root relative to the repo under which the framework manages `changes/` and `versions/`, fixed-name subfolders the skills create themselves —, docs to keep in sync, language configuration) and checks that the required command-line tools are installed. On a first `pv-init`, it always asks for the interaction language (`framework.interaction.language`) and, with a yes/no, whether the rest of the areas (`changes`, `versions`, `docs.functional`, `docs.tech`) share that same language or are configured one by one; it records the reason for each choice in `framework._comments`. If the project was already initialized without a language configured (`hasLanguage: false`), it adds that question to the same round that fills in the rest of the pending optional fields, without asking again if it was already resolved. The single configuration point all other skills depend on. *Uses:* no other skill.
 - **pv-new** — Documents an intentional change (new functionality or a deliberate behavior modification, not a bug). Invokes `pv-internal-tech-analysis` to gather technical context before anticipating typical functional questions, generates `description.md` via `pv-internal-workflow` and, if applicable, functional Mermaid diagrams per use case (via `pv-internal-tech-mermaid`) and visual mockups `design_*.html` (via `pv-internal-mockups-html`, or the alternative configured in `framework.skills.mockups`), validating both with the user before considering the change documented. Doesn't implement anything itself, but if the user wants to implement right away it can invoke `pv-how` directly on the entry it just created. *Uses:* `pv-internal-workflow`, `pv-internal-tech-analysis`, `pv-internal-tech-mermaid`, `pv-internal-mockups-html`, `pv-how`.
 - **pv-fix** — Documents a bug and implements it end to end, and is also the framework's fast lane for changes small enough to barely need analysis (typo, text, a value/constant, an isolated style tweak, bug or not). First invokes `pv-internal-tech-analysis` to assess whether the request is `fast` (unambiguous, ≤2 files, doesn't affect `docs.tech.architectureDocDir`/`docs.tech.styleBibleDocDir` and no inconsistencies detected with them, no new behavior). If it's `fast`, it creates the entry via `pv-internal-workflow` (`action=create`, `type=fast`), applies the change directly, and moves it to `implemented` (`action=move`) in the same invocation, without `plan.md`. If it's not `fast` and it is a bug, it generates `description.md` via `pv-internal-workflow` (`type=fix`), invoking `pv-internal-tech-mermaid`/`pv-internal-mockups-html` when the fix has a flow or visual component to represent, and automatically chains `pv-how` to fix it end to end, with the analysis strictly scoped to the root cause (no scope creep). If it's not `fast` and not a bug, it tells the user and invokes `pv-new` with their request. *Uses:* `pv-internal-workflow`, `pv-internal-tech-analysis`, `pv-internal-tech-mermaid`, `pv-internal-mockups-html`, `pv-new`, `pv-how`.
 - **pv-how** — Takes an entry already documented in `inProgress`, invokes `pv-internal-tech-analysis` to gather technical context, analyzes the technical solution, and writes `plan.md` (using `pv-internal-tech-mermaid`/`pv-internal-mockups-html` when what needs describing is a flow or requires a visual mockup). With `plan.md` already written, it invokes `pv-internal-tech-risks` to assess the risk of breaking something by implementing it and writes the returned median in the plan's header (the detail of the 9 factors is only added if the user asks for it). If the user confirms they want to implement now, it chains directly into `pv-do` on the same entry. *Uses:* `pv-internal-tech-analysis`, `pv-internal-tech-mermaid`, `pv-internal-mockups-html`, `pv-internal-tech-risks`, `pv-do`.
@@ -117,14 +117,26 @@ Example of an already-configured `.claude/pv-context.json`:
     "sourcecodeDir": "src",
     "workFolder": "/",
     "numberWidth": 5,
+    "interaction": { "language": "en" },
+    "changes": { "language": "es" },
+    "versions": { "language": "es" },
     "docs": {
       "functional": {
-        "featuresDocPathDir": "design/docs/features"
+        "featuresDocPathDir": "design/docs/features",
+        "language": "es"
       },
       "tech": {
         "architectureDocDir": "design/docs/architecture",
-        "styleBibleDocDir": "design/docs/style"
+        "styleBibleDocDir": "design/docs/style",
+        "language": "en"
       }
+    },
+    "_comments": {
+      "interaction.language": "The team talks to Claude in English.",
+      "changes.language": "Each in-progress change/fix is documented in Spanish, the team's language.",
+      "versions.language": "The published changelog is written in Spanish.",
+      "docs.functional.language": "Feature documentation in Spanish.",
+      "docs.tech.language": "Architecture and style bible in English, to share with external collaborators."
     }
   }
 }
@@ -136,7 +148,7 @@ Only `pv-init` writes it: it creates the file the first time and, on later invoc
 
 It has two top-level keys: `skillModels` (optional) and `framework` (required).
 
-### `skillModels` (optional)
+### skillModels
 
 Declarative source of truth for the Claude model/effort each `pv-*` skill runs with. It has no effect on its own: the Claude Code harness only reads the `model`/`effort` field from each `SKILL.md`'s frontmatter, not this JSON. After editing `default` or `overrides` you need to run `.claude/skills/pv-init/scripts/sync-skill-models.py` (or the equivalent option in `pv.py`'s menu), which rewrites that frontmatter according to what's configured here — it's a deterministic script, no model invoked.
 
@@ -146,21 +158,41 @@ Declarative source of truth for the Claude model/effort each `pv-*` skill runs w
 
 Where `modelConfig` is `{ "model": string, "effort": string }` — `model` accepts the same IDs as `/model` (e.g. `claude-sonnet-5`, `claude-haiku-4-5-20251001`, or `inherit`); `effort` accepts the same values as the frontmatter (`low`/`medium`/`high`).
 
-### `framework` (required)
+### framework
 
-Fixed-shape configuration that the `pv-*` skills use directly.
+Fixed-shape configuration that the `pv-*` skills use directly, split into four blocks: the basics, configuration of interchangeable skills, language configuration, and external reference documentation.
+
+#### The basics
 
 - **`workFolder`** (`string`, optional, default `"/"`): folder relative to the repo root under which the framework manages all its work. Inside it, the skills create two fixed-name subfolders themselves that the user doesn't choose or rename:
   - `{workFolder}/changes/` — with `inProgress/` (documented, pending planning/implementation), `implemented/` (plan already implemented, pending release — `pv-do` moves it here), `todo/` (loose ideas from `pv-todo`, unrelated to the change/fix flow), and `closed/` (already incorporated into a release, managed by `pv-version`/`pv-internal-changelog`). A given `{xxxx}` never repeats between `inProgress`/`implemented`.
   - `{workFolder}/versions/` — one subfolder per release prepared with `pv-version`, with a free-text `XXXX` code chosen by the user on each invocation; a numbering space completely independent from `changes/`'s `{xxxx}`.
 - **`sourcecodeDir`** (`string`, optional): the project's source code root folder. Used by `pv-how` as fallback context when writing `plan.md`, only when `docs.tech.architectureDocDir` doesn't exist as a real folder in the repo.
+- **`numberWidth`** (`integer`, optional, default `4`, minimum `1`): number of digits of the sequential `xxxx` code, zero-padded.
+
+#### Skill configuration
+
 - **`skills`** (`object`, optional): interchangeable skill names that the rest of the framework invokes by name instead of having them hardcoded in the code of whoever needs them — replacing the value here is enough to switch technology without touching `pv-new`/`pv-fix`/`pv-how`/`pv-internal-workflow`, as long as the indicated skill honors the same input/output contract as the one it replaces:
   - **`mockups`** (`string`, default `"pv-internal-mockups-html"`): the skill `pv-new`/`pv-fix` invoke for a change/fix's `design_*.html` mockups. Contract: destination folder + list of elements to create/edit as input; paths of the resulting files as output.
   - **`diagrams`** (`string`, default `"pv-internal-tech-mermaid"`): the skill `pv-internal-workflow`/`pv-new`/`pv-fix`/`pv-how` invoke for Mermaid diagrams. Contract: list of diagrams to generate (type + what each one represents) as input; each diagram's code as output.
-- **`numberWidth`** (`integer`, optional, default `4`, minimum `1`): number of digits of the sequential `xxxx` code, zero-padded.
+
+#### Language configuration
+
+Every writing point of the framework can have its own language instead of a single global one. `pv-init` asks about this configuration the first time it initializes the project (see its entry above); the rest of the skills only read it.
+
+- **`interaction.language`** (`string`, optional, default `"en"`): the language `pv-*` skills use to talk to the user in chat (questions, confirmations, summaries). It's also the fallback value for `changes.language`, `versions.language`, and any `docs.*.language` that isn't configured separately. Free text or an ISO 639-1 code (e.g. `"es"`, `"fr"`).
+- **`changes.language`** (`string`, optional, default `interaction.language`): language of an in-progress change/fix's documents (`description.md`, `plan.md`, `history.md`, and the sample text in `design_*.html`/`.txt` mockups) inside `{workFolder}/changes/**`.
+- **`versions.language`** (`string`, optional, default `interaction.language`): language of `changelog.md`, generated by `pv-internal-changelog` in `{workFolder}/versions/{XXXX}/` from `changes/closed`.
+- **`docs.functional.language`** (`string`, optional, default `interaction.language`): language of `docs.functional.featuresDocPathDir` (see "Documentation" below), which `pv-do` keeps updated after every implemented change/fix.
+- **`docs.tech.language`** (`string`, optional, default `interaction.language`): language shared by `docs.tech.architectureDocDir` and `docs.tech.styleBibleDocDir` (see "Documentation" below), which `pv-do` keeps updated after every implemented change/fix — doesn't apply to the fixed English tags `pv-internal-doc-technical` requires for recurring properties, which always stay in English.
+- **`_comments`** (`object`, optional): informational metadata for whoever edits the JSON by hand — for example, why each language was chosen. Ignored at runtime by all skills, same pattern as `skillModels._instructions`. `pv-init` fills it in alongside each `language` it writes.
+
+#### Documentation
+
 - **`docs`** (`object`, optional): external reference documentation for the project, grouped by area:
-  - **`functional.featuresDocPathDir`** (`string`, optional): listing of already-implemented functionality. Can be a folder (recommended — one file per feature plus a generated `INDEX.md`, in which case `pv-do` delegates reading/writing to `pv-internal-doc-features`) or, in projects not yet migrated, a single `.md` file. `pv-do` adds/updates the corresponding entry when implementing each change/fix, creating the path if it doesn't exist. If not configured, that step is skipped without asking.
-  - **`tech.architectureDocDir`** (`string`, optional): folder with the architecture/technical design document, split into several files with an `INDEX.md` summarizing each one (2-digit numeric prefix, e.g. `01-`, `02-`). `pv-do` keeps it in sync after every change/fix, creating a new file with the next free number if the topic doesn't fit any existing one.
+  - **`functional.featuresDocPathDir`** (`string`, optional): listing of already-implemented functionality. Can be a folder (recommended — one file per feature plus a generated `INDEX.md`, in which case `pv-do` delegates reading/writing to `pv-internal-doc-features`) or, in projects not yet migrated, a single `.md` file. `pv-do` adds/updates the corresponding entry when implementing each change/fix, creating the path if it doesn't exist. If not configured, that step is skipped without asking. Its language is configured in `functional.language` (see "Language configuration" above).
+  - **`tech.architectureDocDir`** (`string`, optional): folder with the architecture/technical design document, split into several files with an `INDEX.md` summarizing each one (2-digit numeric prefix, e.g. `01-`, `02-`). `pv-do` keeps it in sync after every change/fix, creating a new file with the next free number if the topic doesn't fit any existing one. Before drafting or editing its content, `pv-do` invokes `pv-internal-doc-technical` to apply its writing style.
   - **`tech.styleBibleDocDir`** (`string`, optional): same convention as `architectureDocDir`, but for the project's style guide (visual, interaction, writing).
+  - The language shared by both `tech.*` fields is configured in `tech.language` (see "Language configuration" above).
 
 Any `docs` field that isn't configured means the corresponding step is skipped without asking anything — the framework works the same either way, just with less context when analyzing and without keeping that documentation in sync.
