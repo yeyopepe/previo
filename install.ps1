@@ -1,12 +1,12 @@
 # Instala o actualiza Previo en el proyecto actual.
-# Uso: irm https://raw.githubusercontent.com/yeyopepe/previo/main/install.ps1 | iex
+# Uso: irm https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.ps1 | iex
 # Uso (versión concreta): $env:PREVIO_VERSION = "v1.2.3"; irm .../install.ps1 | iex
 param(
     [string]$Version = $env:PREVIO_VERSION
 )
 $ErrorActionPreference = "Stop"
 
-$Repo = "yeyopepe/previo"
+$Repo = "yeyopepe/previo-sdd"
 
 if ($Version) {
     try {

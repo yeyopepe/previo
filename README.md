@@ -42,13 +42,13 @@ From the root of the project where you want to use the framework, run:
 **macOS / Linux / Git Bash / WSL:**
 
 ```
-curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.sh | sh
 ```
 
 **Windows (PowerShell):**
 
 ```
-irm https://raw.githubusercontent.com/yeyopepe/previo/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.ps1 | iex
 ```
 
 This installs (or updates) `.claude/skills` and the documentation (`pv-guide.md`, `pv-design.md`, and their `.en.md` versions) with the framework's content, without touching your configuration (`pv-context.json`, `settings.json`) or any custom skill that doesn't start with `pv-`. Running it again at any time updates the framework to the latest version: it adds new skills, updates existing ones, and removes any that are no longer part of Previo.
