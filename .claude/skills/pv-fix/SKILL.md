@@ -52,7 +52,7 @@ Invoke the `pv-internal-tech-analysis` skill (Skill tool) passing it a summary o
 
 - What needs to change is unambiguously clear from a single read of the request — no relevant information is missing and no design or scope decision needs to be made. If applying it would require asking the user quite a bit, it's not `fast`.
 - It touches few files, in a very localized way (a constant, a piece of text, a value, a style rule, a one-off condition, a typo). If it affects more than 3 files, it's not `fast`, however small the change in each one.
-- If the change carries 0% risk for the rest of the application (it doesn't modify any function's interface, or modifies it while fully guaranteeing backward compatibility; doesn't change any response; doesn't change any flow; doesn't change any value used by other parts of the application besides the one being modified), it's `fast`.
+- If the change carries 0%-10% risk for the rest of the application (it doesn't modify any function's interface, or modifies it while fully guaranteeing backward compatibility; doesn't change any response; doesn't change any flow; doesn't change any value used by other parts of the application besides the one being modified), it's `fast`.
 - It doesn't introduce new behavior nor change an existing flow or interaction — at most it adjusts a value, text, or aspect of something that already exists.
 - It has no relevant edge cases to analyze, nor does it affect how different parts of the project coexist with each other.
 - If it's a bug: it's nowhere close to one whose root cause needs investigating — if digging is needed to find out why something fails, it's not `fast` (but it's still a fix: go to step 3).

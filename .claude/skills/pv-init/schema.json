@@ -110,7 +110,7 @@
           "type": "integer",
           "minimum": 1,
           "default": 5,
-          "description": "OPTIONAL (default 4). Number of digits of the sequential 'xxxx' code, zero-padded. No need to ask the user unless they want something different from the default.",
+          "description": "OPTIONAL (default 5). Number of digits of the sequential 'xxxx' code, zero-padded. Always written to pv-context.json even when the default is used -- the scripts that consume it have no fallback of their own. No need to ask the user unless they want something different from the default.",
           "examples": [5]
         },
         "docs": {

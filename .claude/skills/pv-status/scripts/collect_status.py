@@ -23,6 +23,11 @@ For each entry it determines:
   - hasDescription / hasPlan: whether description.md / plan.md exist.
   - subStatus: only relevant for the 'inProgress' state (to distinguish
     'described' from 'ready_to_implement'); null for every other state.
+  - risk: integer 0-10 parsed from plan.md's '**Risk**' header field
+    (written by pv-how once the technical solution is planned). Null if
+    there's no plan.md yet, or plan.md exists but doesn't have that field
+    written (shouldn't normally happen once pv-how finishes, but handled
+    defensively).
 
 Writes nothing: prints a single JSON on stdout with the full detail and the
 aggregated totals, for the skill to use when drafting the report.
@@ -40,6 +45,7 @@ from pathlib import Path
 
 TYPE_RE = re.compile(r"\*\*Type\*\*\s*[:—-]\s*([A-Za-z]+)", re.IGNORECASE)
 NAME_RE = re.compile(r"\*\*Name\*\*\s*[:—-]\s*(.+)")
+RISK_RE = re.compile(r"\*\*Risk\*\*\s*[:—-]\s*(\d{1,2})\s*/\s*10")
 # pv-todo doesn't use pv-new/pv-fix's "- **Field**:" format; it uses
 # markdown headings ('## Idea', '## Notes') without bold.
 # Both capture the whole block of each section, up to the next '##' heading
@@ -106,6 +112,22 @@ def parse_description(description_path: Path) -> dict:
     return result
 
 
+def parse_risk(plan_path: Path) -> int | None:
+    """Extracts the numeric median from plan.md's '**Risk**: {median}/10 — ...' field.
+
+    Returns None if plan.md doesn't exist or the field isn't written yet
+    (pv-how always writes it before considering plan.md finished, but older
+    or in-progress entries may not have it).
+    """
+    try:
+        text = plan_path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+
+    match = RISK_RE.search(text)
+    return int(match.group(1)) if match else None
+
+
 def parse_todo_description(description_path: Path) -> dict:
     """Extracts the full 'Idea' and 'Notes' text from a pv-todo description.md.
 
@@ -157,6 +179,8 @@ def build_entry(state_name: str, entry_dir: Path) -> dict:
         else:
             sub_status = "no_description"
 
+    risk = parse_risk(plan_path) if has_plan else None
+
     return {
         "code": entry_dir.name,
         "type": entry_type,
@@ -165,6 +189,7 @@ def build_entry(state_name: str, entry_dir: Path) -> dict:
         "hasDescription": has_description,
         "hasPlan": has_plan,
         "subStatus": sub_status,
+        "risk": risk,
     }
 
 

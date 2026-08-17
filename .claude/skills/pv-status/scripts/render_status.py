@@ -12,7 +12,7 @@ Besides the table's scalar placeholders, the template defines four
 reusable row patterns and three optional sections that get removed
 entirely (including their heading) when they don't apply:
 
-  <!-- ROW_ENTRY: ... -->    "in progress"/"pending" row (xxxx/name/type)
+  <!-- ROW_ENTRY: ... -->    "in progress"/"pending" row (xxxx/name/type/risk)
   <!-- EMPTY_ENTRY: ... -->  text if one of those two lists is empty
   <!-- ROW_FAST: ... -->     "implemented fast changes" row
   <!-- ROW_IDEA: ... -->     "ideas in todo/" row
@@ -112,6 +112,11 @@ def apply_section(text: str, name: str, keep: bool) -> str:
     return pattern.sub(replacement, text)
 
 
+def format_risk(entry: dict) -> str:
+    risk = entry.get("risk")
+    return f"{risk}/10" if risk is not None else "—"
+
+
 def entry_lines(entries: list[dict], row_template: str, empty_template: str) -> str:
     if not entries:
         return empty_template
@@ -121,6 +126,7 @@ def entry_lines(entries: list[dict], row_template: str, empty_template: str) -> 
             name=entry["name"] or "(no name)",
             type=entry["type"],
             icon=TYPE_ICONS.get(entry["type"], "❓"),
+            risk=format_risk(entry),
         )
         for entry in entries
     )
@@ -281,7 +287,8 @@ def render_terminal_entries(title_text: str, entries: list[dict]) -> list[str]:
     else:
         for entry in entries:
             name = entry["name"] or "(no name)"
-            block.append(term.wrap(f"- {entry['code']} — {name}", indent="  "))
+            risk = format_risk(entry)
+            block.append(term.wrap(f"- {entry['code']} — {name} (Risk: {risk})", indent="  "))
     return block
 
 

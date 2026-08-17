@@ -2,9 +2,9 @@
 
 *Generated: {generatedDate}*
 
-| Code | Type | Description | Date |
-| --- | --- | --- | --- |
+| Code | Type | Description | Risk | Date |
+| --- | --- | --- | --- | --- |
 {rows}
 
-<!-- ROW_TEMPLATE: | {code} | {type} | {description} | {date} | -->
+<!-- ROW_TEMPLATE: | {code} | {type} | {description} | {risk} | {date} | -->
 <!-- EMPTY_TEMPLATE: *(There are no entries in the "{state}" state.)* -->

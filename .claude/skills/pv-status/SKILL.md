@@ -59,7 +59,7 @@ python .claude/skills/pv-status/scripts/filter_status.py <state>
 
 If the given state doesn't exist as a `{changesDir}` folder, the script fails with a message listing the available states — your reply must be exactly that error message, as-is, without improvising your own list.
 
-The script already applies the [`STATUS.filtered.template.md`](STATUS.filtered.template.md) template internally and prints the ready-to-show markdown report on stdout (Code/Type/Description/Date table, or the "no entries" message if the state is empty) — it's not JSON, don't reapply the template yourself or reformat anything.
+The script already applies the [`STATUS.filtered.template.md`](STATUS.filtered.template.md) template internally and prints the ready-to-show markdown report on stdout (Code/Type/Description/Risk/Date table, or the "no entries" message if the state is empty) — it's not JSON, don't reapply the template yourself or reformat anything.
 
 Your chat reply must be **exactly** the script's stdout, with nothing added before or after (no "Here's the report:", summaries, or comments of your own). Don't save it to a file unless the user asks (step 4).
 

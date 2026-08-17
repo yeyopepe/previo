@@ -7,7 +7,7 @@ already rendered as markdown per the STATUS.filtered.template.md template
 (not JSON) -- so the model invoking this script doesn't need to spend
 tokens applying the template itself, just paste the output as-is.
 
-For each entry in the state folder, four columns are computed:
+For each entry in the state folder, five columns are computed:
   - code: the subfolder's name.
   - type: 'todo' if the state is 'todo' (pv-todo doesn't use a Type
     field); in any other state, description.md's '**Type**' field
@@ -18,6 +18,11 @@ For each entry in the state folder, four columns are computed:
     that section is empty or missing. history.md is never used as a
     fallback: it's prompt history for the exclusive use of pv-new/pv-fix,
     no other skill (including pv-status) should read it.
+  - risk: plan.md's '**Risk**' header field (written by pv-how once the
+    technical solution is planned), shown as '{value}/10'; None if there's
+    no plan.md yet or it doesn't have that field written (e.g. 'fast'
+    entries, which skip plan.md entirely, or entries still pending
+    pv-how).
   - date: description.md's '**Creation date**' field if present (verbatim
     as written); otherwise description.md's modification time (mtime)
     formatted as YYYY-MM-DD; if there's no description.md, the folder's own
@@ -27,7 +32,7 @@ The template (STATUS.filtered.template.md, in the skill's folder) defines
 the output format: a body with {state}, {generatedDate} and {rows}
 placeholders, plus two HTML comment lines the script extracts and doesn't
 print:
-  <!-- ROW_TEMPLATE: ... -->   pattern for one row, with {code}/{type}/{description}/{date}
+  <!-- ROW_TEMPLATE: ... -->   pattern for one row, with {code}/{type}/{description}/{risk}/{date}
   <!-- EMPTY_TEMPLATE: ... --> text to use for {rows} if there are no entries
 
 Writes nothing to disk: prints the final markdown to stdout.
@@ -51,6 +56,7 @@ TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "STATUS.filtered.templa
 
 DATE_RE = re.compile(r"\*\*Creation date\*\*\s*[:—-]\s*(.+)")
 TYPE_RE = re.compile(r"\*\*Type\*\*\s*[:—-]\s*([A-Za-z]+)", re.IGNORECASE)
+RISK_RE = re.compile(r"\*\*Risk\*\*\s*[:—-]\s*(\d{1,2})\s*/\s*10")
 KNOWN_TYPES = {"change", "fix", "fast"}
 
 TYPE_LABELS = {
@@ -131,12 +137,18 @@ def extract_type(text: str) -> str:
     return type_ if type_ in KNOWN_TYPES else "unknown"
 
 
+def extract_risk(text: str) -> str | None:
+    match = RISK_RE.search(text)
+    return match.group(1) if match else None
+
+
 def mtime_str(path: Path) -> str:
     return datetime.fromtimestamp(path.stat().st_mtime).strftime("%Y-%m-%d")
 
 
 def build_entry(state: str, entry_dir: Path) -> dict:
     description_path = entry_dir / "description.md"
+    plan_path = entry_dir / "plan.md"
 
     description = None
     date = None
@@ -151,11 +163,14 @@ def build_entry(state: str, entry_dir: Path) -> dict:
     else:
         date = mtime_str(entry_dir)
 
+    risk = extract_risk(plan_path.read_text(encoding="utf-8")) if plan_path.is_file() else None
+
     return {
         "code": entry_dir.name,
         "type": type_,
         "description": description,
         "date": date,
+        "risk": risk,
     }
 
 
@@ -208,6 +223,7 @@ def render_report(result: dict) -> str:
                 code=entry["code"],
                 type=TYPE_LABELS.get(entry["type"], entry["type"]),
                 description=entry["description"] or "—",
+                risk=f"{entry['risk']}/10" if entry["risk"] else "—",
                 date=entry["date"] or "—",
             )
             for entry in result["entries"]
@@ -239,8 +255,9 @@ def render_terminal(result: dict) -> str:
 
     for entry in result["entries"]:
         type_ = TYPE_LABELS.get(entry["type"], entry["type"])
+        risk = f"{entry['risk']}/10" if entry["risk"] else "—"
         lines.append("")
-        lines.append(f"{entry['code']}  [{type_}]  {entry['date'] or '—'}")
+        lines.append(f"{entry['code']}  [{type_}]  Risk: {risk}  {entry['date'] or '—'}")
         lines.append(term.wrap(entry["description"] or "—", indent="  "))
 
     lines.append("")

@@ -112,8 +112,9 @@ Skills opcionales que complementan el ciclo mínimo: anotar ideas antes de compr
 - **`/pv-version <código>`** — empaqueta una entrega: genera el entregable, comprime la documentación vigente y redacta el changelog funcional a partir de lo cerrado.
 
 
-## Todas las opciones
+### Todas las opciones
 Consulta en la [`Guía de usuario`](.claude/pv-guide.es.md) todo lo que puedes hacer con Previo.
+
 
 ## 📐Cómo está hecho, al detalle
 Si lo quieres es ver cómo está hecho (el mapa de skills del framework, cómo se invocan entre sí, las decisiones detrás de su arquitectura, etc), aquí tienes el [`documento de diseño`](.claude/pv-design.es.md).

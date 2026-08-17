@@ -115,7 +115,7 @@ Optional skills that complement the minimal cycle: jotting down ideas before com
 - **`/pv-version <code>`** — packages a release: generates the deliverable, archives the current documentation, and writes the functional changelog from what's been closed.
 
 
-## All the options
+### All the options
 See the [user guide](.claude/pv-guide.en.md) for everything you can do with Previo.
 
 ## 📐How it's built, in detail
