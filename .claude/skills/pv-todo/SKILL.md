@@ -5,7 +5,7 @@ argument-hint: "[code] <idea to note or develop>"
 model: claude-haiku-4-5
 effort: medium
 metadata:
-  version: 0.9.4-beta1
+  version: 0.9.5-beta1
   uses: []
 ---
 
