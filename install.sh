@@ -1,10 +1,10 @@
 #!/bin/sh
 # Instala o actualiza Previo en el proyecto actual.
-# Uso: curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo/main/install.sh | sh
+# Uso: curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.sh | sh
 # Uso (versión concreta): curl -fsSL .../install.sh | sh -s -- v1.2.3
 set -e
 
-REPO="yeyopepe/previo"
+REPO="yeyopepe/previo-sdd"
 REQUESTED_TAG="$1"
 
 if [ -n "$REQUESTED_TAG" ]; then

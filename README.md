@@ -17,38 +17,41 @@ It brings the control and traceability of *spec-driven development* without the 
 - [How it's built and how it works in detail](#how-its-built-and-how-it-works-in-detail)
 - [License](#license)
 
-## Key features
+## 🔑 Key features
 
-- <u>**Complete spec, free-form.**</u> Every entry requires just enough structure to be useful (intent, plan, state), without complex *spec* formats to learn or maintain by hand.
-- <u>**Design is always validated.**</u> Visual changes and workflows are validated with static mockups (HTML/CSS or a custom format) before anything gets implemented — avoiding the "implement → doesn't land right → redo" cycle.
-- <u>**Detailed analysis, clear risks.**</u> Every change is analyzed and written up in a detailed plan to set it up for success and surface the risk it carries upfront.
-- <u>**Documentation always up to date.**</u> Previo keeps the project's technical and functional documentation up to date at all times, along with the changelog between versions. You can start the project with an initial technical design or just let it build up as you go.
-- <u>**Speed vs. complexity.**</u> Prioritizes speed and sequential work over parallel work, avoiding the complexity of coordinating multiple changes at once, resolving PR conflicts, or managing simultaneous branches.
-- <u>**Adaptable and versatile.**</u> Works on projects of any size and adapts to each project's stack; some of its pieces can be extended or swapped out without touching the rest of the framework.
-- <u>**No extra tooling.**</u> Requires nothing beyond Claude Code and Python on the development machine — no external services, databases, or infrastructure to maintain.
-- <u>**100% made by AI, to AI.**</u> The whole cycle (from idea to delivery) is a 100% AI-guided process, for any kind of profile. A few more tokens, much less complexity.
-- <u>**And plenty more.**</u> Tracking and traceability for every change, release generation (documentation included), a prompt history tied to each change, fast changes, security reviews, multi-language support, and more.
+| Feature | Description |
+|---|---|
+|<u>**Complete spec, free-form.**</u>|Every entry requires just enough structure to be useful (intent, plan, state), without complex *spec* formats to learn or maintain by hand. |
+|<u>**Design is always validated.**</u>|Visual changes and workflows are validated with static mockups (HTML/CSS or a custom format) before anything gets implemented — avoiding the "implement → doesn't land right → redo" cycle.|
+|<u>**Detailed analysis, clear risks.**</u>|Every change is analyzed and written up in a detailed plan to set it up for success and surface the risk it carries upfront.|
+|<u>**Documentation always up to date.**</u>|Previo keeps the project's technical and functional documentation up to date at all times, along with the changelog between versions. You can start the project with an initial technical design or just let it build up as you go.|
+|<u>**Speed vs. complexity.**</u>|Prioritizes speed and sequential work over parallel work, avoiding the complexity of coordinating multiple changes at once, resolving PR conflicts, or managing simultaneous branches.|
+|<u>**Adaptable and versatile.**</u>|Works on projects of any size and adapts to each project's stack; some of its pieces can be extended or swapped out without touching the rest of the framework.|
+|<u>**No extra tooling.**</u>|Requires nothing beyond Claude Code and Python on the development machine — no external services, databases, or infrastructure to maintain.|
+|<u>**100% made by AI, to AI.**</u>|The whole cycle (from idea to delivery) is a 100% AI-guided process, for any kind of profile. A few more tokens, much less complexity.|
+|<u>**And plenty more.**</u>|Tracking and traceability for every change, release generation (documentation included), a prompt history tied to each change, fast changes, security reviews, multi-language support, and more.|
+ 
 
-## Weaknesses and what's coming next
+## ⚠️ Weaknesses and what's coming next
 
 - <u>**Large contexts.**</u> As the project grows, the context Previo needs to do its job grows too (and token usage along with it). We've prioritized the quality of results over the assumed token savings (though we haven't forgotten about those either), because our experience tells us that rework always costs more than good upfront analysis.
 - <u>**Better with better models.**</u> Previo can run on any model, though results will vary accordingly, of course. Think of it like deciding what profile to hire for a job: a junior (e.g. Haiku) will go faster and cost you less, but the risk of mistakes and rework is high. You could even run several in parallel if you want, but then it's no longer that cheap. A senior (e.g. Sonnet) will cost you a bit more, but will think things through better and the risk will be much lower. We've tested Previo with both approaches and using a senior for everything has always paid off for us (rework rate on our last project: 5%) over trying to save with juniors (rework on the same project: 40%). These are just our numbers, we know, so try it yourself.
 - <u>**Risk vs. testing.**</u> Since we've prioritized quality of work and risk reduction, we've set aside implementing more specific testing tooling for now. We're figuring out how to add it without hurting the framework's agility. Right now you can define changes that are specifically about writing tests for already-implemented changes, but we think there may be a better way to do this in the near future.
 
-## Installation
+## 🛠️Installation
 
 From the root of the project where you want to use the framework, run:
 
 **macOS / Linux / Git Bash / WSL:**
 
 ```
-curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.sh | sh
 ```
 
 **Windows (PowerShell):**
 
 ```
-irm https://raw.githubusercontent.com/yeyopepe/previo/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.ps1 | iex
 ```
 
 This installs (or updates) `.claude/skills` and the documentation (`pv-guide.md`, `pv-design.md`, and their `.en.md` versions) with the framework's content, without touching your configuration (`pv-context.json`, `settings.json`) or any custom skill that doesn't start with `pv-`. Running it again at any time updates the framework to the latest version: it adds new skills, updates existing ones, and removes any that are no longer part of Previo.
@@ -61,7 +64,7 @@ Then, from that project's root, run once:
 
 This checks the required tools (Git, Python 3, and any conditional ones depending on the project's stack) and generates `.claude/pv-context.json` — the single configuration file the rest of the skills depend on: where changes are stored, whether the project versions deliverables, where the source code lives, which documentation to keep in sync, etc.
 
-## Workflow
+## 💻Workflow
 
 Each change lives in a numbered folder inside `changes/` that travels between subfolders as its state progresses: `inProgress/` → `implemented/` → `closed/`.
 
@@ -102,7 +105,7 @@ Optional skills that complement the minimal cycle: jotting down ideas before com
 
 See the [user guide](.claude/pv-guide.en.md) for everything you can do with Previo.
 
-## How it's built, in detail
+## 📐How it's built, in detail
 
 If you want to see how it's built (the framework's skill map, how they invoke each other, the reasoning behind its architecture, etc), here's the [design document](.claude/pv-design.en.md).
 
