@@ -50,10 +50,16 @@ def load_framework(root: Path) -> dict:
     return framework
 
 
+def resolve_work_root(root: Path, work_folder_rel: str) -> Path:
+    # workFolder is always relative to the repo root, whether or not it
+    # carries a leading "/" (that's only a convention to make it visually
+    # explicit) -- Path("/a") / "/b" would otherwise discard "a" entirely,
+    # since pathlib treats a leading-slash operand as its own absolute path.
+    return root / (work_folder_rel or "").lstrip("/")
+
+
 def resolve_versions_dir(root: Path, work_folder_rel: str) -> Path:
-    work_folder_rel = work_folder_rel or "/"
-    work_root = root if work_folder_rel in ("/", "") else root / work_folder_rel
-    return work_root / "versions"
+    return resolve_work_root(root, work_folder_rel) / "versions"
 
 
 def zip_dir(source_dir: Path, dest_zip: Path) -> None:
@@ -84,7 +90,8 @@ def main() -> None:
     root = repo_root()
     framework = load_framework(root)
     work_folder_rel = args.work_folder or framework.get("workFolder", "/")
-    versions_dir = resolve_versions_dir(root, work_folder_rel)
+    work_root = resolve_work_root(root, work_folder_rel)
+    versions_dir = work_root / "versions"
 
     version_docs_dir = versions_dir / args.xxxx / "docs"
     if not version_docs_dir.is_dir():
@@ -110,7 +117,7 @@ def main() -> None:
             skipped.append(field)
             continue
 
-        source_path = root / doc_path_rel
+        source_path = work_root / doc_path_rel
         if source_path.is_dir():
             dest_zip = version_docs_dir / f"{source_path.name}.zip"
             zip_dir(source_path, dest_zip)

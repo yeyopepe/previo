@@ -31,6 +31,8 @@
       }
     },
     "_comments": {
+      "workFolder": "Es la carpeta de trabajo principal del framework, relativa siempre a la raíz del repo.",
+      "sourcecodeDir": "Es la carpeta del código fuente del proyecto, relativa siempre a la raíz del repo.",
       "interaction.language": "Idioma en el que las skills pv-* hablan con el usuario en el chat (preguntas, confirmaciones, resumenes). Tambien es el valor por defecto (fallback) de changes.language, versions.language y cualquier docs.*.language que no se configure aparte. Fijado en espanol; confirmado explicitamente con el usuario el 2026-08-16 al implementar el plan de idioma configurable.",
       "changes.language": "Idioma de los documentos de un change/fix en curso (description.md, plan.md, history.md y los textos de los mockups design_*.html/.txt) dentro de {workFolder}/changes/**. Coincide con interaction porque el equipo documenta el proceso de cada change/fix en espanol.",
       "versions.language": "Idioma de changelog.md, generado por pv-internal-changelog en {workFolder}/versions/{XXXX}/ a partir de changes/closed. Coincide con interaction porque el changelog se redacta en espanol.",

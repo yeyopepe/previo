@@ -134,6 +134,8 @@ Ejemplo de `.claude/pv-context.json` ya configurado:
       }
     },
     "_comments": {
+      "workFolder": "Es la carpeta de trabajo principal del framework, relativa siempre a la raíz del repo.",
+      "sourcecodeDir": "Es la carpeta del código fuente del proyecto, relativa siempre a la raíz del repo.",
       "interaction.language": "El equipo habla con Claude en inglés.",
       "changes.language": "Cada change/fix en curso se documenta en español, idioma del equipo.",
       "versions.language": "El changelog publicado se redacta en español.",
@@ -166,11 +168,11 @@ Configuración de forma fija que las skills `pv-*` usan directamente, dividida e
 
 #### Lo básico
 
-- **`workFolder`** (`string`, opcional, default `"/previo-sdd"`): carpeta relativa a la raíz del repo bajo la que el framework gestiona todo su trabajo. Es el único campo de `framework` que `pv-init` nunca pregunta ni confirma: siempre escribe el default en silencio, igual que `skills.mockups`/`skills.diagrams`. Si algún día se quiere otra carpeta, se cambia a mano en `pv-context.json`, bajo la responsabilidad de quien lo edite. Dentro de ella, las skills crean por sí mismas tres subcarpetas de nombre fijo que el usuario no elige ni renombra:
+- **`workFolder`** (`string`, opcional, default `"/previo-sdd"`): carpeta relativa a la raíz del repo bajo la que el framework gestiona todo su trabajo. La `/` inicial es solo un convenio visual (para que se distinga a simple vista de `docs.*`, que es relativa a `workFolder` mismo) — es opcional y todo script `pv-*` la quita antes de resolver la ruta, así que `"previo-sdd"` y `"/previo-sdd"` funcionan igual; nunca es una ruta absoluta real del sistema de ficheros. Es el único campo de `framework` que `pv-init` nunca pregunta ni confirma: siempre escribe el default en silencio, igual que `skills.mockups`/`skills.diagrams`. Si algún día se quiere otra carpeta, se cambia a mano en `pv-context.json`, bajo la responsabilidad de quien lo edite. Dentro de ella, `scaffold-project.py` de `pv-init` crea tres subcarpetas de nombre fijo justo después de escribir `pv-context.json`, que el usuario no elige ni renombra:
   - `{workFolder}/changes/` — con `inProgress/` (documentado, pendiente de planificar/implementar), `implemented/` (plan ya implementado, pendiente de entrega — lo mueve ahí `pv-do`), `todo/` (ideas sueltas de `pv-todo`, ajenas al flujo de change/fix) y `closed/` (ya incorporado a una entrega, gestionado por `pv-version`/`pv-internal-changelog`). Un mismo `{xxxx}` nunca se repite entre `inProgress`/`implemented`.
   - `{workFolder}/versions/` — una subcarpeta por entrega preparada con `pv-version`, con código `XXXX` de texto libre elegido por el usuario en cada invocación; espacio de numeración totalmente independiente del `{xxxx}` de `changes/`.
   - `{workFolder}/stuff/` — ficheros propios del proyecto que ninguna otra skill del framework decide por él, empezando por `how-to-compile-version.md` (procedimiento de build que `pv-version` pregunta y escribe la primera vez que hace falta).
-- **`sourcecodeDir`** (`string`, opcional, default `"/src"`): carpeta raíz del código fuente del proyecto, relativa a la raíz del repo — con `/` inicial para que se distinga a simple vista de `docs.*`, que es relativa a `workFolder`. La usa `pv-how` como contexto de respaldo al escribir `plan.md`, solo cuando `docs.tech.architectureDocDir` no existe como carpeta real en el repo.
+- **`sourcecodeDir`** (`string`, opcional, default `"/src"`): carpeta raíz del código fuente del proyecto, relativa a la raíz del repo — con `/` inicial para que se distinga a simple vista de `docs.*`, que es relativa a `workFolder`. Mismo convenio que `workFolder`: esa `/` inicial es opcional y solo visual, nunca una ruta absoluta real — `"src"` y `"/src"` resuelven igual. La usa `pv-how` como contexto de respaldo al escribir `plan.md`, solo cuando `docs.tech.architectureDocDir` no existe como carpeta real en el repo.
 - **`numberWidth`** (`integer`, opcional, default `4`, mínimo `1`): número de dígitos del código secuencial `xxxx`, con ceros a la izquierda.
 
 #### Configuración de skills

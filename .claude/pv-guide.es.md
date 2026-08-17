@@ -77,6 +77,15 @@ Ejemplo de `.claude/pv-context.json` ya configurado:
         "styleBibleDocDir": "docs/style",
         "language": "en"
       }
+    },
+    "_comments": {
+      "workFolder": "Es la carpeta de trabajo principal del framework, relativa siempre a la raíz del repo.",
+      "sourcecodeDir": "Es la carpeta del código fuente del proyecto, relativa siempre a la raíz del repo.",
+      "interaction.language": "El equipo habla con Claude en inglés.",
+      "changes.language": "Cada change/fix en curso se documenta en español, idioma del equipo.",
+      "versions.language": "El changelog publicado se redacta en español.",
+      "docs.functional.language": "Documentación de funcionalidades en español.",
+      "docs.tech.language": "Arquitectura y biblia de estilo en inglés, para compartir con colaboradores externos."
     }
   }
 }

@@ -59,8 +59,11 @@ def load_framework_defaults(root: Path) -> dict:
 
 
 def resolve_changes_dir(root: Path, work_folder_rel: str) -> Path:
-    work_folder_rel = work_folder_rel or "/"
-    work_root = root if work_folder_rel in ("/", "") else root / work_folder_rel
+    # workFolder is always relative to the repo root, whether or not it
+    # carries a leading "/" (that's only a convention to make it visually
+    # explicit) -- Path("/a") / "/b" would otherwise discard "a" entirely,
+    # since pathlib treats a leading-slash operand as its own absolute path.
+    work_root = root / (work_folder_rel or "").lstrip("/")
     return work_root / "changes"
 
 

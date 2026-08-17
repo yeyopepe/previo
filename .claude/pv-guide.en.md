@@ -43,6 +43,7 @@ Before using any other `pv-*` skill, you need to run `/pv-init` once per project
 
 `pv-init` explores the repo looking for clues (`package.json`, architecture docs...) and only asks about what it can't infer. `workFolder` isn't one of those questions: it's always `/previo-sdd`, set silently without confirmation; if you ever want a different folder, you change it yourself in `.claude/pv-context.json`, at your own risk. If invoked again on an already-initialized project, it lets you reconfigure or fill in missing fields without repeating the whole questionnaire.
 
+
 Example of an already-configured `.claude/pv-context.json`:
 
 ```json
