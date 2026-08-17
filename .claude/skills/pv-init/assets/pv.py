@@ -163,7 +163,7 @@ def list_states() -> list[str]:
 def show_filtered_status() -> None:
     states = list_states()
     if not states:
-        print(wrap(f"No state folders in {CHANGES_DIR}."))
+        print(wrap("There are no changes yet in this project."))
         return
 
     print()

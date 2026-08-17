@@ -31,11 +31,11 @@
       }
     },
     "_comments": {
-      "interaction.language": "Historico del proyecto en espanol; se confirmo explicitamente con el usuario el 2026-08-16 al implementar el plan de idioma configurable.",
-      "changes.language": "Mismo idioma que interaction: el equipo documenta el proceso de cada change/fix en espanol.",
-      "versions.language": "Mismo idioma que interaction: el changelog se redacta en espanol.",
-      "docs.functional.language": "Documentacion de features en espanol.",
-      "docs.tech.language": "Arquitectura y biblia de estilo en espanol."
+      "interaction.language": "Idioma en el que las skills pv-* hablan con el usuario en el chat (preguntas, confirmaciones, resumenes). Tambien es el valor por defecto (fallback) de changes.language, versions.language y cualquier docs.*.language que no se configure aparte. Fijado en espanol; confirmado explicitamente con el usuario el 2026-08-16 al implementar el plan de idioma configurable.",
+      "changes.language": "Idioma de los documentos de un change/fix en curso (description.md, plan.md, history.md y los textos de los mockups design_*.html/.txt) dentro de {workFolder}/changes/**. Coincide con interaction porque el equipo documenta el proceso de cada change/fix en espanol.",
+      "versions.language": "Idioma de changelog.md, generado por pv-internal-changelog en {workFolder}/versions/{XXXX}/ a partir de changes/closed. Coincide con interaction porque el changelog se redacta en espanol.",
+      "docs.functional.language": "Idioma de la documentacion de funcionalidades (featuresDocPathDir, p.ej. design/docs/features) que pv-do mantiene actualizada tras cada change/fix implementado. En espanol.",
+      "docs.tech.language": "Idioma compartido por la documentacion de arquitectura (architectureDocDir) y la biblia de estilo (styleBibleDocDir), que pv-do mantiene actualizadas tras cada change/fix implementado. En espanol."
     }
   }
 }

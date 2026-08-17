@@ -160,21 +160,19 @@ def build_entry(state: str, entry_dir: Path) -> dict:
 
 
 def collect(changes_dir: Path, state: str) -> dict:
-    if not changes_dir.is_dir():
-        raise SystemExit(f"Changes folder doesn't exist: {changes_dir}")
-
-    available = sorted(p.name for p in changes_dir.iterdir() if p.is_dir())
+    # A missing changes_dir or state subfolder just means there are no
+    # entries in that state yet -- not an error condition. Treated the same
+    # as an existing-but-empty folder, so the caller reports "no entries"
+    # instead of failing.
     state_dir = changes_dir / state
-    if not state_dir.is_dir():
-        raise SystemExit(
-            f"State '{state}' doesn't exist in {changes_dir}. "
-            f"Available states: {', '.join(available) if available else '(none)'}."
-        )
-
-    entries = [
-        build_entry(state, entry_dir)
-        for entry_dir in sorted(p for p in state_dir.iterdir() if p.is_dir())
-    ]
+    entries = (
+        [
+            build_entry(state, entry_dir)
+            for entry_dir in sorted(p for p in state_dir.iterdir() if p.is_dir())
+        ]
+        if state_dir.is_dir()
+        else []
+    )
 
     return {
         "changesDir": str(changes_dir),

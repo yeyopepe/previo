@@ -172,10 +172,16 @@ def collect(changes_dir: Path) -> dict:
     states: dict[str, dict] = {}
     warnings: list[str] = []
 
-    if not changes_dir.is_dir():
-        raise SystemExit(f"Changes folder doesn't exist: {changes_dir}")
+    # A missing changes_dir just means nothing has been tracked yet -- not an
+    # error condition. Treated the same as an existing-but-empty folder, so
+    # every consumer below reports "no entries" instead of failing.
+    state_dirs = (
+        sorted(p for p in changes_dir.iterdir() if p.is_dir())
+        if changes_dir.is_dir()
+        else []
+    )
 
-    for state_dir in sorted(p for p in changes_dir.iterdir() if p.is_dir()):
+    for state_dir in state_dirs:
         entries = []
         for entry_dir in sorted(p for p in state_dir.iterdir() if p.is_dir()):
             entry = build_entry(state_dir.name, entry_dir)
