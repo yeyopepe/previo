@@ -1,7 +1,7 @@
 #!/bin/sh
 # Instala o actualiza Previo en el proyecto actual.
 # Uso: curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.sh | sh
-# Uso (versión concreta): curl -fsSL .../install.sh | sh -s -- v1.2.3
+# Uso (versión concreta): curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.sh | sh -s -- v1.2.3
 set -e
 
 REPO="yeyopepe/previo-sdd"
@@ -49,11 +49,16 @@ for dir in "$DEST_SKILLS"/pv-*; do
 done
 
 # Sincroniza la documentación del framework.
-for doc in pv-guide.md pv-guide.en.md pv-design.md pv-design.en.md; do
+for doc in pv-guide.en.md pv-guide.es.md; do
   if [ -f "$TMP/.claude/$doc" ]; then
     cp "$TMP/.claude/$doc" ".claude/$doc"
   fi
 done
+
+# Sincroniza el lanzador pv.py en la raíz del repo (fichero generado, se sobrescribe siempre).
+if [ -f "$SRC_SKILLS/pv-init/assets/pv.py" ]; then
+  cp "$SRC_SKILLS/pv-init/assets/pv.py" "pv.py"
+fi
 
 echo "Previo instalado/actualizado en .claude/skills."
 echo "Si es la primera instalación, ejecuta /pv-init en tu agente para configurarlo."
