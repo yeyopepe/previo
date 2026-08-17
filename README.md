@@ -1,42 +1,43 @@
+*Read this in [Spanish](README.es.md).*
+
 # Previo
 
-*Read this in [English](README.en.md).*
+**Previo** is a development framework created and driven by AI for [Claude Code](https://claude.com/claude-code): it defines changes, validates design through mockups and diagrams, tracks the state of each change, and prepares releases — all conversationally, without rigid templates or extra tooling.
 
-**Previo** es un framework de desarrollo creado y dirigido por IA para [Claude Code](https://claude.com/claude-code): define cambios, valida el diseño sobre maquetas y diagramas, gestiona el estado de cada cambio y prepara entregas — todo de forma conversacional, sin plantillas rígidas ni herramientas adicionales.
+It brings the control and traceability of *spec-driven development* without the process overhead that approach usually demands in large projects. Built for projects of any size run by a single person.
 
-Aporta el control y la trazabilidad del *spec-driven development* sin la sobrecarga de proceso que ese enfoque suele exigir en proyectos grandes. Pensado para proyectos de cualquier tamaño y gestionados por una sola persona.
+## Table of contents
 
-## Índice
+- [Key features](#key-features)
+- [Weaknesses and what's coming next](#weaknesses-and-whats-coming-next)
+- [Installation](#installation)
+- [Workflow](#workflow)
+  - [Minimal flow](#minimal-flow)
+  - [Extended flow](#extended-flow)
+- [How it's built and how it works in detail](#how-its-built-and-how-it-works-in-detail)
+- [License](#license)
 
-- [Puntos fuertes](#puntos-fuertes)
-- [Puntos menos fuertes y lo que está por llegar](#puntos-menos-fuertes-y-lo-que-está-por-llegar)
-- [Instalación](#instalación)
-- [Flujo de trabajo](#flujo-de-trabajo)
-  - [Flujo mínimo](#flujo-mínimo)
-  - [Flujo extendido](#flujo-extendido)
-- [Cómo está hecho y cómo funciona en detalle](#cómo-está-hecho-y-cómo-funciona-en-detalle)
-- [Licencia](#licencia)
+## Key features
 
-## Puntos fuertes
+- <u>**Complete spec, free-form.**</u> Every entry requires just enough structure to be useful (intent, plan, state), without complex *spec* formats to learn or maintain by hand.
+- <u>**Design is always validated.**</u> Visual changes and workflows are validated with static mockups (HTML/CSS or a custom format) before anything gets implemented — avoiding the "implement → doesn't land right → redo" cycle.
+- <u>**Detailed analysis, clear risks.**</u> Every change is analyzed and written up in a detailed plan to set it up for success and surface the risk it carries upfront.
+- <u>**Documentation always up to date.**</u> Previo keeps the project's technical and functional documentation up to date at all times, along with the changelog between versions. You can start the project with an initial technical design or just let it build up as you go.
+- <u>**Speed vs. complexity.**</u> Prioritizes speed and sequential work over parallel work, avoiding the complexity of coordinating multiple changes at once, resolving PR conflicts, or managing simultaneous branches.
+- <u>**Adaptable and versatile.**</u> Works on projects of any size and adapts to each project's stack; some of its pieces can be extended or swapped out without touching the rest of the framework.
+- <u>**No extra tooling.**</u> Requires nothing beyond Claude Code and Python on the development machine — no external services, databases, or infrastructure to maintain.
+- <u>**100% made by AI, to AI.**</u> The whole cycle (from idea to delivery) is a 100% AI-guided process, for any kind of profile. A few more tokens, much less complexity.
+- <u>**And plenty more.**</u> Tracking and traceability for every change, release generation (documentation included), a prompt history tied to each change, fast changes, security reviews, multi-language support, and more.
 
-- <u>**Especificación completa, formato libre.**</u> Cada entrada exige la estructura mínima necesaria para ser útil (intención, plan, estado), sin formatos de *spec* complejos que haya que aprender o mantener a mano.
-- <u>**Valida siempre sobre diseños.**</u> Visualiza y valida los cambios visuales y los flujos de trabajo con maquetas estáticas (HTML/CSS o personalizado) antes implementar nada, evitando el ciclo de "implementar → ver que no convence → rehacer".
-- <u>**Análisis detallados, riesgos claros.**</u> Cada cambio es analizado y escrito en un plan al detalle para asegurar el éxito yanticipar el riesgo que conlleva.
-- <u>**Documentación siempre al día.**</u> Previo mantiene siempre actualizada la documentación técnica y funcional del proyecto, así como los cambios entre versiones. Puedes empezar el proyecto con un diseño técnico inicial o simplemente dejar que vaya haciendo.
-- <u>**Velocidad vs. complejidad.**</u> Prioriza la velocidad y el trabajo secuencial frente al trabajo en paralelo, evitando la complejidad de coordinar varios cambios a la vez, resolver conflictos entre PRs o gestionar ramas simultáneas.
-- <u>**Adaptable y versátil.**</u> Funciona en proyectos de cualquier tamaño y se adapta al stack de cada uno; algunas de sus piezas se pueden extender o sustituir sin tocar el resto del framework.
-- <u>**Sin herramientas adicionales.**</u> No requiere más que Claude Code y Python en la máquina de desarrollo — nada de servicios externos, bases de datos ni infraestructura propia.
-- <u>**100% construido con IA y para IA.**</u> Todo el ciclo (desde la idea hasta su realización) es un proceso 100% guidado por IA, para cualquier tipo de perfil. Unos pocos tokens más, mucha complejidad menos.
-- <u>**Y muchas cosas más.**</u> Gestión y trazabilidad de cada cambio, generación de versiones (incluida documentación), histórico de prompts relacionados con cada cambio, cambios rápidos, evaluaciones de seguridad, soporte multi-idioma, etc.
+## Weaknesses and what's coming next
 
-## Puntos menos fuertes y lo que está por llegar
-- <u>**Contextos grandes.**</u> A medida que el proyecto crezca, el contexto necesario para que Previo haga su trabajo también crecerá (y el consumo de tokens). Hemos priorizado la calidad de los resultados frente al supuesto ahorro de tokens (aunque no los hemos olvidado) porque nuestra experiencia nos dice que el retrabajo siempre sale más caro que un buen análisis previo.
-- <u>**Mejor con mejores modelos.**</u> Previo puede funcionar con cualquier modelo, aunque los resultados irán en consonancia, claro. Esto es cómo decidir qué perfil quieres contratar para hacer un trabajo: un junior (ej: Haiku) irá más rápido y te costará menos, pero el riesgo de errores y retrabajo es grande. Incluso puedes tener varios en paralelo si quieres, pero entonces ya no te sale tan barato. Un senior (ej: Sonnet) te costará un poco más, pero se lo pensará mejor y el riesgo será mucho menor. Nosotros hemos testeado Previo con ambos enfoques (Sonnet es suficiente senior) y siempre nos ha compensado el uso de un senior (porcentaje de retrabajo en el último proyecto: 5%) para todo en lugar de intentar ahorrar con juniors (retrabajo en el mismo proyecto: 40%). Son solo nuestros números, lo sabemos, así que pruébalo tú mismo.
-- <u>**Riesgo vs. testing.**</u> Como hemos priorizado la calidad del trabajo y la reducción de riesgos, hemos dejado de lado de momento la implementación de herramientas de testing más específico. Estamos pensando cómo incorporarlo de manera que no afecte a la agilidad del framework. Actualmente puedes definir cambios que sean específicamente la creación de tests sobre cambios ya implementados, pero creemos que puede haber una manera mejor en el futuro cercano.
+- <u>**Large contexts.**</u> As the project grows, the context Previo needs to do its job grows too (and token usage along with it). We've prioritized the quality of results over the assumed token savings (though we haven't forgotten about those either), because our experience tells us that rework always costs more than good upfront analysis.
+- <u>**Better with better models.**</u> Previo can run on any model, though results will vary accordingly, of course. Think of it like deciding what profile to hire for a job: a junior (e.g. Haiku) will go faster and cost you less, but the risk of mistakes and rework is high. You could even run several in parallel if you want, but then it's no longer that cheap. A senior (e.g. Sonnet) will cost you a bit more, but will think things through better and the risk will be much lower. We've tested Previo with both approaches and using a senior for everything has always paid off for us (rework rate on our last project: 5%) over trying to save with juniors (rework on the same project: 40%). These are just our numbers, we know, so try it yourself.
+- <u>**Risk vs. testing.**</u> Since we've prioritized quality of work and risk reduction, we've set aside implementing more specific testing tooling for now. We're figuring out how to add it without hurting the framework's agility. Right now you can define changes that are specifically about writing tests for already-implemented changes, but we think there may be a better way to do this in the near future.
 
-## Instalación
+## Installation
 
-Desde la raíz del proyecto donde quieras usar el framework, ejecuta:
+From the root of the project where you want to use the framework, run:
 
 **macOS / Linux / Git Bash / WSL:**
 
@@ -50,59 +51,61 @@ curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo/main/install.sh | s
 irm https://raw.githubusercontent.com/yeyopepe/previo/main/install.ps1 | iex
 ```
 
-Esto instala (o actualiza) `.claude/skills` y la documentación (`pv-guide.md`, `pv-design.md` y sus versiones `.en.md`) con el contenido del framework, sin tocar tu configuración (`pv-context.json`, `settings.json`) ni ninguna skill propia que no empiece por `pv-`. Volver a ejecutarlo en cualquier momento actualiza el framework a la última versión: añade skills nuevas, actualiza las existentes y elimina las que ya no formen parte de Previo.
+This installs (or updates) `.claude/skills` and the documentation (`pv-guide.md`, `pv-design.md`, and their `.en.md` versions) with the framework's content, without touching your configuration (`pv-context.json`, `settings.json`) or any custom skill that doesn't start with `pv-`. Running it again at any time updates the framework to the latest version: it adds new skills, updates existing ones, and removes any that are no longer part of Previo.
 
-Después, desde la raíz de ese proyecto, ejecuta una vez:
+Then, from that project's root, run once:
 
 ```
 /pv-init
 ```
 
-Esto comprueba las herramientas necesarias (Git, Python 3, y las condicionales según el stack del proyecto) y genera `.claude/pv-context.json` — el único fichero de configuración del que dependen el resto de skills: dónde se guardan los cambios, si el proyecto versiona entregables, dónde está el código fuente, qué documentación mantener sincronizada, etc.
+This checks the required tools (Git, Python 3, and any conditional ones depending on the project's stack) and generates `.claude/pv-context.json` — the single configuration file the rest of the skills depend on: where changes are stored, whether the project versions deliverables, where the source code lives, which documentation to keep in sync, etc.
 
-## Flujo de trabajo
+## Workflow
 
-Cada cambio vive en una carpeta numerada dentro de `changes/` que va viajando entre subcarpetas según su estado: `inProgress/` → `implemented/` → `closed/`.
+Each change lives in a numbered folder inside `changes/` that travels between subfolders as its state progresses: `inProgress/` → `implemented/` → `closed/`.
 
-### Flujo mínimo
+### Minimal flow
 
-El ciclo obligatorio: documentar la intención y, si el usuario confirma, planificar e implementar.
+The mandatory cycle: document the intent and, once the user confirms, plan and implement.
 
 ```mermaid
 flowchart LR
-    A["/pv-new o /pv-fix\n(documentar intención)"]
-    B["pv-how\n(planificar: plan.md)"]
-    C["pv-do\n(implementar código)"]
-    H["fin de ciclo"]
+    A["/pv-new or /pv-fix\n(document intent)"]
+    B["pv-how\n(plan: plan.md)"]
+    C["pv-do\n(implement code)"]
+    H["end of cycle"]
 
     A -->|"inProgress"| B
-    B -->|usuario confirma| C
+    B -->|user confirms| C
     C -->|"implemented"| H
 
-    class A,B,C obligatorio
-    classDef obligatorio fill:#4c6ef5,stroke:#364fc7,stroke-width:2px,color:#fff
+    class A,B,C required
+    classDef required fill:#4c6ef5,stroke:#364fc7,stroke-width:2px,color:#fff
 ```
 
-- **`/pv-new <descripción>`** — documenta funcionalidad nueva o un cambio de comportamiento intencionado (`description.md`), generando maquetas visuales si aplica.
-- **`/pv-fix <descripción>`** — corrige un bug de punta a punta, o aplica al vuelo un cambio tan trivial (typo, texto, un valor puntual) que no merece pasar por `plan.md`.
-- **`pv-how` + `pv-do`** — planifican la solución técnica (`plan.md`) e implementan el código, actualizando la documentación de arquitectura/estilo/funcionalidades configurada.
+- **`/pv-new <description>`** — documents new functionality or an intentional behavior change (`description.md`), generating visual mockups if applicable.
+- **`/pv-fix <description>`** — fixes a bug end to end, or applies a change trivial enough (typo, text, a single value) on the spot that it doesn't warrant a `plan.md`.
+- **`pv-how` + `pv-do`** — plan the technical solution (`plan.md`) and implement the code, updating the configured architecture/style/features documentation.
 
-### Flujo extendido
+### Extended flow
 
-Skills opcionales que complementan el ciclo mínimo: anotar ideas antes de comprometerte, consultar el estado y empaquetar entregas.
-
-
-- **`/pv-todo <idea>`** — apunta una idea suelta para más adelante sin comprometerte todavía a documentarla ni implementarla.
-- **`/pv-status`** — consulta el estado de los cambios en curso, implementados o pendientes de versionar.
-- **`/pv-version <código>`** — empaqueta una entrega: genera el entregable, comprime la documentación vigente y redacta el changelog funcional a partir de lo cerrado.
+Optional skills that complement the minimal cycle: jotting down ideas before committing, checking status, and packaging releases.
 
 
-## Todas las opciones
-Consulta en la [`Guía de usuario`](.claude/pv-guide.md) todo lo que puedes hacer con Previo.
+- **`/pv-todo <idea>`** — jots down a loose idea for later without committing to documenting or implementing it yet.
+- **`/pv-status`** — checks the status of changes in progress, implemented, or pending release.
+- **`/pv-version <code>`** — packages a release: generates the deliverable, archives the current documentation, and writes the functional changelog from what's been closed.
 
-## Cómo está hecho, al detalle
-Si lo quieres es ver cómo está hecho (el mapa de skills del framework, cómo se invocan entre sí, las decisiones detrás de su arquitectura, etc), aquí tienes el [`documento de diseño`](.claude/pv-design.md).
 
-## Licencia
+## All the options
+
+See the [user guide](.claude/pv-guide.en.md) for everything you can do with Previo.
+
+## How it's built, in detail
+
+If you want to see how it's built (the framework's skill map, how they invoke each other, the reasoning behind its architecture, etc), here's the [design document](.claude/pv-design.en.md).
+
+## License
 
 [MIT](LICENSE)
