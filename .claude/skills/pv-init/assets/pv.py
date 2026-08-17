@@ -25,6 +25,7 @@ Usage:
   python3 pv.py
 """
 
+import json
 import os
 import re
 import subprocess
@@ -36,7 +37,6 @@ ROOT = Path(__file__).resolve().parent
 STATUS_SCRIPTS = ROOT / ".claude" / "skills" / "pv-status" / "scripts"
 WORKFLOW_SCRIPTS = ROOT / ".claude" / "skills" / "pv-internal-workflow" / "scripts"
 INIT_SCRIPTS = ROOT / ".claude" / "skills" / "pv-init" / "scripts"
-CHANGES_DIR = ROOT / "changes"
 CONTEXT_PATH = ROOT / ".claude" / "pv-context.json"
 
 WIDTH = 70
@@ -146,6 +146,17 @@ def run_script(script: Path, *args: str) -> None:
     subprocess.run([sys.executable, str(script), *args], cwd=ROOT)
 
 
+def changes_dir() -> Path:
+    # workFolder is always relative to the repo root, whether or not it
+    # carries a leading "/" (that's only a convention to make it visually
+    # explicit) -- Path("/a") / "/b" would otherwise discard "a" entirely,
+    # since pathlib treats a leading-slash operand as its own absolute path.
+    context = json.loads(CONTEXT_PATH.read_text(encoding="utf-8"))
+    work_folder_rel = context.get("framework", {}).get("workFolder", "/")
+    work_root = ROOT / (work_folder_rel or "").lstrip("/")
+    return work_root / "changes"
+
+
 def show_general_status() -> None:
     run_script(STATUS_SCRIPTS / "render_status.py", "--terminal")
 
@@ -155,9 +166,10 @@ def show_todo_ideas() -> None:
 
 
 def list_states() -> list[str]:
-    if not CHANGES_DIR.is_dir():
+    changes = changes_dir()
+    if not changes.is_dir():
         return []
-    return sorted(p.name for p in CHANGES_DIR.iterdir() if p.is_dir())
+    return sorted(p.name for p in changes.iterdir() if p.is_dir())
 
 
 def show_filtered_status() -> None:
@@ -187,7 +199,7 @@ def show_filtered_status() -> None:
 
 
 def list_implemented_entries() -> list[tuple[str, str]]:
-    implemented_dir = CHANGES_DIR / "implemented"
+    implemented_dir = changes_dir() / "implemented"
     if not implemented_dir.is_dir():
         return []
 
