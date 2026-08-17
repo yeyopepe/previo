@@ -134,8 +134,8 @@ RING_ART = r"""
 ++*##=              :+**==**: 	Previo: the AI-driven, visual,
 *+=*##*:              :**=+#*.	rapid-development framework.
  *++***#*-.             +*=**:
-  +*+******+-.           ***= 	One script
-   -**+++*####*+-:.      --:. 	to rule them all.
+  +*+******+-.           ***= 	One script, growing
+   -**+++*####*+-:.      --:. 	to manage more.
      -++++**#*##***++===---:
        .=*###+#****+**+--:
            :=+*###%#*=:.

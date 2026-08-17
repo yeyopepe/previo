@@ -19,6 +19,7 @@ All skills live under `.claude/skills/pv-*` and share a single configuration fil
 - [Preparing a release: `/pv-version`](#preparing-a-release-pv-version)
 - [Full cycle example](#full-cycle-example)
 - [More ways to customize Previo](#more-ways-to-customize-previo)
+- [The `pv.py` script: checking and closing changes without Claude Code](#the-pvpy-script-checking-and-closing-changes-without-claude-code)
 - [Other tricks](#other-tricks)
 
 
@@ -184,7 +185,7 @@ The framework offers two entry points depending on the nature of the change — 
 
 For new functionality or an **intentional** behavior change that isn't trivial. Example: `/pv-new add a button to manually shuffle the event deck`.
 
-#### 2. `/pv-fix` — fix a bug or apply fixes
+#### 2. `/pv-fix` — fix a bug (or apply a trivial change on the spot)
 
 For a bug — something that should already work differently. Example: `/pv-fix reloading the page loses the current game even though it was saved`. It's also the entry point for something small enough that it doesn't deserve `description.md` + `plan.md` + confirmation (a typo, some text, a single value/constant, an isolated style tweak, whether or not it's a bug): `/pv-fix fix the "Sav" button label to "Save"`.
 
@@ -351,10 +352,46 @@ Two things always stay in English no matter what you configure: `pv-status`'s re
 
 After editing `default` or `overrides`, you need to sync the framework for the change to take effect — the configuration file alone isn't enough. You have two options for that:
 
-- (Recommended) Run `pv.py` and select the _Update skill models_ option.
+- (Recommended) Run `pv.py` and select the _Sync skill models per pv-context.json_ option (see [The `pv.py` script](#the-pvpy-script-checking-and-closing-changes-without-claude-code) below).
 - Run the script `.claude/skills/pv-init/scripts/sync-skill-models.py`.
 
 It's an automatic process that doesn't spend tokens; it can be repeated at any time after editing `skillModels` by hand, or you can ask `pv-init` to do it for you the next time you invoke it.
+
+## The `pv.py` script: checking and closing changes without Claude Code
+
+```
+     ........
+  :=. . ..:::::----:
+ -*:.:..:---=---:-====-.
+:*#-.       .:=*+==--==+=:
+++#*:            :-+*+==**+.
+++*##=              :+**==**: 	Previo: the AI-driven, visual,
+*+=*##*:              :**=+#*.	rapid-development framework.
+ *++***#*-.             +*=**:
+  +*+******+-.           ***= 	One script, growing
+   -**+++*####*+-:.      --:. 	to manage more.
+     -++++**#*##***++===---:
+       .=*###+#****+**+--:
+           :=+*###%#*=:.
+```
+
+To check the project's status or close changes without going through Claude Code, run this from the project root:
+
+```
+python3 pv.py
+```
+
+`pv-init` generates it (and updates it on every re-initialization) automatically, so there's no need to create or maintain it by hand — it's a file you shouldn't edit directly: any manual change would be lost the next time you run `/pv-init`.
+
+Running it and you will see the menu with some useful options:
+
+1. **General project status** — the same summary as `/pv-status`.
+2. **Listing filtered by state** (`todo`, `inProgress`, `implemented`...) — asks you to pick one from the list before showing it.
+3. **Ideas in `todo/`** — same as `/pv-status todo`.
+4. **Close an implemented entry** (move to `changes/closed/`) — lets you pick a specific entry or close all of them at once, asking for confirmation (`y`/`N`) before moving anything.
+5. **Sync skill models per `pv-context.json`** — applies changes you've made by hand to `skillModels` (see [Each skill's model/effort](#3-each-skills-modeleffort-skillmodels) above), without you having to run the script by hand or invoke `pv-init` again.
+
+No option spends tokens: they're all deterministic scripts, the same kind of operation you'd run yourself from a terminal. Useful for a quick look at the project or for closing changes without opening Claude Code.
 
 ## Other tricks
 
@@ -367,4 +404,3 @@ It's an automatic process that doesn't spend tokens; it can be repeated at any t
 
   This runs `pv-how` and, without stopping to ask, chains `pv-do` in the same response if the plan turns out to be reasonable. Useful for small changes or ones you're already clear on, where reviewing the plan before implementing doesn't add anything.
 - **Quick fixes**: fixes with `pv-fix` work similarly to changes (documenting, analyzing, etc.), but if the fix is small and/or trivial and carries no risk, the framework will implement it directly.
-- **The `pv.py` script**: with the `pv.py` script you can check the project's status, close changes quickly, sync the framework, and more — all without spending tokens.

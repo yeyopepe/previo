@@ -19,6 +19,7 @@ Todas las skills viven bajo `.claude/skills/pv-*` y comparten un único fichero 
 - [Preparar una entrega: `/pv-version`](#preparar-una-entrega-pv-version)
 - [Ejemplo de ciclo completo](#ejemplo-de-ciclo-completo)
 - [Más formas de personalizar Previo](#más-formas-de-personalizar-previo)
+- [El script `pv.py`: consultar y cerrar cambios sin Claude Code](#el-script-pvpy-consultar-y-cerrar-cambios-sin-claude-code)
 - [Otros trucos](#otros-trucos)
 
 
@@ -351,10 +352,47 @@ Dos cosas se quedan siempre en inglés, se configure lo que se configure: la tab
 
 Después de editar `default` u `overrides`, hay que sincronizar el framework para que el cambio tenga efecto — el fichero de configuración por sí solo no basta. Para ello tienes dos opciones:
 
-- (Recomendada) Ejecuta `pv.py` y selecciona la opción _Actualizar modelos de las skills_.
+- (Recomendada) Ejecuta `pv.py` y selecciona la opción _Sincronizar modelos de las skills según pv-context.json_ (ver [El script `pv.py`](#el-script-pvpy-consultar-y-cerrar-cambios-sin-claude-code) más abajo).
 - Ejecuta el script `.claude/skills/pv-init/scripts/sync-skill-models.py`.
 
 Es un proceso automático que no gasta tokens; puede repetirse en cualquier momento tras editar `skillModels` a mano, o pedirle a `pv-init` que lo haga por ti la próxima vez que lo invoques.
+
+## El script `pv.py`: consultar y cerrar cambios sin Claude Code
+
+
+```
+     ........
+  :=. . ..:::::----:
+ -*:.:..:---=---:-====-.
+:*#-.       .:=*+==--==+=:
+++#*:            :-+*+==**+.
+++*##=              :+**==**: 	Previo: the AI-driven, visual,
+*+=*##*:              :**=+#*.	rapid-development framework.
+ *++***#*-.             +*=**:
+  +*+******+-.           ***= 	One script, growing
+   -**+++*####*+-:.      --:. 	to manage more.
+     -++++**#*##***++===---:
+       .=*###+#****+**+--:
+           :=+*###%#*=:.
+```
+
+Para consultar el estado del proyecto o cerrar cambios sin pasar por Claude Code, ejecuta desde la raíz del proyecto:
+
+```
+python3 pv.py
+```
+
+`pv-init` lo genera (y lo actualiza en cada reinicialización) automáticamente, así que no hace falta crearlo ni mantenerlo a mano — es un fichero que no debes editar directamente: cualquier cambio manual se perdería la próxima vez que ejecutes `/pv-init`.
+
+El menú contiene opciones para gestionar los cambios en curso:
+
+1. **Estado general del proyecto** — el mismo resumen que `/pv-status`.
+2. **Listado filtrado por estado** (`todo`, `inProgress`, `implemented`...) — te pide elegir uno de la lista antes de mostrarlo.
+3. **Ideas en `todo/`** — igual que `/pv-status todo`.
+4. **Cerrar una entrada implementada** (mover a `changes/closed/`) — te deja elegir una entrada concreta o cerrarlas todas de golpe, pidiéndote confirmación (`y`/`N`) antes de mover nada.
+5. **Sincronizar modelos de las skills según `pv-context.json`** — aplica los cambios que hayas hecho a mano en `skillModels` (ver [Modelo/esfuerzo de cada skill](#3-modeloesfuerzo-de-cada-skill-skillmodels) más arriba), sin que tengas que ejecutar el script a mano ni volver a invocar `pv-init`.
+
+Ninguna opción gasta tokens: todo son scripts deterministas, el mismo tipo de operación que ejecutarías tú mismo desde la terminal. Útil para un vistazo rápido del proyecto o para cerrar cambios sin abrir Claude Code.
 
 ## Otros trucos
 
@@ -367,6 +405,5 @@ Es un proceso automático que no gasta tokens; puede repetirse en cualquier mome
 
   Esto ejecuta `pv-how` y, sin detenerse a preguntar, encadena `pv-do` en la misma respuesta si el plan resulta razonable. Útil para cambios pequeños o ya claros en tu cabeza, donde revisar el plan antes de implementar no aporta nada.
 - **Arreglos rápidos**: los arreglos con `pv-fix` funcionan parecido a los cambios (documentándolo, analizándolo, etc), pero si el arreglo es pequeño y/o trivial y no supone riesgo alguno, el framework lo implementará directamente.
-- **El script `pv.py`**: con el script pv.py podrás consultar el estado del proyecto, cerrar cambios rápidamente, sincronizar el framework, etc. Todo sin gastar tokens.
 
 

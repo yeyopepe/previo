@@ -11,6 +11,7 @@ Mapa de las skills que componen el framework `pv-*` y cómo se invocan entre sí
 - [El fichero `pv-context.json`](#el-fichero-pv-contextjson)
   - [skillModels](#skillmodels)
   - [framework](#framework)
+- [El lanzador `pv.py`](#el-lanzador-pvpy)
 - [Estructura completa de carpetas y ficheros](#estructura-completa-de-carpetas-y-ficheros)
 
 ## Diagrama de relaciones
@@ -198,6 +199,19 @@ Cada punto de escritura del framework puede tener su propio idioma en vez de uno
   - El idioma compartido por ambos campos `tech.*` se configura en `tech.language` (ver "Configuración de idioma" más arriba).
 
 Cualquier campo de `docs` que no esté configurado hace que el paso correspondiente se omita sin preguntar nada — el framework funciona igual, solo con menos contexto al analizar y sin mantener esa documentación sincronizada.
+
+## El lanzador `pv.py`
+
+Script Python autocontenido pensado para quien quiera consultar o cerrar cambios del framework directamente desde una terminal, sin pasar por Claude Code ni tener que recordar nombres de script, rutas o parámetros. La copia maestra vive en [`.claude/skills/pv-init/assets/pv.py`](skills/pv-init/assets/pv.py); `pv-init` la copia tal cual a `{raíz del repo}/pv.py` en el paso 5 de su proceso (ver su entrada en "Responsabilidades de cada skill" más arriba), sobrescribiendo lo que hubiera. Es fichero generado, no contenido de usuario: no se edita a mano en la raíz del repo (cualquier cambio se perdería en la siguiente reinicialización), pero sí se versiona en git como el resto de ficheros del framework — a diferencia de `pv-context.json`, no lleva ninguna configuración propia del proyecto, así que no hay nada del usuario que preservar entre copias.
+
+- **No gasta tokens**: todas sus acciones son scripts deterministas invocados como subproceso (`subprocess.run`), nunca invoca ningún modelo.
+- **La mayoría de opciones son de solo lectura** y delegan en los scripts de `pv-status` (`render_status.py`, `filter_status.py`, `list_todo.py`), pasándoles `--terminal` para el formato de salida en consola en vez del que usa el chat.
+- **Dos opciones mutan estado**, ambas con confirmación explícita (`y`/`N`) antes de ejecutar nada:
+  - *Cerrar una entrada implementada*: mueve la carpeta de `changes/implemented/{xxxx}` a `changes/closed/{xxxx}` delegando en `move-change.py` de `pv-internal-workflow` — una operación que solo mueve la carpeta, sin tocar el contenido de ningún fichero. Permite cerrar una entrada concreta o todas las pendientes de una vez.
+  - *Sincronizar modelos de las skills*: delega en `sync-skill-models.py` de `pv-init`, que propaga `skillModels` de `pv-context.json` al frontmatter (`model`/`effort`) de cada `SKILL.md` `pv-*`.
+- **Punto de extensión único**: si en el futuro conviene exponer algún otro script directamente en el menú, debe ser puramente de lectura, o una mutación igual de simple y ya validada por su propio script (como mover una carpeta) y confirmada explícitamente antes de ejecutar. Mutaciones más complejas (borrar, crear versiones, redactar ficheros con contenido) quedan fuera del alcance de `pv.py` — necesitan contexto que solo la skill correspondiente puede aportar, así que siguen requiriendo Claude Code.
+- **Comprueba primero que el framework esté inicializado** (existencia de `.claude/pv-context.json`); si no lo está, avisa y remite a `/pv-init` en vez de continuar.
+- Salida en terminal con colores ANSI (si el terminal los soporta y la variable `NO_COLOR` no está definida) y un arte ASCII de portada; en Windows habilita el procesamiento de secuencias virtuales de terminal (`ENABLE_VIRTUAL_TERMINAL_PROCESSING`) si hace falta para que los colores se vean.
 
 ## Estructura completa de carpetas y ficheros
 
