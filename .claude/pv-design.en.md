@@ -11,6 +11,7 @@ Map of the skills that make up the `pv-*` framework and how they invoke each oth
 - [The `pv-context.json` file](#the-pv-contextjson-file)
   - [skillModels](#skillmodels)
   - [framework](#framework)
+- [Complete folder and file structure](#complete-folder-and-file-structure)
 
 ## Relationship diagram
 
@@ -197,3 +198,71 @@ Every writing point of the framework can have its own language instead of a sing
   - The language shared by both `tech.*` fields is configured in `tech.language` (see "Language configuration" above).
 
 Any `docs` field that isn't configured means the corresponding step is skipped without asking anything — the framework works the same either way, just with less context when analyzing and without keeping that documentation in sync.
+
+## Complete folder and file structure
+
+Complete view of what the framework creates and where, using the default configuration (`workFolder` fixed at `/previo-sdd`, `docs.*` under `{workFolder}/docs/...`). Everything under `{workFolder}` (`changes/`, `versions/`, `stuff/`) has a fixed name — no skill asks about it or lets the user choose it; the only configurable pieces are `workFolder` itself (by hand, in `pv-context.json`, without going through `pv-init`) and the `docs.*` paths inside it. `sourcecodeDir` is the only path in `pv-context.json` relative to the repo root instead of to `workFolder`.
+
+```
+{repo root}/
+├── pv.py                              # framework launcher (copied/updated by pv-init)
+├── src/                               # sourcecodeDir (default "/src") — only path relative to the repo root
+├── .claude/
+│   ├── pv-context.json                # single configuration point (written by pv-init)
+│   ├── pv-design.{es,en}.md           # this document
+│   ├── pv-guide.{es,en}.md            # usage guide
+│   └── skills/
+│       ├── pv-init/                   # initializes/completes pv-context.json
+│       ├── pv-new/                    # documents a change
+│       ├── pv-fix/                    # documents+implements a fix (or fast shortcut)
+│       ├── pv-how/                    # plans: writes plan.md
+│       ├── pv-do/                     # implements the code
+│       ├── pv-status/                 # read-only status view
+│       ├── pv-todo/                   # loose ideas, outside the flow
+│       ├── pv-version/                # prepares a release
+│       │   └── how-to-compile-version.template.md  # template pv-version copies when writing stuff/how-to-compile-version.md
+│       └── pv-internal-*/             # internal skills, invoked by the ones above
+│
+└── previo-sdd/                        # {workFolder} — fixed default, never asked about
+    ├── changes/                       # fixed name
+    │   ├── inProgress/                # documented, pending planning/implementation
+    │   │   └── {xxxx}/                # e.g. 00007 (numbered, numberWidth digits)
+    │   │       ├── description.md     # functional summary (pv-new/pv-fix, via pv-internal-workflow)
+    │   │       ├── history.md         # original prompt verbatim, exclusive to pv-new/pv-fix
+    │   │       ├── plan.md            # technical solution, only after pv-how
+    │   │       └── design_*.html      # visual mockups, if the change has a UI component
+    │   ├── implemented/               # same content as inProgress, moved by pv-do
+    │   │   └── {xxxx}/                # folder moved as-is from inProgress/{xxxx}
+    │   ├── todo/                      # notes from pv-todo, own numbering
+    │   │   └── {code}/                # e.g. a3f9k (5 alphanumeric characters)
+    │   │       ├── description.md     # idea jotted down as-is, no scope analysis
+    │   │       └── design_*.html      # optional mockup, only if the user provides one
+    │   └── closed/                    # already incorporated into a release
+    │       └── {xxxx}/                # deleted after pv-internal-changelog + user confirmation
+    │
+    ├── versions/                      # fixed name
+    │   └── {XXXX}/                    # free text chosen by the user, e.g. v1.2
+    │       ├── files/                 # generated deliverable(s), copied by script
+    │       ├── docs/                  # .zip of docs.tech.*/docs.functional.* current at this release
+    │       └── changelog.md           # written by pv-internal-changelog from changes/closed/
+    │
+    ├── stuff/                         # fixed name — the project's own files
+    │   └── how-to-compile-version.md  # build procedure, written by pv-version (lazily created)
+    │
+    └── docs/                          # docs.* — configurable paths (relative to workFolder), kept in sync by pv-do
+        ├── architecture/              # docs.tech.architectureDocDir
+        │   ├── INDEX.md                 # generated index, summarizes each sibling file
+        │   └── 01-overview.md, 02-...   # actual content, 2-digit numeric prefix per topic
+        ├── style/                     # docs.tech.styleBibleDocDir
+        │   ├── INDEX.md                 # same pattern as architecture/INDEX.md
+        │   └── 01-overview.md, 02-...   # same pattern as architecture/
+        └── features/                  # docs.functional.featuresDocPathDir
+            ├── INDEX.md                 # index generated by pv-internal-doc-features
+            └── {feature}.md              # one file per already-implemented feature
+```
+
+Notes:
+- `{xxxx}` (`changes/` numbering) and `{XXXX}` (`versions/` numbering) are completely independent numbering spaces from each other and from `todo/`'s `{code}`.
+- `stuff/how-to-compile-version.md` is created lazily: it doesn't exist until `pv-version` needs it for the first time (or until a build-procedure change is reported without requesting a release).
+- `docs/` is the default path `pv-init` proposes/generates for the three `docs` fields, inside `workFolder`; any of the three can point to a different path (always relative to `workFolder`), or not exist if the user decides not to maintain it. Don't confuse it with `versions/{XXXX}/docs/`, which is just this folder's `.zip` at the time of each release.
+- `sourcecodeDir` (default `"/src"`) is the only field in `pv-context.json` relative to the repo root instead of to `workFolder` — the project's source code isn't managed by the framework. The leading `/` is the visual convention distinguishing it from `docs.*`, which is relative to `workFolder`.

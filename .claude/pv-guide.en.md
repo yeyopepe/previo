@@ -9,6 +9,7 @@ All skills live under `.claude/skills/pv-*` and share a single configuration fil
 - [Setup](#setup)
   - [1. Required tools](#1-required-tools)
   - [2. Initialize the framework: `/pv-init`](#2-initialize-the-framework-pv-init)
+- [Folder structure](#folder-structure)
 - [Quick usage guide: the natural flow](#quick-usage-guide-the-natural-flow)
   - [Step 0 (optional) — Jot down loose ideas: `/pv-todo`](#step-0-optional--jot-down-loose-ideas-pv-todo)
   - [Step 1 — Define the change: two ways](#step-1--define-the-change-two-ways)
@@ -82,6 +83,49 @@ Example of an already-configured `.claude/pv-context.json`:
 
 
 `.claude/pv-context.json` also supports two optional blocks for fine-tuning the framework: `skillModels` (which model/effort each skill runs with) and `framework`'s `language` fields (which language each thing speaks or writes in). `pv-init` asks about language on first setup; the detail of both blocks is in [More ways to customize Previo](#more-ways-to-customize-previo).
+
+## Folder structure
+
+Quick overview of what each folder the framework uses is for, with the default configuration. The detail of the actual files inside each one is in `pv-design.en.md`, meant for anyone who wants to understand how it works internally.
+
+```
+{repo root}/
+├── src/                        # your source code (sourcecodeDir); pv-how checks it if architecture documentation is missing
+├── .claude/
+│   └── skills/
+│       ├── pv-init/             # run it once per project to bootstrap the framework
+│       ├── pv-new/              # documents new functionality or an intentional behavior change
+│       ├── pv-fix/              # fixes a bug, or applies a trivial change on the spot
+│       ├── pv-how/              # plans the technical solution for an already-documented entry
+│       ├── pv-do/               # implements the code for an entry whose plan.md is already written
+│       ├── pv-status/           # checks the project's status without touching anything
+│       ├── pv-todo/             # jots down loose ideas without committing to documenting them yet
+│       ├── pv-version/          # packages a release once you have work ready
+│       └── pv-internal-*/       # internal support — you never invoke these directly
+│
+└── previo-sdd/                  # {workFolder} — where all of the framework's in-progress work lives
+    ├── changes/                 # all your documentation and implementation work goes through here
+    │   ├── inProgress/          # changes already documented, pending planning or implementation
+    │   │   └── {xxxx}/          # one folder per change/fix, numbered automatically
+    │   ├── implemented/         # changes already implemented, pending inclusion in a release
+    │   │   └── {xxxx}/          # moved here only once pv-do finishes
+    │   ├── todo/                # loose ideas from /pv-todo, outside the normal flow
+    │   │   └── {code}/          # one folder per idea, with its own short code
+    │   └── closed/              # changes already included in a release, waiting to be cleaned up
+    │       └── {xxxx}/          # deleted automatically when writing the changelog, with your confirmation
+    │
+    ├── versions/                # every release you prepare with /pv-version shows up here
+    │   └── {XXXX}/              # one folder per release, with the code you choose
+    │       ├── files/           # the already-generated deliverable, ready to distribute
+    │       └── docs/            # copy of the documentation current at the time of that release
+    │
+    ├── stuff/                   # your project's build procedure is kept here
+    │
+    └── docs/                    # the reference documentation pv-do keeps in sync
+        ├── architecture/        # the project's architecture and technical design
+        ├── style/               # visual, interaction, and writing style guide
+        └── features/            # listing of already-implemented functionality
+```
 
 ## Quick usage guide: the natural flow
 
