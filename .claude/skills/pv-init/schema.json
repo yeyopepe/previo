@@ -7,6 +7,10 @@
   "required": ["framework"],
   "additionalProperties": false,
   "properties": {
+    "_warning": {
+      "type": "string",
+      "description": "OPTIONAL. Header note for whoever opens this file by hand, warning that it's machine-managed by pv-init and that editing it manually without understanding the schema can break every pv-* skill. Ignored at runtime by every skill -- same pattern as skillModels._instructions and framework._comments. pv-init writes it once and doesn't overwrite it if already present."
+    },
     "skillModels": {
       "type": "object",
       "description": "OPTIONAL in this schema, but pv-init always writes it (mirroring each SKILL.md's real frontmatter via scripts/collect-skill-models.py, even if the user customizes nothing) so it's never left absent after init. Source of truth for which model/effort (Claude) each 'pv-*' skill in this repo runs with. The Claude Code harness only reads the 'model'/'effort' field from each SKILL.md's frontmatter -- not this JSON -- so this section has no effect on its own. After editing 'default' or 'overrides', run the sync script documented in '_instructions' to propagate the values to each SKILL.md's actual frontmatter.",
@@ -34,14 +38,15 @@
       "properties": {
         "workFolder": {
           "type": "string",
-          "default": "/",
-          "description": "OPTIONAL (default '/', the repo root). Folder, relative to the repo root, under which the pv-* framework manages ALL of its work. Inside workFolder, the skills create two fixed-name subfolders by themselves -- '{workFolder}/changes/' and '{workFolder}/versions/' -- which the user doesn't choose or rename, to avoid any manual configuration that could break or collide with those paths. '{workFolder}/changes/' contains two subtrees with numbered subfolders ({xxxx}): 'changes/inProgress/' (changes/fixes documented by pv-new/pv-fix, pending implementation or planning) and 'changes/implemented/' (changes/fixes whose plan.md has already been implemented -- pv-do moves them there); the same {xxxx} must never repeat between the two. 'changes/todo/' (loose ideas from pv-todo, outside the change/fix flow) and 'changes/closed/' (changes/fixes already folded into a release, managed by pv-version/pv-internal-changelog) can also live there. '{workFolder}/versions/' contains one subfolder per release prepared with pv-version, with a free-text XXXX code chosen by the user on each invocation -- a numbering space entirely independent from changes/'s {xxxx}.",
-          "examples": ["/", "_previo"]
+          "default": "/previo-sdd",
+          "description": "OPTIONAL (default '/previo-sdd', a fixed folder at the repo root -- never asked/confirmed at init time, silently written like skills.mockups/skills.diagrams). Folder, relative to the repo root, under which the pv-* framework manages ALL of its work. Inside workFolder, the skills create three fixed-name subfolders by themselves -- '{workFolder}/changes/', '{workFolder}/versions/' and '{workFolder}/stuff/' -- which the user doesn't choose or rename, to avoid any manual configuration that could break or collide with those paths. '{workFolder}/changes/' contains two subtrees with numbered subfolders ({xxxx}): 'changes/inProgress/' (changes/fixes documented by pv-new/pv-fix, pending implementation or planning) and 'changes/implemented/' (changes/fixes whose plan.md has already been implemented -- pv-do moves them there); the same {xxxx} must never repeat between the two. 'changes/todo/' (loose ideas from pv-todo, outside the change/fix flow) and 'changes/closed/' (changes/fixes already folded into a release, managed by pv-version/pv-internal-changelog) can also live there. '{workFolder}/versions/' contains one subfolder per release prepared with pv-version, with a free-text XXXX code chosen by the user on each invocation -- a numbering space entirely independent from changes/'s {xxxx}. '{workFolder}/stuff/' holds pv-version's own project-specific files, starting with 'how-to-compile-version.md'. If the user ever wants a different workFolder, they change it directly in pv-context.json at their own risk -- pv-init never asks about it.",
+          "examples": ["/previo-sdd", "/", "_previo"]
         },
         "sourcecodeDir": {
           "type": "string",
-          "description": "OPTIONAL. Project's source code root folder (relative to the repo root). Used by pv-how as fallback context when analyzing a change/fix and writing its plan.md, only when docs.tech.architectureDocDir doesn't exist as a real folder in the repo.",
-          "examples": ["src", "app"]
+          "default": "/src",
+          "description": "OPTIONAL (default '/src'). Project's source code root folder, relative to the repo root -- the leading '/' makes that explicit, since every other path in this file (changes/versions/stuff/docs.*) is relative to workFolder instead. Used by pv-how as fallback context when analyzing a change/fix and writing its plan.md, only when docs.tech.architectureDocDir doesn't exist as a real folder in the repo.",
+          "examples": ["/src", "/app"]
         },
         "interaction": {
           "type": "object",
@@ -125,8 +130,8 @@
               "properties": {
                 "featuresDocPathDir": {
                   "type": "string",
-                  "description": "OPTIONAL. Listing of features already implemented in the project (relative to the repo root). Can be a FOLDER (recommended, e.g. 'design/docs/features') with one file per feature plus a generated 'INDEX.md' -- in that case pv-do delegates reading/writing to the pv-internal-doc-features skill, which knows that convention -- or, in older projects that haven't migrated yet, a single .md file. pv-do adds or updates the corresponding entry there every time it implements a change/fix, creating the folder/file if it doesn't exist yet. If not configured, this step is skipped without asking anything.",
-                  "examples": ["design/docs/features", "design/docs/FEATURES.md"]
+                  "description": "OPTIONAL. Listing of features already implemented in the project (relative to workFolder, not the repo root -- the only path in this file relative to the repo root is sourcecodeDir). Can be a FOLDER (recommended, e.g. 'docs/features') with one file per feature plus a generated 'INDEX.md' -- in that case pv-do delegates reading/writing to the pv-internal-doc-features skill, which knows that convention -- or, in older projects that haven't migrated yet, a single .md file. pv-do adds or updates the corresponding entry there every time it implements a change/fix, creating the folder/file if it doesn't exist yet. If not configured, this step is skipped without asking anything.",
+                  "examples": ["docs/features", "docs/FEATURES.md"]
                 },
                 "language": {
                   "type": "string",
@@ -143,13 +148,13 @@
               "properties": {
                 "architectureDocDir": {
                   "type": "string",
-                  "description": "OPTIONAL. Folder (relative to the repo root) with the architecture/technical-design document, split into several files for selective reading by an LLM. Must contain an 'INDEX.md' summarizing what each sibling file covers (with a 2-digit numeric prefix, e.g. '01-', '02-'). pv-do keeps this folder in sync after implementing each change/fix, creating a new file with the next free number if the topic doesn't fit any existing one. If not configured, this step is skipped without asking anything.",
-                  "examples": ["design/docs/architecture"]
+                  "description": "OPTIONAL. Folder (relative to workFolder, not the repo root -- the only path in this file relative to the repo root is sourcecodeDir) with the architecture/technical-design document, split into several files for selective reading by an LLM. Must contain an 'INDEX.md' summarizing what each sibling file covers (with a 2-digit numeric prefix, e.g. '01-', '02-'). pv-do keeps this folder in sync after implementing each change/fix, creating a new file with the next free number if the topic doesn't fit any existing one. If not configured, this step is skipped without asking anything.",
+                  "examples": ["docs/architecture"]
                 },
                 "styleBibleDocDir": {
                   "type": "string",
-                  "description": "OPTIONAL. Folder (relative to the repo root) with the project's style guide (visual, interaction, writing), split into several files for selective reading by an LLM. Must contain an 'INDEX.md' summarizing what each sibling file covers (with a 2-digit numeric prefix, e.g. '01-', '02-'). pv-do keeps this folder in sync after implementing each change/fix, creating a new file with the next free number if the topic doesn't fit any existing one. If not configured, this step is skipped without asking anything.",
-                  "examples": ["design/docs/style"]
+                  "description": "OPTIONAL. Folder (relative to workFolder, not the repo root -- the only path in this file relative to the repo root is sourcecodeDir) with the project's style guide (visual, interaction, writing), split into several files for selective reading by an LLM. Must contain an 'INDEX.md' summarizing what each sibling file covers (with a 2-digit numeric prefix, e.g. '01-', '02-'). pv-do keeps this folder in sync after implementing each change/fix, creating a new file with the next free number if the topic doesn't fit any existing one. If not configured, this step is skipped without asking anything.",
+                  "examples": ["docs/style"]
                 },
                 "language": {
                   "type": "string",
@@ -185,6 +190,7 @@
   },
   "examples": [
     {
+      "_warning": "Machine-managed by the pv-init skill. Don't edit this file by hand unless you know what you're doing -- fields are read as-is by every pv-* skill, with no validation beyond this schema.",
       "skillModels": {
         "_instructions": "After editing 'default'/'overrides', run from the repo root: python .claude/skills/pv-init/scripts/sync-skill-models.py -- rewrites 'model'/'effort' in every 'pv-*' SKILL.md's frontmatter according to this section.",
         "default": { "model": "claude-sonnet-5", "effort": "medium" },
@@ -193,22 +199,22 @@
         }
       },
       "framework": {
-        "workFolder": "/",
+        "workFolder": "/previo-sdd",
         "numberWidth": 5,
         "interaction": { "language": "en" },
         "changes": { "language": "es" },
         "versions": { "language": "es" },
         "docs": {
           "functional": {
-            "featuresDocPathDir": "design/docs/features",
+            "featuresDocPathDir": "docs/features",
             "language": "es"
           },
           "tech": {
-            "architectureDocDir": "design/docs/architecture",
+            "architectureDocDir": "docs/architecture",
             "language": "en"
           }
         },
-        "sourcecodeDir": "src",
+        "sourcecodeDir": "/src",
         "skills": {
           "mockups": "pv-internal-mockups-html",
           "diagrams": "pv-internal-tech-mermaid"

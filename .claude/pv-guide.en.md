@@ -39,7 +39,7 @@ Generating a deliverable version **is** part of the `pv-*` framework: `/pv-versi
 
 Before using any other `pv-*` skill, you need to run `/pv-init` once per project. It generates `.claude/pv-context.json`, the single place where the configuration lives: where changes are stored, whether the project versions deliverables, where the source code is, which documents to keep in sync, etc.
 
-`pv-init` explores the repo looking for clues (an existing changes folder, `package.json`, architecture docs...) and only asks about what it can't infer. If invoked again on an already-initialized project, it lets you reconfigure or fill in missing fields without repeating the whole questionnaire.
+`pv-init` explores the repo looking for clues (`package.json`, architecture docs...) and only asks about what it can't infer. `workFolder` isn't one of those questions: it's always `/previo-sdd`, set silently without confirmation; if you ever want a different folder, you change it yourself in `.claude/pv-context.json`, at your own risk. If invoked again on an already-initialized project, it lets you reconfigure or fill in missing fields without repeating the whole questionnaire.
 
 Example of an already-configured `.claude/pv-context.json`:
 
@@ -59,20 +59,20 @@ Example of an already-configured `.claude/pv-context.json`:
       "mockups": "pv-internal-mockups-html",
       "diagrams": "pv-internal-tech-mermaid"
     },
-    "sourcecodeDir": "src",
-    "workFolder": "/",
+    "sourcecodeDir": "/src",
+    "workFolder": "/previo-sdd",
     "numberWidth": 5,
     "interaction": { "language": "en" },
     "changes": { "language": "es" },
     "versions": { "language": "es" },
     "docs": {
       "functional": {
-        "featuresDocPathDir": "design/docs/features",
+        "featuresDocPathDir": "docs/features",
         "language": "es"
       },
       "tech": {
-        "architectureDocDir": "design/docs/architecture",
-        "styleBibleDocDir": "design/docs/style",
+        "architectureDocDir": "docs/architecture",
+        "styleBibleDocDir": "docs/style",
         "language": "en"
       }
     }
@@ -178,7 +178,7 @@ If you invoke `/pv-how` without an argument, it lists what's pending in `inProgr
 
 When there's work ready (`changes/implemented/`) and you want to cut a release, `/pv-version <XXXX>` packages everything into `{workFolder}/versions/{XXXX}/`: it generates the deliverable, zips and copies the current technical and functional documentation, and writes the functional changelog from what's been closed in `changes/closed/`. `{XXXX}` is free text you choose on each invocation (e.g. `00001`, `v1`, `beta3`) — unrelated to the `xxxx` numbering of changes/fixes, or to `src/_output/versions/` (the folder `build.py` already generates on its own with its own `NNNN` counter): they're three completely independent spaces.
 
-If you invoke `/pv-version` just to report a change in the build procedure (e.g. "the build now also generates a rules PDF"), without asking to prepare a release, it updates `{workFolder}/framework/how-to-compile-version.md` with that and asks whether you want to launch the versioning process now — it doesn't launch it on its own.
+If you invoke `/pv-version` just to report a change in the build procedure (e.g. "the build now also generates a rules PDF"), without asking to prepare a release, it updates `{workFolder}/stuff/how-to-compile-version.md` with that and asks whether you want to launch the versioning process now — it doesn't launch it on its own.
 
 ```mermaid
 flowchart LR
@@ -209,7 +209,7 @@ In prose:
 
 1. **Startup guardrail**: if `changes/implemented/` has any entries, `/pv-version` doesn't move forward until they're all resolved — for each one it asks whether it moves to `closed` (irreversible without confirmation) before continuing.
 2. **Create the version folder**: `{workFolder}/versions/{XXXX}/{files,docs}/`. If `{XXXX}` already exists, it asks whether to regenerate over the existing one or pick another code.
-3. **Generate the deliverable**: follows the procedure in `{workFolder}/framework/how-to-compile-version.md` (asked about and written the first time it's needed, with one step per artifact if the build produces several; in this repo it runs `python ./src/scripts/build.py`) and copies the result to `files/` via a script.
+3. **Generate the deliverable**: follows the procedure in `{workFolder}/stuff/how-to-compile-version.md` (asked about and written the first time it's needed, with one step per artifact if the build produces several; in this repo it runs `python ./src/scripts/build.py`) and copies the result to `files/` via a script.
 4. **Zip and copy documentation**: the paths configured in `docs.tech.architectureDocDir`/`docs.tech.styleBibleDocDir`/`docs.functional.featuresDocPathDir` (whichever are configured) are each zipped and saved into `docs/`, as a record of which documentation was current at the time of this release.
 5. **Functional changelog**: `pv-internal-changelog` (internal skill) reads every `description.md` in `changes/closed/`. `fix`-type entries go straight to **Fixes**; the rest are compared against the previous version's changelog detected in `{workFolder}/versions/` (confirmed with you before using it) and classified into **New** / **Changed** / **Removed**. `changelog.md` carries a header with the entry count per section, in purely functional language. After your explicit confirmation, it deletes from `closed/` only the folders already incorporated (never blindly "all of `closed/`"); if you don't confirm the deletion, the changelog is still written and `closed/` isn't touched.
 
@@ -225,7 +225,7 @@ You can ask "how does `/pv-version` work?" in the middle of the invocation and i
 
 1. `pv-fix` documents the bug in `changes/inProgress/00008/description.md` and automatically chains `pv-how`.
 2. `pv-how` analyzes the root cause, writes `plan.md` (scoped only to that bug), and asks whether to implement.
-3. You confirm → `pv-how` chains `pv-do`, which edits the code, updates `FEATURES.md`/`design/docs/architecture/` if applicable, and moves the folder to `changes/implemented/00008/`.
+3. You confirm → `pv-how` chains `pv-do`, which edits the code, updates `FEATURES.md`/`docs/architecture/` if applicable, and moves the folder to `changes/implemented/00008/`.
 4. When you want to cut a new release: `/pv-version 00001` → moves `00008` (and any other entry in `implemented/`) to `closed`, generates the deliverable (`python ./src/scripts/build.py` underneath, which increments the version in `version.js`), zips and copies the current technical and functional documentation, and writes `changelog.md` with what's accumulated in `closed/` (this `00008`, of type `fix`, lands in the Fixes section).
 
 And for something trivial:

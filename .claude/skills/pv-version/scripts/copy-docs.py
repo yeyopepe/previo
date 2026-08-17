@@ -14,7 +14,7 @@ without extension) + ".zip". Ones not configured are skipped without error
 Prints ONLY a JSON on stdout with what was copied, for the skill to use when
 confirming to the user:
 
-  {"copied": ["design/docs/architecture", "design/docs/style"], "skipped": ["featuresDocPathDir"]}
+  {"copied": ["docs/architecture", "docs/style"], "skipped": ["featuresDocPathDir"]}
 
 Usage:
   python copy-docs.py --xxxx 00001

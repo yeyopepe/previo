@@ -3,7 +3,7 @@
 Never edit INDEX.md by hand -- this script is the only source of truth for
 its content, so it never drifts out of sync with the real files. Usage:
 
-    python rebuild-index.py --folder design/docs/features
+    python rebuild-index.py --folder docs/features
 """
 import argparse
 import re

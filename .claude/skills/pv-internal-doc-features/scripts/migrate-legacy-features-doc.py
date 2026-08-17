@@ -5,7 +5,7 @@ identifying number (per the order they appear in the original document), and
 generates the final INDEX.md.
 
 Usage (from the repo root):
-    python migrate-legacy-features-doc.py --source design/docs/FEATURES.md --dest design/docs/features
+    python migrate-legacy-features-doc.py --source docs/FEATURES.md --dest docs/features
 
 Not an invocable skill -- a one-off utility to adopt the folder convention
 in a project that already had a FEATURES.md as a single file.

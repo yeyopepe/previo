@@ -3,7 +3,7 @@ the filename is still the title's slug). A number already assigned to an existin
 feature is never recomputed or reused when it's deleted.
 
 Usage:
-    python next-feature-number.py --folder design/docs/features
+    python next-feature-number.py --folder docs/features
 """
 import argparse
 import re

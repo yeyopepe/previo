@@ -1,4 +1,5 @@
 {
+  "_warning": "Fichero gestionado por la skill pv-init. No lo edites a mano si no sabes lo que haces -- cada skill pv-* lo lee tal cual, sin mas validacion que el schema en .claude/skills/pv-init/schema.json.",
   "skillModels": {
     "_instructions": "Tras editar 'default' o 'overrides' de esta seccion, ejecuta desde la raiz del repo: python .claude/skills/pv-init/scripts/sync-skill-models.py -- reescribe el campo 'model'/'effort' en el frontmatter de cada SKILL.md 'pv-*' segun lo que quede configurado aqui. El harness de Claude Code solo lee ese frontmatter, no este JSON, asi que sin ejecutar el script los cambios de aqui no tienen efecto.",
     "default": { "model": "claude-sonnet-5", "effort": "medium" },
@@ -12,20 +13,20 @@
       "mockups": "pv-internal-mockups-html",
       "diagrams": "pv-internal-tech-mermaid"
     },
-    "sourcecodeDir": "src",
-    "workFolder": "/",
+    "sourcecodeDir": "/src",
+    "workFolder": "/previo-sdd",
     "numberWidth": 5,
     "interaction": { "language": "es" },
     "changes": { "language": "es" },
     "versions": { "language": "es" },
     "docs": {
       "functional": {
-        "featuresDocPathDir": "design/docs/features",
+        "featuresDocPathDir": "docs/features",
         "language": "es"
       },
       "tech": {
-        "architectureDocDir": "design/docs/architecture",
-        "styleBibleDocDir": "design/docs/style",
+        "architectureDocDir": "docs/architecture",
+        "styleBibleDocDir": "docs/style",
         "language": "es"
       }
     },
@@ -33,7 +34,7 @@
       "interaction.language": "Idioma en el que las skills pv-* hablan con el usuario en el chat (preguntas, confirmaciones, resumenes). Tambien es el valor por defecto (fallback) de changes.language, versions.language y cualquier docs.*.language que no se configure aparte. Fijado en espanol; confirmado explicitamente con el usuario el 2026-08-16 al implementar el plan de idioma configurable.",
       "changes.language": "Idioma de los documentos de un change/fix en curso (description.md, plan.md, history.md y los textos de los mockups design_*.html/.txt) dentro de {workFolder}/changes/**. Coincide con interaction porque el equipo documenta el proceso de cada change/fix en espanol.",
       "versions.language": "Idioma de changelog.md, generado por pv-internal-changelog en {workFolder}/versions/{XXXX}/ a partir de changes/closed. Coincide con interaction porque el changelog se redacta en espanol.",
-      "docs.functional.language": "Idioma de la documentacion de funcionalidades (featuresDocPathDir, p.ej. design/docs/features) que pv-do mantiene actualizada tras cada change/fix implementado. En espanol.",
+      "docs.functional.language": "Idioma de la documentacion de funcionalidades (featuresDocPathDir, p.ej. docs/features dentro de workFolder) que pv-do mantiene actualizada tras cada change/fix implementado. En espanol.",
       "docs.tech.language": "Idioma compartido por la documentacion de arquitectura (architectureDocDir) y la biblia de estilo (styleBibleDocDir), que pv-do mantiene actualizadas tras cada change/fix implementado. En espanol."
     }
   }

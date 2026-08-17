@@ -15,7 +15,7 @@ Orchestrates preparing a project release: resolves change/fix entries pending cl
 
 **Language.** Use `framework.interaction.language` (default English) for everything you say to the user in this conversation, including the fixed messages below. Copying technical documentation and generating the deliverable are copy/build operations, not new prose (`language` doesn't apply); it chains `pv-internal-changelog` for `changelog.md`. If `language` is not configured anywhere, everything is English.
 
-`{workFolder}` is `.claude/pv-context.json`'s `framework.workFolder` value (default `"/"`, the repo root). Inside it, `changes/` and `versions/` are fixed-name subfolders the framework creates by itself — not asked about or configured separately. `{workFolder}/versions/{XXXX}/` is a free-text numbering space, chosen by the user on each invocation, with no relation to change/fix's `xxxx` nor to any other folder called "versions" that might exist in the repo (e.g. a build script's own output): this skill never reads or writes outside `{workFolder}/versions/`.
+`{workFolder}` is `.claude/pv-context.json`'s `framework.workFolder` value (default `"/previo-sdd"`, never asked/confirmed by `pv-init`). Inside it, `changes/`, `versions/` and `stuff/` are fixed-name subfolders the framework creates by itself — not asked about or configured separately. `{workFolder}/versions/{XXXX}/` is a free-text numbering space, chosen by the user on each invocation, with no relation to change/fix's `xxxx` nor to any other folder called "versions" that might exist in the repo (e.g. a build script's own output): this skill never reads or writes outside `{workFolder}/versions/`.
 
 ## 0. Framework initialized
 
@@ -33,7 +33,7 @@ At any point during invocation, if the user asks how the process works or explic
 
 The user might invoke this skill only to report a change in the build/deliverable-generation procedure (e.g. "the build now also generates a rules PDF", "change the build command to..."), without explicitly asking to prepare a release right now.
 
-If that's the intent: update `{workFolder}/framework/how-to-compile-version.md` with the new information, following [`how-to-compile-version.template.md`](how-to-compile-version.template.md) (including its support for multi-step/multi-artifact processes if applicable — see the template itself), and **don't continue with the rest of the flow**. Explicitly ask the user whether they want to launch the versioning process now with this now-updated procedure. Only if they specifically confirm, continue with step 0.5; if they don't confirm (or don't answer that), stop here.
+If that's the intent: update `{workFolder}/stuff/how-to-compile-version.md` with the new information, following [`how-to-compile-version.template.md`](how-to-compile-version.template.md) (including its support for multi-step/multi-artifact processes if applicable — see the template itself), and **don't continue with the rest of the flow**. Explicitly ask the user whether they want to launch the versioning process now with this now-updated procedure. Only if they specifically confirm, continue with step 0.5; if they don't confirm (or don't answer that), stop here.
 
 ## 0.5. Guardrail: `implemented/` must be empty before starting
 
@@ -67,7 +67,7 @@ Creates `{workFolder}/versions/{XXXX}/` with empty `files/` and `docs/` subfolde
 
 ## 3. Check `how-to-compile-version.md`
 
-Look for `{workFolder}/framework/how-to-compile-version.md` (the project's own file, not the skill's nor `pv-context.json`'s: it's a shell/build procedure, not declarative configuration).
+Look for `{workFolder}/stuff/how-to-compile-version.md` (the project's own file, not the skill's nor `pv-context.json`'s: it's a shell/build procedure, not declarative configuration).
 
 - **If it doesn't exist**: ask the user for this project's exact procedure to generate the deliverable (which command(s) to run, where the resulting file ends up and how to identify it — or, if the process has several steps generating different artifacts, each step with its own command and resulting file), and write it following [`how-to-compile-version.template.md`](how-to-compile-version.template.md). Don't continue with step 4 in the same reply without having saved the file.
 - **If it already exists**: read it and follow it as-is, without asking again.

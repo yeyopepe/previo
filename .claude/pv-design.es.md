@@ -11,6 +11,7 @@ Mapa de las skills que componen el framework `pv-*` y cómo se invocan entre sí
 - [El fichero `pv-context.json`](#el-fichero-pv-contextjson)
   - [skillModels](#skillmodels)
   - [framework](#framework)
+- [Estructura completa de carpetas y ficheros](#estructura-completa-de-carpetas-y-ficheros)
 
 ## Diagrama de relaciones
 
@@ -70,14 +71,14 @@ Leyenda:
 
 ### Invocables por el usuario
 
-- **pv-init** — Inicializa el framework: crea/completa `.claude/pv-context.json` (`framework.workFolder` — raíz relativa al repo bajo la que el framework gestiona `changes/` y `versions/`, subcarpetas de nombre fijo que las skills crean por sí mismas —, docs a sincronizar, configuración de idioma) y comprueba que las herramientas de línea de comandos necesarias estén instaladas. En un primer `pv-init`, pregunta siempre el idioma de interacción (`framework.interaction.language`) y, con un sí/no, si el resto de áreas (`changes`, `versions`, `docs.functional`, `docs.tech`) comparten ese mismo idioma o se configuran una a una; deja constancia del porqué de cada elección en `framework._comments`. Si el proyecto ya estaba inicializado sin idioma configurado (`hasLanguage: false`), añade esa pregunta a la misma ronda que complete el resto de opcionales pendientes, sin volver a preguntar si ya estaba resuelto. Único punto de configuración del que dependen todas las demás skills. *Usa:* ninguna otra skill.
+- **pv-init** — Inicializa el framework: crea/completa `.claude/pv-context.json` (`framework.workFolder` — fijo en `/previo-sdd`, nunca preguntado, raíz relativa al repo bajo la que el framework gestiona `changes/`, `versions/` y `stuff/`, subcarpetas de nombre fijo que las skills crean por sí mismas —, docs a sincronizar, configuración de idioma) y comprueba que las herramientas de línea de comandos necesarias estén instaladas. En un primer `pv-init`, pregunta siempre el idioma de interacción (`framework.interaction.language`) y, con un sí/no, si el resto de áreas (`changes`, `versions`, `docs.functional`, `docs.tech`) comparten ese mismo idioma o se configuran una a una; deja constancia del porqué de cada elección en `framework._comments`. Si el proyecto ya estaba inicializado sin idioma configurado (`hasLanguage: false`), añade esa pregunta a la misma ronda que complete el resto de opcionales pendientes, sin volver a preguntar si ya estaba resuelto. Único punto de configuración del que dependen todas las demás skills. *Usa:* ninguna otra skill.
 - **pv-new** — Documenta un cambio intencionado (funcionalidad nueva o modificación de comportamiento a propósito, no un bug). Invoca `pv-internal-tech-analysis` para reunir contexto técnico antes de anticipar dudas funcionales típicas, genera `description.md` vía `pv-internal-workflow` y, si aplica, diagramas Mermaid funcionales por caso de uso (vía `pv-internal-tech-mermaid`) y maquetas visuales `design_*.html` (vía `pv-internal-mockups-html`, o la alternativa configurada en `framework.skills.mockups`), validando ambos con el usuario antes de dar el cambio por documentado. No implementa nada por sí misma, pero si el usuario quiere implementar de inmediato puede invocar directamente `pv-how` sobre la entrada recién creada. *Usa:* `pv-internal-workflow`, `pv-internal-tech-analysis`, `pv-internal-tech-mermaid`, `pv-internal-mockups-html`, `pv-how`.
 - **pv-fix** — Documenta un bug y lo implementa de punta a punta, y además es la vía rápida del framework para cambios tan pequeños que casi no requieren análisis (typo, texto, un valor/constante, un ajuste de estilo aislado, sea o no un bug). Primero invoca `pv-internal-tech-analysis` para valorar si lo pedido es `fast` (sin ambigüedad, ≤2 ficheros, sin afectar a `docs.tech.architectureDocDir`/`docs.tech.styleBibleDocDir` ni incongruencias detectadas con ellos, sin comportamiento nuevo). Si es `fast`, crea la entrada vía `pv-internal-workflow` (`action=create`, `type=fast`), aplica el cambio directamente y la mueve a `implemented` (`action=move`) en la misma invocación, sin `plan.md`. Si no es `fast` y es un bug, genera `description.md` vía `pv-internal-workflow` (`type=fix`), invocando `pv-internal-tech-mermaid`/`pv-internal-mockups-html` cuando el fix tiene flujo o componente visual que representar, y encadena automáticamente `pv-how` para corregirlo de punta a punta, con el análisis acotado estrictamente a la causa raíz (sin ampliar alcance). Si no es `fast` y no es un bug, avisa al usuario e invoca `pv-new` con su petición. *Usa:* `pv-internal-workflow`, `pv-internal-tech-analysis`, `pv-internal-tech-mermaid`, `pv-internal-mockups-html`, `pv-new`, `pv-how`.
 - **pv-how** — Toma una entrada ya documentada en `inProgress`, invoca `pv-internal-tech-analysis` para reunir el contexto técnico, analiza la solución técnica y escribe `plan.md` (usando `pv-internal-tech-mermaid`/`pv-internal-mockups-html` cuando lo que hay que describir es un flujo o requiere maqueta visual). Con `plan.md` ya escrito, invoca `pv-internal-tech-risks` para valorar el riesgo de romper algo al implementarlo y escribe la mediana devuelta en la cabecera del plan (el detalle de los 9 factores solo se añade si el usuario lo pide). Si el usuario confirma que quiere implementar ya, encadena directamente `pv-do` sobre la misma entrada. *Usa:* `pv-internal-tech-analysis`, `pv-internal-tech-mermaid`, `pv-internal-mockups-html`, `pv-internal-tech-risks`, `pv-do`.
 - **pv-do** — Toma una entrada de `inProgress` cuyo `plan.md` ya está escrito (por `pv-how`, o invocada directamente por el usuario), implementa el código, actualiza la documentación sincronizada (`docs.tech.architectureDocDir`/`docs.functional.featuresDocPathDir`/`docs.tech.styleBibleDocDir` — incluyendo cualquier incongruencia que `pv-internal-tech-analysis` haya reportado vía `pv-how`) y mueve la carpeta a `implemented` vía `pv-internal-workflow`. Si `docs.functional.featuresDocPathDir` es una carpeta, delega su lectura/escritura en `pv-internal-doc-features` en vez de tocarla directamente. Antes de redactar o editar contenido de `docs.tech.architectureDocDir`/`styleBibleDocDir`, invoca `pv-internal-doc-technical` para cargar su estilo de escritura (pensado para que lo lea una IA, no una persona) y lo aplica al redactar. *Usa:* `pv-internal-workflow`, `pv-internal-doc-features`, `pv-internal-doc-technical`.
 - **pv-status** — Da una vista general de solo lectura del estado del proyecto (totales por tipo —incluido `fast`, el atajo trivial de `pv-fix`— y por estado, detalle de qué está solo descrito vs. listo para implementar, y listado aparte de los cambios `fast` ya aplicados). No crea, mueve ni modifica nada; el informe se entrega en el chat salvo que el usuario pida guardarlo. *Usa:* ninguna otra skill.
 - **pv-todo** — Cuaderno de ideas sueltas, deliberadamente fuera del flujo de trabajo del framework: vive en `{changesDir}/todo/`, con numeración e identificadores propios que ninguna otra skill `pv-*` lee ni cuenta. Sirve para anotar ideas incompletas sin forzar el análisis de alcance de `pv-new`/`pv-fix`. *Usa:* ninguna otra skill.
-- **pv-version** — Prepara una entrega en `{workFolder}/versions/{XXXX}/`: exige primero que `{changesDir}/implemented/` esté vacío (cada entrada se resuelve moviéndola a `closed`), genera el entregable siguiendo `{workFolder}/framework/how-to-compile-version.md` (procedimiento propio del proyecto, escrito la primera vez que hace falta, capaz de describir varios pasos si el build genera varios artefactos), comprime en `.zip` y copia `docs.tech.architectureDocDir`/`docs.tech.styleBibleDocDir`/`docs.functional.featuresDocPathDir` que estén configuradas, y encadena `pv-internal-changelog` para el changelog funcional. Si se invoca solo para informar de un cambio en el procedimiento de build, actualiza `{workFolder}/framework/how-to-compile-version.md` sin lanzar el resto del proceso salvo confirmación explícita. `{XXXX}` es texto libre elegido por el usuario en cada invocación, sin relación con la numeración `xxxx` de change/fix ni con ninguna otra carpeta "versions" que exista en el repo. *Usa:* `pv-internal-changelog`.
+- **pv-version** — Prepara una entrega en `{workFolder}/versions/{XXXX}/`: exige primero que `{changesDir}/implemented/` esté vacío (cada entrada se resuelve moviéndola a `closed`), genera el entregable siguiendo `{workFolder}/stuff/how-to-compile-version.md` (procedimiento propio del proyecto, escrito la primera vez que hace falta, capaz de describir varios pasos si el build genera varios artefactos), comprime en `.zip` y copia `docs.tech.architectureDocDir`/`docs.tech.styleBibleDocDir`/`docs.functional.featuresDocPathDir` que estén configuradas, y encadena `pv-internal-changelog` para el changelog funcional. Si se invoca solo para informar de un cambio en el procedimiento de build, actualiza `{workFolder}/stuff/how-to-compile-version.md` sin lanzar el resto del proceso salvo confirmación explícita. `{XXXX}` es texto libre elegido por el usuario en cada invocación, sin relación con la numeración `xxxx` de change/fix ni con ninguna otra carpeta "versions" que exista en el repo. *Usa:* `pv-internal-changelog`.
 
 ### Internas y de soporte
 
@@ -114,20 +115,20 @@ Ejemplo de `.claude/pv-context.json` ya configurado:
       "mockups": "pv-internal-mockups-html",
       "diagrams": "pv-internal-tech-mermaid"
     },
-    "sourcecodeDir": "src",
-    "workFolder": "/",
+    "sourcecodeDir": "/src",
+    "workFolder": "/previo-sdd",
     "numberWidth": 5,
     "interaction": { "language": "en" },
     "changes": { "language": "es" },
     "versions": { "language": "es" },
     "docs": {
       "functional": {
-        "featuresDocPathDir": "design/docs/features",
+        "featuresDocPathDir": "docs/features",
         "language": "es"
       },
       "tech": {
-        "architectureDocDir": "design/docs/architecture",
-        "styleBibleDocDir": "design/docs/style",
+        "architectureDocDir": "docs/architecture",
+        "styleBibleDocDir": "docs/style",
         "language": "en"
       }
     },
@@ -164,10 +165,11 @@ Configuración de forma fija que las skills `pv-*` usan directamente, dividida e
 
 #### Lo básico
 
-- **`workFolder`** (`string`, opcional, default `"/"`): carpeta relativa a la raíz del repo bajo la que el framework gestiona todo su trabajo. Dentro de ella, las skills crean por sí mismas dos subcarpetas de nombre fijo que el usuario no elige ni renombra:
+- **`workFolder`** (`string`, opcional, default `"/previo-sdd"`): carpeta relativa a la raíz del repo bajo la que el framework gestiona todo su trabajo. Es el único campo de `framework` que `pv-init` nunca pregunta ni confirma: siempre escribe el default en silencio, igual que `skills.mockups`/`skills.diagrams`. Si algún día se quiere otra carpeta, se cambia a mano en `pv-context.json`, bajo la responsabilidad de quien lo edite. Dentro de ella, las skills crean por sí mismas tres subcarpetas de nombre fijo que el usuario no elige ni renombra:
   - `{workFolder}/changes/` — con `inProgress/` (documentado, pendiente de planificar/implementar), `implemented/` (plan ya implementado, pendiente de entrega — lo mueve ahí `pv-do`), `todo/` (ideas sueltas de `pv-todo`, ajenas al flujo de change/fix) y `closed/` (ya incorporado a una entrega, gestionado por `pv-version`/`pv-internal-changelog`). Un mismo `{xxxx}` nunca se repite entre `inProgress`/`implemented`.
   - `{workFolder}/versions/` — una subcarpeta por entrega preparada con `pv-version`, con código `XXXX` de texto libre elegido por el usuario en cada invocación; espacio de numeración totalmente independiente del `{xxxx}` de `changes/`.
-- **`sourcecodeDir`** (`string`, opcional): carpeta raíz del código fuente del proyecto. La usa `pv-how` como contexto de respaldo al escribir `plan.md`, solo cuando `docs.tech.architectureDocDir` no existe como carpeta real en el repo.
+  - `{workFolder}/stuff/` — ficheros propios del proyecto que ninguna otra skill del framework decide por él, empezando por `how-to-compile-version.md` (procedimiento de build que `pv-version` pregunta y escribe la primera vez que hace falta).
+- **`sourcecodeDir`** (`string`, opcional, default `"/src"`): carpeta raíz del código fuente del proyecto, relativa a la raíz del repo — con `/` inicial para que se distinga a simple vista de `docs.*`, que es relativa a `workFolder`. La usa `pv-how` como contexto de respaldo al escribir `plan.md`, solo cuando `docs.tech.architectureDocDir` no existe como carpeta real en el repo.
 - **`numberWidth`** (`integer`, opcional, default `4`, mínimo `1`): número de dígitos del código secuencial `xxxx`, con ceros a la izquierda.
 
 #### Configuración de skills
@@ -189,10 +191,78 @@ Cada punto de escritura del framework puede tener su propio idioma en vez de uno
 
 #### Documentación
 
-- **`docs`** (`object`, opcional): documentación de referencia externa del proyecto, agrupada por área:
+- **`docs`** (`object`, opcional): documentación de referencia externa del proyecto, agrupada por área. Las tres rutas son relativas a `workFolder` (no a la raíz del repo) — el único campo de `pv-context.json` relativo a la raíz es `sourcecodeDir`:
   - **`functional.featuresDocPathDir`** (`string`, opcional): listado de funcionalidades ya implementadas. Puede ser una carpeta (recomendado — un fichero por funcionalidad más un `INDEX.md` generado, en cuyo caso `pv-do` delega la lectura/escritura en `pv-internal-doc-features`) o, en proyectos aún no migrados, un único fichero `.md`. `pv-do` añade/actualiza la entrada correspondiente al implementar cada cambio/fix, creando la ruta si no existe. Si no está configurado, ese paso se omite sin preguntar. Su idioma se configura en `functional.language` (ver "Configuración de idioma" más arriba).
   - **`tech.architectureDocDir`** (`string`, opcional): carpeta con el documento de arquitectura/diseño técnico, partido en varios ficheros con un `INDEX.md` que resume cada uno (prefijo numérico de 2 dígitos, p.ej. `01-`, `02-`). `pv-do` la mantiene sincronizada tras cada cambio/fix, creando un fichero nuevo con el siguiente número libre si el tema no encaja en ninguno existente. Antes de redactar o editar su contenido, `pv-do` invoca `pv-internal-doc-technical` para aplicar su estilo de escritura.
   - **`tech.styleBibleDocDir`** (`string`, opcional): misma convención que `architectureDocDir`, pero para la guía de estilo (visual, de interacción, de redacción) del proyecto.
   - El idioma compartido por ambos campos `tech.*` se configura en `tech.language` (ver "Configuración de idioma" más arriba).
 
 Cualquier campo de `docs` que no esté configurado hace que el paso correspondiente se omita sin preguntar nada — el framework funciona igual, solo con menos contexto al analizar y sin mantener esa documentación sincronizada.
+
+## Estructura completa de carpetas y ficheros
+
+Vista completa de qué crea el framework y dónde, con la configuración por defecto (`workFolder` fijo en `/previo-sdd`, `docs.*` en `{workFolder}/docs/...`). Todo lo que cuelga de `{workFolder}` (`changes/`, `versions/`, `stuff/`) tiene nombre fijo — ninguna skill pregunta por él ni lo deja elegir al usuario; lo único configurable es el propio `workFolder` (a mano, en `pv-context.json`, sin pasar por `pv-init`) y las rutas de `docs.*` dentro de él. `sourcecodeDir` es la única ruta de `pv-context.json` relativa a la raíz del repo en vez de a `workFolder`.
+
+```
+{raíz del repo}/
+├── pv.py                              # lanzador del framework (lo copia/actualiza pv-init)
+├── src/                               # sourcecodeDir (default "/src") — única ruta relativa a la raíz del repo
+├── .claude/
+│   ├── pv-context.json                # único punto de configuración (lo escribe pv-init)
+│   ├── pv-design.{es,en}.md           # este documento
+│   ├── pv-guide.{es,en}.md            # guía de uso
+│   └── skills/
+│       ├── pv-init/                   # inicializa/completa pv-context.json
+│       ├── pv-new/                    # documenta un change
+│       ├── pv-fix/                    # documenta+implementa un fix (o atajo fast)
+│       ├── pv-how/                    # planifica: escribe plan.md
+│       ├── pv-do/                     # implementa el código
+│       ├── pv-status/                 # vista de solo lectura del estado
+│       ├── pv-todo/                   # ideas sueltas, fuera del flujo
+│       ├── pv-version/                # prepara una entrega
+│       │   └── how-to-compile-version.template.md  # plantilla que pv-version copia al escribir stuff/how-to-compile-version.md
+│       └── pv-internal-*/             # skills internas, invocadas por las de arriba
+│
+└── previo-sdd/                        # {workFolder} — default fijo, no se pregunta
+    ├── changes/                       # nombre fijo
+    │   ├── inProgress/                # documentado, pendiente de planificar/implementar
+    │   │   └── {xxxx}/                # p.ej. 00007 (numerado, numberWidth dígitos)
+    │   │       ├── description.md     # resumen funcional (pv-new/pv-fix, vía pv-internal-workflow)
+    │   │       ├── history.md         # prompt original verbatim, uso exclusivo de pv-new/pv-fix
+    │   │       ├── plan.md            # solución técnica, solo tras pv-how
+    │   │       └── design_*.html      # maquetas visuales, si el cambio tiene componente de UI
+    │   ├── implemented/               # mismo contenido que inProgress, movido por pv-do
+    │   │   └── {xxxx}/                # carpeta trasladada tal cual desde inProgress/{xxxx}
+    │   ├── todo/                      # notas de pv-todo, numeración propia
+    │   │   └── {code}/                # p.ej. a3f9k (5 caracteres alfanuméricos)
+    │   │       ├── description.md     # idea anotada tal cual, sin análisis de alcance
+    │   │       └── design_*.html      # maqueta opcional, solo si el usuario la aporta
+    │   └── closed/                    # ya incorporado a una entrega
+    │       └── {xxxx}/                # se borra tras pv-internal-changelog + confirmación del usuario
+    │
+    ├── versions/                      # nombre fijo
+    │   └── {XXXX}/                    # texto libre elegido por el usuario, p.ej. v1.2
+    │       ├── files/                 # entregable(s) generado(s), copiado(s) por script
+    │       ├── docs/                  # .zip de docs.tech.*/docs.functional.* vigentes en esta entrega
+    │       └── changelog.md           # redactado por pv-internal-changelog a partir de changes/closed/
+    │
+    ├── stuff/                         # nombre fijo — ficheros propios del proyecto
+    │   └── how-to-compile-version.md  # procedimiento de build, escrito por pv-version (creación perezosa)
+    │
+    └── docs/                          # docs.* — rutas configurables (relativas a workFolder), mantenidas por pv-do
+        ├── architecture/              # docs.tech.architectureDocDir
+        │   ├── INDEX.md                 # índice generado, resume cada fichero hermano
+        │   └── 01-overview.md, 02-...   # contenido real, prefijo numérico de 2 dígitos por tema
+        ├── style/                     # docs.tech.styleBibleDocDir
+        │   ├── INDEX.md                 # mismo patrón que architecture/INDEX.md
+        │   └── 01-overview.md, 02-...   # mismo patrón que architecture/
+        └── features/                  # docs.functional.featuresDocPathDir
+            ├── INDEX.md                 # índice generado por pv-internal-doc-features
+            └── {funcionalidad}.md        # un fichero por funcionalidad ya implementada
+```
+
+Notas:
+- `{xxxx}` (numeración de `changes/`) y `{XXXX}` (numeración de `versions/`) son espacios de numeración completamente independientes entre sí y del `{code}` de `todo/`.
+- `stuff/how-to-compile-version.md` es de creación perezosa: no existe hasta que `pv-version` lo necesita por primera vez (o hasta que se reporta un cambio en el procedimiento de build sin pedir entrega).
+- `docs/` es la ruta por defecto que `pv-init` propone/genera para los tres campos de `docs`, dentro de `workFolder`; cualquiera de los tres puede apuntar a otra ruta (siempre relativa a `workFolder`), o no existir si el usuario decide no mantenerlo. No confundir con `versions/{XXXX}/docs/`, que es solo el `.zip` de esta carpeta en el momento de cada entrega.
+- `sourcecodeDir` (default `"/src"`) es el único campo de `pv-context.json` relativo a la raíz del repo en vez de a `workFolder` — el código fuente del proyecto no es gestionado por el framework. El `/` inicial es la convención visual que lo distingue de `docs.*`, relativo a `workFolder`.
