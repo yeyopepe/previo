@@ -5,7 +5,7 @@ argument-hint: <texto a traducir/revisar, o ruta a un fichero>
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.1.0
+  version: 0.9.4-beta1
   uses: []
 ---
 

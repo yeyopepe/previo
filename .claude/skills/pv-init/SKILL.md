@@ -4,7 +4,7 @@ description: Initializes the pv-* framework (change/fix/workflow) in the current
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.2
+  version: 0.9.4-beta1
   uses: []
 ---
 
@@ -98,7 +98,13 @@ Fields to resolve — `framework` section:
 - `numberWidth` (optional, default `4`, no need to ask unless the user wants something different).
 - `skills.mockups` and `skills.diagrams`: always write their defaults (`pv-internal-mockups-html`, `pv-internal-tech-mermaid`) to the file silently, without asking about them or mentioning them anywhere in this init — not in the questions, not in the step 6 summary. If the user ever wants to swap the underlying skill/technology, they'll find that documented in `schema.json` themselves.
 
-`skillModels` section (optional, outside `framework`) — always mention it, even briefly, don't skip it silently: ask if the user wants to fix upfront a model/effort different from what each `SKILL.md` already has for some `pv-*` skill (e.g. dropping the more mechanical ones like `pv-status`/`pv-todo` to Haiku, or raising `pv-do`'s effort). If they don't want to touch anything now, skip the section entirely — the default is whatever each `SKILL.md` already carries in its own frontmatter. If they configure something, remind the user in step 5 that they must run `python .claude/skills/pv-init/scripts/sync-skill-models.py` for the change to actually take effect (this section alone isn't enough, see its `description` in `schema.json`).
+`skillModels` section (optional in the schema, but **always written** by `pv-init`, even on a run where the user changes nothing) — compute the baseline deterministically and for free in tokens with:
+
+```
+python .claude/skills/pv-init/scripts/collect-skill-models.py
+```
+
+It reads every `pv-*/SKILL.md`'s real `model`/`effort` frontmatter and returns the proposed `default` (the most common pair) plus `overrides` (one entry per skill whose frontmatter differs from that pair) — a straight mirror of what's already on disk, so `pv-context.json` never claims a baseline that doesn't match reality. Write that result as-is into `skillModels.default`/`skillModels.overrides`, and always mention it (even briefly) don't skip it silently: ask if the user wants to change anything upfront on top of that mirrored baseline (e.g. dropping another mechanical skill to Haiku, or raising some skill's effort). If they don't want to touch anything now, still write the mirrored baseline — never leave the section absent. If they configure something different from the mirrored baseline, remind the user in step 5 that they must run `python .claude/skills/pv-init/scripts/sync-skill-models.py` for the change to actually take effect on the `SKILL.md` files (this section alone isn't enough, see its `description` in `schema.json`) — a freshly mirrored baseline with no user changes is already in sync and doesn't need that run.
 
 **Partial update case**: if `complete` was already `true` but `hasLanguage` was `false` (project initialized before language support existed), include the language question in the same round as any other unconfigured optionals — don't create a separate round for it. If `hasLanguage` is already `true`, don't ask about language again in this run.
 
@@ -123,4 +129,4 @@ Before considering the initialization done:
 3. If any of the three was left undefined because the user explicitly declined it, confirm no trace was left on disk or in the JSON.
 4. Confirm `{repo root}/pv.py` exists and matches [`assets/pv.py`](assets/pv.py).
 
-Show the user a complete summary of what was configured: the file's path, every `framework` field resolved (including ones left unconfigured and why), the resolved language configuration (`interaction.language`/`changes.language`/`versions.language`/`docs.*.language`, and what was written to `framework._comments`), whether anything was set in `skillModels` (with the reminder to run `sync-skill-models.py` if applicable), and that they can now run `python3 pv.py` from the repo root to check the framework's status without going through Claude Code. Remind the user they can invoke this skill again to reconfigure any field later.
+Show the user a complete summary of what was configured: the file's path, every `framework` field resolved (including ones left unconfigured and why), the resolved language configuration (`interaction.language`/`changes.language`/`versions.language`/`docs.*.language`, and what was written to `framework._comments`), the `skillModels` baseline written (`default`, and `overrides` if any skill differs from it — always written now, even with no customization), with the reminder to run `sync-skill-models.py` only if the user changed something beyond the mirrored baseline, and that they can now run `python3 pv.py` from the repo root to check the framework's status without going through Claude Code. Remind the user they can invoke this skill again to reconfigure any field later.

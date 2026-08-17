@@ -9,8 +9,6 @@ Todas las skills viven bajo `.claude/skills/pv-*` y comparten un único fichero 
 - [Preparación](#preparación)
   - [1. Herramientas necesarias](#1-herramientas-necesarias)
   - [2. Inicializar el framework: `/pv-init`](#2-inicializar-el-framework-pv-init)
-    - [Elegir el modelo/esfuerzo de cada skill: `skillModels`](#elegir-el-modeloesfuerzo-de-cada-skill-skillmodels)
-    - [Configurar el idioma: `interaction`/`changes`/`versions`/`docs.*.language`](#configurar-el-idioma-interactionchangesversionsdocslanguage)
 - [Guía de uso rápida: el flujo natural](#guía-de-uso-rápida-el-flujo-natural)
   - [Paso 0 (opcional) — Apuntar ideas sueltas: `/pv-todo`](#paso-0-opcional--apuntar-ideas-sueltas-pv-todo)
   - [Paso 1 — Definir el cambio: dos maneras](#paso-1--definir-el-cambio-dos-maneras)
@@ -83,56 +81,7 @@ Ejemplo de `.claude/pv-context.json` ya configurado:
 ```
 
 
-#### Elegir el modelo/esfuerzo de cada skill: `skillModels`
-
-`.claude/pv-context.json` también puede incluir una sección opcional `skillModels` que decide con qué modelo (Sonnet, Haiku...) y esfuerzo corre cada skill `pv-*` del proyecto. Sirve tanto para bajar el coste de las skills más mecánicas (por ejemplo, `pv-status` o `pv-todo` a Haiku) como para subir la capacidad de una skill puntual que lo necesite — por ejemplo, si quieres que `pv-how` (la que diseña la solución técnica) razone con un modelo más capaz que el resto:
-
-```json
-"skillModels": {
-  "default": { "model": "claude-sonnet-5", "effort": "medium" },
-  "overrides": {
-    "pv-how": { "model": "claude-opus-5", "effort": "high" }
-  }
-}
-```
-
-- `default`: modelo/esfuerzo que aplica a cualquier skill `pv-*` sin entrada propia en `overrides`.
-- `overrides`: una entrada por nombre de skill (el `name:` de su `SKILL.md`) para las que necesiten algo distinto del `default`.
-
-Después de editar `default` u `overrides`, hay que sincronizar el framework para que el cambio tenga efecto — el fichero de configuración por sí solo no basta. Para ello tienes dos opciones:
-
-- (Recomendada) Ejecuta `pv.py` y selecciona la opción _Actualizar modelos de las skills_.
-- Ejecuta el script `.claude/skills/pv-init/scripts/sync-skill-models.py`.
-
-Es un proceso automático que no gasta tokens; puede repetirse en cualquier momento tras editar `skillModels` a mano, o pedirle a `pv-init` que lo haga por ti la próxima vez que lo invoques.
-
-#### Configurar el idioma: `interaction`/`changes`/`versions`/`docs.*.language`
-
-Las instrucciones propias de cada skill `pv-*` (cada `SKILL.md`, sus plantillas, sus scripts) están siempre en inglés, sea cual sea la configuración — es el idioma en el que estas skills están mejor probadas, y lo que hace fiable seguir instrucciones complejas. Lo que controla `language` es solo el idioma de lo que una skill produce *hacia fuera*: lo que te dice en el chat, y el contenido de los documentos que escribe. Si nunca configuras `language` en ningún sitio, todo funciona en inglés por defecto.
-
-`framework` puede llevar hasta cinco campos `language` independientes, todos opcionales:
-
-```json
-"framework": {
-  "interaction": { "language": "en" },
-  "changes": { "language": "es" },
-  "versions": { "language": "es" },
-  "docs": {
-    "functional": { "language": "es" },
-    "tech": { "language": "en" }
-  }
-}
-```
-
-- **`interaction.language`** — idioma en el que las skills hablan contigo en el chat (preguntas, confirmaciones, resúmenes). Es también el valor de respaldo de todos los campos siguientes cuando no están configurados.
-- **`changes.language`** — idioma de los documentos de un change/fix en curso: `description.md`, `plan.md`, `history.md`, y el texto de ejemplo de las maquetas `design_*.html`/`design_*.txt`.
-- **`versions.language`** — idioma de `changelog.md`, generado por `pv-version`/`pv-internal-changelog` a partir de `changes/closed`. Es una familia distinta de `changes.language`: un changelog que publiques hacia fuera puede razonablemente estar en un idioma distinto del que tu equipo usa para documentar los cambios internamente.
-- **`docs.functional.language`** — idioma de `docs.functional.featuresDocPathDir`.
-- **`docs.tech.language`** — idioma compartido por `docs.tech.architectureDocDir` y `docs.tech.styleBibleDocDir`.
-
-`pv-init` siempre pregunta por el idioma en una inicialización desde cero, proponiendo inglés por defecto para `interaction` y ofreciendo reutilizar el mismo valor para el resto salvo que quieras algo distinto. Si inicializaste este proyecto antes de que existiera el soporte de idioma, la próxima vez que ejecutes `pv-init` te preguntará solo esto, sin repetir el resto del cuestionario.
-
-Dos cosas se quedan siempre en inglés, se configure lo que se configure: la tabla del informe de `pv-status` (la generan scripts deterministas, no el modelo, para que sea gratis en tokens y consistente — solo la frase que la introduce sigue `interaction.language`), y las etiquetas de campo markdown que los scripts parsean literalmente en `description.md` (`**Type**`, `**Name**`, `## Idea`, `## Notes`...) — solo el texto que sigue a cada etiqueta sigue el idioma configurado.
+`.claude/pv-context.json` también admite dos bloques opcionales para afinar el framework: `skillModels` (qué modelo/esfuerzo usa cada skill) y los campos `language` de `framework` (en qué idioma habla o escribe cada cosa). `pv-init` te pregunta por el idioma en la primera inicialización; el detalle de ambos bloques está en [Más formas de personalizar Previo](#más-formas-de-personalizar-previo).
 
 ## Guía de uso rápida: el flujo natural
 
@@ -290,6 +239,8 @@ Y para algo trivial:
 
 ## Más formas de personalizar Previo
 
+### 1. Creación de maquetas y diagramas
+
 Algunas piezas del framework se pueden sustituir por otras propias sin tocar el resto, configurando `framework.skills` en `.claude/pv-context.json`. Por defecto no hace falta tocar nada; solo se configura si quieres cambiar alguna de estas dos piezas:
 
 - **Maquetas visuales** (`mockups`): por defecto genera maquetas en HTML/CSS/SVG navegables en el navegador. Si prefieres maquetas en texto plano (arte ASCII), cámbialo a `pv-internal-mockups-ascii`.
@@ -308,6 +259,58 @@ Ejemplo, para usar maquetas en ASCII en vez de HTML:
 
 También puedes apuntar cualquiera de las dos a una skill propia de tu proyecto, en vez de a una de las incluidas en Previo, siempre que reciba y devuelva la misma información que la skill a la que sustituye: la carpeta destino del cambio/fix y la lista de elementos a maquetar o diagramar como entrada, y las rutas de lo generado como salida.
 
+### 2. Configuración de idiomas
+
+Las instrucciones propias de cada skill `pv-*` (cada `SKILL.md`, sus plantillas, sus scripts) están siempre en inglés, sea cual sea la configuración — es el idioma en el que estas skills están mejor probadas, y lo que hace fiable seguir instrucciones complejas. Lo que controla `language` es solo el idioma de lo que una skill produce *hacia fuera*: lo que te dice en el chat, y el contenido de los documentos que escribe. Si nunca configuras `language` en ningún sitio, todo funciona en inglés por defecto.
+
+Previo separa el idioma en el que hablas con el framework del idioma en el que se escribe cada tipo de documento, configurando el bloque `framework` de `.claude/pv-context.json`. Se define un idioma por punto:
+
+- **`interaction.language`**: idioma en el que las skills `pv-*` hablan contigo en el chat (preguntas, confirmaciones, resúmenes). También es el valor por defecto (*fallback*) del resto de puntos que no configures aparte.
+- **`changes.language`**: idioma de los documentos de cada change/fix en curso (`description.md`, `plan.md`, `history.md` y los textos de los mockups `design_*.html`/`.txt`) dentro de `changes/`.
+- **`versions.language`**: idioma de `changelog.md`, generado por `pv-internal-changelog` a partir de `changes/closed`.
+- **`docs.functional.language`**: idioma de la documentación de funcionalidades (`featuresDocPathDir`) que `pv-do` mantiene actualizada tras cada change/fix implementado.
+- **`docs.tech.language`**: idioma compartido por la documentación de arquitectura (`architectureDocDir`) y la biblia de estilo (`styleBibleDocDir`), que `pv-do` mantiene actualizadas tras cada change/fix implementado.
+
+Todos los puntos salvo `interaction.language` son opcionales: si no los configuras, heredan el idioma de `interaction.language` (y si tampoco está configurado, se usa inglés). Esto te permite, por ejemplo, hablar con Previo en español mientras la documentación técnica queda en inglés para compartirla con colaboradores externos:
+
+```json
+"framework": {
+  "interaction": { "language": "es" },
+  "changes": { "language": "es" },
+  "versions": { "language": "es" },
+  "docs": {
+    "functional": { "language": "es" },
+    "tech": { "language": "en" }
+  }
+}
+```
+
+`pv-init` siempre pregunta por el idioma en una inicialización desde cero, proponiendo inglés por defecto para `interaction` y ofreciendo reutilizar el mismo valor para el resto salvo que quieras algo distinto. Si inicializaste este proyecto antes de que existiera el soporte de idioma, la próxima vez que ejecutes `pv-init` te preguntará solo esto, sin repetir el resto del cuestionario. Puedes editar los valores a mano en `.claude/pv-context.json` en cualquier momento después.
+
+Dos cosas se quedan siempre en inglés, se configure lo que se configure: la tabla del informe de `pv-status` (la generan scripts deterministas, no el modelo, para que sea gratis en tokens y consistente — solo la frase que la introduce sigue `interaction.language`), y las etiquetas de campo markdown que los scripts parsean literalmente en `description.md` (`**Type**`, `**Name**`, `## Idea`, `## Notes`...) — solo el texto que sigue a cada etiqueta sigue el idioma configurado.
+
+### 3. Modelo/esfuerzo de cada skill: `skillModels`
+
+`.claude/pv-context.json` también puede incluir una sección opcional `skillModels` que decide con qué modelo (Sonnet, Haiku...) y esfuerzo corre cada skill `pv-*` del proyecto. Sirve tanto para bajar el coste de las skills más mecánicas (por ejemplo, `pv-status` o `pv-todo` a Haiku) como para subir la capacidad de una skill puntual que lo necesite — por ejemplo, si quieres que `pv-how` (la que diseña la solución técnica) razone con un modelo más capaz que el resto:
+
+```json
+"skillModels": {
+  "default": { "model": "claude-sonnet-5", "effort": "medium" },
+  "overrides": {
+    "pv-how": { "model": "claude-opus-5", "effort": "high" }
+  }
+}
+```
+
+- `default`: modelo/esfuerzo que aplica a cualquier skill `pv-*` sin entrada propia en `overrides`.
+- `overrides`: una entrada por nombre de skill (el `name:` de su `SKILL.md`) para las que necesiten algo distinto del `default`.
+
+Después de editar `default` u `overrides`, hay que sincronizar el framework para que el cambio tenga efecto — el fichero de configuración por sí solo no basta. Para ello tienes dos opciones:
+
+- (Recomendada) Ejecuta `pv.py` y selecciona la opción _Actualizar modelos de las skills_.
+- Ejecuta el script `.claude/skills/pv-init/scripts/sync-skill-models.py`.
+
+Es un proceso automático que no gasta tokens; puede repetirse en cualquier momento tras editar `skillModels` a mano, o pedirle a `pv-init` que lo haga por ti la próxima vez que lo invoques.
 
 ## Otros trucos
 
