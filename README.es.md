@@ -8,17 +8,19 @@ Aporta el control y la trazabilidad del *spec-driven development* sin la sobreca
 
 ## Índice
 
-- [Puntos fuertes](#puntos-fuertes)
-- [Puntos menos fuertes y lo que está por llegar](#puntos-menos-fuertes-y-lo-que-está-por-llegar)
-- [Instalación](#instalación)
+- 🔑[Puntos fuertes](#puntos-fuertes)
+- 🛠️[Configurable y extensible](#configurable-y-extensible)
+- ⚠️[Puntos menos fuertes y lo que está por llegar](#puntos-menos-fuertes-y-lo-que-está-por-llegar)
+- 🛜[Instalación](#instalación)
   - [Estructura completa de carpetas](#estructura-completa-de-carpetas)
-- [Flujo de trabajo](#flujo-de-trabajo)
+- 💻[Flujo de trabajo](#flujo-de-trabajo)
   - [Flujo mínimo](#flujo-mínimo)
   - [Flujo extendido](#flujo-extendido)
-- [Cómo está hecho y cómo funciona en detalle](#cómo-está-hecho-y-cómo-funciona-en-detalle)
-- [Licencia](#licencia)
+- ⭐[La experiencia completa](#la-experiencia-completa)
+- 📐[Cómo está hecho, al detalle](#cómo-está-hecho-al-detalle)
+- ⚖️[Licencia](#licencia)
 
-## 🔑 Puntos fuertes
+## 🔑Puntos fuertes
 
 | Característica | Descripción |
 |---|---|
@@ -105,7 +107,7 @@ Así es cómo quedará tu repo tras la instalación, listo para empezar a trabaj
 ```
 
 
-## 💻 Flujo de trabajo
+## 💻Flujo de trabajo
 
 Cada cambio vive en una carpeta numerada dentro de `changes/` que va viajando entre subcarpetas según su estado: `inProgress/` → `implemented/` → `closed/`.
 
@@ -142,13 +144,13 @@ Skills opcionales que complementan el ciclo mínimo: anotar ideas antes de compr
 - **`/pv-version <código>`** — empaqueta una entrega: genera el entregable, comprime la documentación vigente y redacta el changelog funcional a partir de lo cerrado.
 
 
-### Todas las opciones
+## ⭐La experiencia completa
 Consulta en la [`Guía de usuario`](.claude/pv-guide.es.md) todo lo que puedes hacer con Previo.
 
 
 ## 📐Cómo está hecho, al detalle
 Si lo quieres es ver cómo está hecho (el mapa de skills del framework, cómo se invocan entre sí, las decisiones detrás de su arquitectura, etc), aquí tienes el [`documento de diseño`](.claude/pv-design.es.md).
 
-## Licencia
+## ⚖️Licencia
 
 [MIT](LICENSE)

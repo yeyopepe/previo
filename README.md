@@ -8,19 +8,19 @@ It brings the control and traceability of *spec-driven development* without the 
 
 ## Table of contents
 
-- [Key features](#key-features)
-- [Configurable and extensible](#configurable-and-extensible)
-- [Weaknesses and what's coming next](#weaknesses-and-whats-coming-next)
-- [Installation](#installation)
+- 🔑[Key features](#key-features)
+- 🛠️[Configurable and extensible](#configurable-and-extensible)
+- ⚠️[Weaknesses and what's coming next](#weaknesses-and-whats-coming-next)
+- 🛜[Installation](#installation)
   - [Full folder structure](#full-folder-structure)
-- [Workflow](#workflow)
+- 💻[Workflow](#workflow)
   - [Minimal flow](#minimal-flow)
   - [Extended flow](#extended-flow)
-- [All the options](#all-the-options)
-- [How it's built, in detail](#how-its-built-in-detail)
-- [License](#license)
+- ⭐[The Full Experience](#the-full-experience)
+- 📐[How it's built, in detail](#how-its-built-in-detail)
+- ⚖️[License](#license)
 
-## 🔑 Key features
+## 🔑Key features
 
 | Feature | Description |
 |---|---|
@@ -108,7 +108,7 @@ Here's what your repo will look like after installation, ready to start working 
 ```
 
 
-## 💻 Workflow
+## 💻Workflow
 
 Each change lives in a numbered folder inside `changes/` that travels between subfolders as its state progresses: `inProgress/` → `implemented/` → `closed/`.
 
@@ -145,12 +145,12 @@ Optional skills that complement the minimal cycle: jotting down ideas before com
 - **`/pv-version <code>`** — packages a release: generates the deliverable, archives the current documentation, and writes the functional changelog from what's been closed.
 
 
-### All the options
+### ⭐The Full Experience
 See the [user guide](.claude/pv-guide.en.md) for everything you can do with Previo.
 
 ## 📐How it's built, in detail
 If you want to see how it's built (the framework's skill map, how they invoke each other, the reasoning behind its architecture, etc), here's the [design document](.claude/pv-design.en.md).
 
-## License
+## ⚖️License
 
 [MIT](LICENSE)
