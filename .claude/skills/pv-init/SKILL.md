@@ -4,8 +4,8 @@ description: Initializes the pv-* framework (change/fix/workflow) in the current
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.5b5
-  uses: []
+  version: 0.9.6b1
+  uses: [pv-init-update]
 ---
 
 # pv-init
@@ -45,7 +45,8 @@ Only once the base tools are available (and the conditional ones that can alread
 ## 1. Check current state
 
 - **If `.claude/pv-context.json` doesn't exist**: follow the normal process from step 2 onward (exploration + questions + full write).
-- **If it already exists**, the comparison against the required fields in [`schema.json`](schema.json) is done deterministically and for free in tokens by the script [`scripts/check-context.py`](scripts/check-context.py) (standard Python, no external dependencies) — don't eyeball it against the schema yourself. Run from the repo root:
+- **If it exists but isn't valid JSON, or `check-context.py` below fails to run for any reason**: don't try to diagnose or fix it yourself — stop this flow and invoke `pv-init-update` (`Skill` tool) instead. It owns everything beyond "which optional fields were never configured": broken JSON, unknown fields, referenced skills/paths that don't exist on disk, a stale `pv.py`, `skillModels` drift, etc. Once it finishes (fixes applied and approved, or the user declined), re-run `check-context.py` and resume this step from the top — only continue the normal `pv-init` flow below if the file is now valid and there's still something left to configure.
+- **If it already exists and is valid JSON**, the comparison against the required fields in [`schema.json`](schema.json) is done deterministically and for free in tokens by the script [`scripts/check-context.py`](scripts/check-context.py) (standard Python, no external dependencies) — don't eyeball it against the schema yourself. Run from the repo root:
 
   ```
   python .claude/skills/pv-init/scripts/check-context.py
@@ -60,6 +61,8 @@ Only once the base tools are available (and the conditional ones that can alread
     ```
   - **If `complete` is `false`** (the `framework` section doesn't exist yet): follow the normal process from step 2 onward — there's nothing to preserve with a merge.
   - **If `complete` is `true` but `hasLanguage` is `false` and/or there are other unconfigured optionals** (e.g. the user initialized once only confirming `workFolder` and declined the rest, or never got the language question because the project predates it): don't offer the destructive full reset up front. Ask first with `AskUserQuestion` whether they want to complete/review those specific optional fields (listing them, including language if `hasLanguage` is `false`) or leave things as they are; only if they explicitly ask to reset everything from scratch, follow the branch above. If they want to complete things, go to step 3 scoped to those fields and update in step 4 with a merge, same as with fields that were missing outright. If `hasLanguage` is already `true`, never ask about language again. Either way (completed now or left as-is), continue to step 5 per the rule below.
+
+  **Beyond `check-context.py`'s own checks**, if at any point in this step (or later, while exploring the repo or writing the file) you notice something `check-context.py` doesn't cover — a path configured in `pv-context.json` that doesn't exist on disk, `framework.skills.mockups`/`diagrams` naming a skill folder that isn't there, `{repo root}/pv.py` missing or clearly stale, a `{xxxx}` change code duplicated between `inProgress`/`implemented` — don't try to fix it inline as part of this normal flow: stop and invoke `pv-init-update` (`Skill` tool) instead, same as the invalid-JSON case above. Resume this flow afterward only if there's still configuration left for `pv-init` itself to handle.
 
   **Step 5 always runs, on every invocation of this skill, regardless of which branch above was taken** — including a run where the user declines every question and nothing in `.claude/pv-context.json` changes. This is what keeps `{repo root}/pv.py` current after installing a newer version of the framework's skill files: `scaffold-project.py` always overwrites `pv.py` unconditionally and only creates folders/placeholders that don't yet exist, so re-running it against an already-configured, unchanged project is safe and idempotent — never skip straight from step 1 to "done" without it.
 
