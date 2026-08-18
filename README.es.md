@@ -50,7 +50,7 @@ Consulta la [`Guía de usuario`](.claude/pv-guide.es.md#más-formas-de-personali
 ## ⚠️Puntos menos fuertes y lo que está por llegar
 - <u>**Contextos grandes.**</u> A medida que el proyecto crezca, el contexto necesario para que Previo haga su trabajo también crecerá (y el consumo de tokens). Hemos priorizado la calidad de los resultados frente al supuesto ahorro de tokens (aunque no los hemos olvidado) porque nuestra experiencia nos dice que el retrabajo siempre sale más caro que un buen análisis previo.
 - <u>**Mejor con mejores modelos.**</u> Previo puede funcionar con cualquier modelo, aunque los resultados irán en consonancia, claro. Esto es como decidir qué perfil quieres contratar para hacer un trabajo: un junior (ej: Haiku) irá más rápido y te costará menos, pero el riesgo de errores y retrabajo es grande. Incluso puedes tener varios en paralelo si quieres, pero entonces ya no te sale tan barato. Un senior (ej: Sonnet) te costará un poco más, pero se lo pensará mejor y el riesgo será mucho menor. Hemos probado Previo con ambos enfoques (Sonnet ya es lo bastante senior) y siempre nos ha compensado el uso de un senior (porcentaje de retrabajo en el último proyecto: 5%) para todo, en lugar de intentar ahorrar con juniors (retrabajo en el mismo proyecto: 40%). Son solo nuestros números, lo sabemos, así que pruébalo tú mismo.
-- <u>**Riesgo vs. pruebas.**</u> Como hemos priorizado la calidad del trabajo y la reducción de riesgos, hemos dejado de lado de momento la implementación de herramientas de pruebas más específicas. Estamos pensando cómo incorporarlo de manera que no afecte a la agilidad del framework. Actualmente puedes definir cambios que sean específicamente la creación de tests sobre cambios ya implementados, pero creemos que puede haber una manera mejor en el futuro cercano.
+- <u>**Riesgo vs. pruebas.**</u> Como hemos priorizado la calidad del trabajo y la reducción de riesgos, hemos dejado de lado de momento la implementación de herramientas de pruebas más específicas. Estamos pensando cómo incorporarlo de manera que no afecte a la agilidad del framework. Obviamente solo tienes que indicar en un cambio qué tipos de tests quieres que se hagan de ahora en adelante y el framework se asegurará de hacerlo, pero creemos que puede haber una manera mejor en el futuro cercano.
 
 ## 🛜Instalación
 
@@ -76,7 +76,8 @@ Después, desde la raíz de ese proyecto, ejecuta una vez:
 /pv-init
 ```
 
-Esto comprueba las herramientas necesarias (Git, Python 3 y las condicionales según el stack del proyecto) y genera `.claude/pv-context.json` — el único fichero de configuración del que dependen el resto de skills: dónde se guardan los cambios, si el proyecto versiona entregables, dónde está el código fuente, qué documentación mantener sincronizada, etc.
+> ❗**IMPORTANTE:**
+> A partir de aquí el framework te guiará en el proceso de configuración comprobando las herramientas necesarias (Git, Python 3 y las condicionales según el stack del proyecto) y genera el fichero de configuración del que dependen el resto de skills `.claude/pv-context.json`, preguntándote qué idioma/s quieres usar para cada cosa, dónde se guardarán los cambios, dónde está o estará tú código fuente, si quieres aportar ya información de tu proyecto para que empiece a documentarlo, etc.
 
 ### Estructura completa de carpetas
 

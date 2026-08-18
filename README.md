@@ -51,7 +51,7 @@ See the [user guide](.claude/pv-guide.en.md#more-ways-to-customize-previo) for t
 
 - <u>**Large contexts.**</u> As the project grows, the context Previo needs to do its job grows too (and token usage along with it). We've prioritized the quality of results over the assumed token savings (though we haven't forgotten about those either), because our experience tells us that rework always costs more than good upfront analysis.
 - <u>**Better with better models.**</u> Previo can run on any model, though results will vary accordingly, of course. Think of it like deciding what profile to hire for a job: a junior (e.g. Haiku) will go faster and cost you less, but the risk of mistakes and rework is high. You could even run several in parallel if you want, but then it's no longer that cheap. A senior (e.g. Sonnet) will cost you a bit more, but will think things through better and the risk will be much lower. We've tested Previo with both approaches (Sonnet is already senior enough) and using a senior for everything has always paid off for us (rework rate on our last project: 5%) over trying to save with juniors (rework on the same project: 40%). These are just our numbers, we know, so try it yourself.
-- <u>**Risk vs. testing.**</u> Since we've prioritized quality of work and risk reduction, we've set aside implementing more specific testing tooling for now. We're figuring out how to add it without hurting the framework's agility. Right now you can define changes that are specifically about writing tests for already-implemented changes, but we think there may be a better way to do this in the near future.
+- <u>**Risk vs. testing.**</u> Since we've prioritized quality of work and risk reduction, we've set aside implementing more specific testing tooling for now. We're figuring out how to add it without hurting the framework's agility. You can simply state in a change which kinds of tests you want done from then on and the framework will make sure it happens, but we think there may be a better way to do this in the near future.
 
 ## 🛜Installation
 
@@ -77,7 +77,8 @@ Then, from that project's root, run once:
 /pv-init
 ```
 
-This checks the required tools (Git, Python 3, and any conditional ones depending on the project's stack) and generates `.claude/pv-context.json` — the single configuration file the rest of the skills depend on: where changes are stored, whether the project versions deliverables, where the source code lives, which documentation to keep in sync, etc.
+> ❗**IMPORTANT:**
+> From here, the framework guides you through the setup process: it checks the required tools (Git, Python 3, and any conditional ones depending on the project's stack) and generates `.claude/pv-context.json` — the configuration file the rest of the skills depend on — asking which language(s) you want to use for each area, where changes will be stored, where your source code is or will be, whether you want to provide project information up front so it can start documenting it, and more.
 
 ### Full folder structure
 

@@ -230,9 +230,16 @@ Si invocas `/pv-how` sin argumento, lista lo que hay pendiente en `inProgress` y
 
 ## Preparar una entrega: `/pv-version`
 
-Cuando ya hay trabajo listo (`changes/implemented/`) y quieres cortar una entrega, `/pv-version <XXXX>` empaqueta todo en `{workFolder}/versions/{XXXX}/`: genera el entregable, comprime y copia la documentación técnica y funcional vigente, y redacta el changelog funcional a partir de lo que se haya ido cerrando en `changes/closed/`. `{XXXX}` es texto libre que eliges tú en cada invocación (p.ej. `00001`, `v1`, `beta3`) — no tiene relación con la numeración `xxxx` de change/fix, ni con `src/_output/versions/` (la carpeta que ya genera `build.py` por su cuenta con su propio contador `NNNN`): son tres espacios completamente independientes.
+Cuando ya hay trabajo listo (`changes/implemented/`) y quieres preparar una entrega, `/pv-version <XXXX>` empaqueta todo en `{workFolder}/versions/{XXXX}/`: genera el entregable, comprime y copia la documentación técnica y funcional vigente, y redacta el changelog funcional a partir de lo que se haya ido cerrando en `changes/closed/`. 
 
-Si invocas `/pv-version` solo para informar de un cambio en el procedimiento de build (p.ej. "ahora el build también genera un PDF de reglas"), sin pedir preparar una entrega, actualiza `{workFolder}/stuff/how-to-compile-version.md` con eso y te pregunta si quieres lanzar el proceso de versionado ahora — no lo lanza por su cuenta.
+`{XXXX}` es texto libre que eliges tú en cada invocación (p.ej. `00001`, `v1`, `beta3`) — no tiene relación con la numeración `xxxx` de change/fix, ni con `src/_output/versions/` (la carpeta que ya genera `build.py` por su cuenta con su propio contador `NNNN`): son tres espacios completamente independientes.
+
+> ❗**IMPORTANTE:**
+> /pv-version utiliza el fichero `{workFolder}/stuff/how-to-compile-version.md` para saber como compilar una versión de tu aplicación. Si cuando llegue el momento este fichero no existe o está vacío, te preguntará sobre el proceso para documentarse y saber qué hacer. <u>Antes de llegar a este momento</u> deberías tener listo ya tu pipeline de compilación (generalmente con scripts) para poder contarle a Previo qué pasos debe seguir.
+
+> ❗**IMPORTANTE:**
+> Si invocas `/pv-version` solo para informar de un cambio en el procedimiento de build (p.ej. "ahora el build también genera un PDF de reglas"), sin pedir preparar una entrega, actualiza `{workFolder}/stuff/how-to-compile-version.md` con eso y te pregunta si quieres lanzar el proceso de versionado ahora — no lo lanza por su cuenta.
+
 
 ```mermaid
 flowchart LR
@@ -270,6 +277,10 @@ En prosa:
 Todo el copiado/borrado de ficheros de este proceso (artefacto del build, documentación, entradas de `closed/`) lo hacen scripts propios de las skills, nunca ediciones manuales.
 
 Puedes preguntar "¿cómo funciona `/pv-version`?" en mitad de la invocación y te muestra este mismo diagrama.
+
+> ❗**NOTA SOBRE PROYECTOS MÁS GRANDES**:
+> Obviamente, en proyectos más grandes, el proceso de liberar una nueva versión no termina aquí, sino que probablemente tenga que pasar todavía por muchos más estados (despliegue en varios entornos, actualización valores de configuración según esos entornos, validaciones de pruebas automáticas, etc).
+> El `/pv-version` se asegura de preprarlo todo para disponer de una versión de nuestra app con todo lo necesario. A partir de este momento, si el proyecto lo requiere, haremos que nuestras pipelines tomen el resultado de este proceso de la carpeta versions/{XXXX} (los ficheros generados, el changelog, la documentación reunida, etc..) y continúen el nuestro proceso de entrega.  Por eso es importante diseñar cómo y qué incluye una entrega y que Previo lo guarde en `{workFolder}/stuff/how-to-compile-version.md`.
 
 ## Ejemplo de ciclo completo
 

@@ -1,19 +1,19 @@
 ---
 name: pv-internal-changelog
-description: Drafts changelog.md from the entries accumulated in {workFolder}/changes/closed (staged into closed/temp/ so later closures don't interfere), from a strictly functional perspective, and deletes the folded-in folders after confirmation. Internal use by the pv-version skill.
+description: Drafts changelog.md from the entries accumulated in {workFolder}/changes/closed (staged into closed/temp/ so later closures don't interfere), from a strictly functional perspective, and deletes the folded-in folders directly (no confirmation needed — they're an isolated staged copy). Internal use by the pv-version skill.
 user-invocable: false
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.5b4
+  version: 0.9.5b5
   uses: []
 ---
 
 # pv-internal-changelog
 
-Drafts `changelog.md` for a release in preparation, from the entries accumulated in `{workFolder}/changes/closed/` (staged into `closed/temp/` at the start, so anything closed later while this runs doesn't interfere), and deletes those folders after explicit user confirmation. Only invoked by `pv-version` — not meant for direct invocation by the user.
+Drafts `changelog.md` for a release in preparation, from the entries accumulated in `{workFolder}/changes/closed/` (staged into `closed/temp/` at the start, so anything closed later while this runs doesn't interfere), and deletes those folders directly once folded in — no confirmation needed, since `closed/temp/` is an isolated staged copy that exactly matches what just got drafted into `changelog.md`. Only invoked by `pv-version` — not meant for direct invocation by the user.
 
-**Language.** Use `framework.interaction.language` (default English) for the guardrail message and the deletion confirmation with the user. `changelog.md` follows `framework.versions.language` (default `interaction.language`, English if neither is configured). If `language` is not configured anywhere, everything is English.
+**Language.** Use `framework.interaction.language` (default English) for the guardrail message. `changelog.md` follows `framework.versions.language` (default `interaction.language`, English if neither is configured). If `language` is not configured anywhere, everything is English.
 
 ## Invocation guardrail — read before anything else
 
@@ -72,30 +72,26 @@ For each entry in `closed/temp/`, read its `description.md` and take its **Name*
 
 Write `{workFolder}/versions/{XXXX}/changelog.md` following the [`changelog.template.md`](changelog.template.md) template: a header with the version's `XXXX`, the date, and the item count for each section (New, Changed, Removed, Fixes — count the ones at 0 too), followed by the four sections (omit an entire section if it's empty), each entry with a bold name + a one- or two-sentence functional summary (changelog tone, past tense), without mentioning files, functions, or technical details.
 
-## 5. Confirm deletion with the user before deleting anything
+## 5. Delete the folded-in entries
 
-Show the list of `xxxx` folded into the changelog and explicitly ask for confirmation that their folders in `{workFolder}/changes/closed/temp/` can be deleted (irreversible action). If the user doesn't confirm, leave `changelog.md` as already written but don't delete anything, and tell the caller (`pv-version`) in step 8 — they'll be moved back to `closed/` in step 7 regardless.
-
-## 6. Delete the folded-in entries
-
-Only after confirmation, run from the repo root:
+No confirmation needed: `closed/temp/` is an isolated staged copy (step 1) that exactly matches what was just drafted into `changelog.md` — nothing else could have landed in it meanwhile. Run directly from the repo root, right after writing `changelog.md`:
 
 ```
 python .claude/skills/pv-internal-changelog/scripts/delete-closed-entries.py --xxxx-list <comma-separated list of folded-in xxxx>
 ```
 
-Deletes only those specific folders under `{workFolder}/changes/closed/temp/`, never "all of `closed/temp/`" blindly, in case the deletion was only partially confirmed.
+Deletes only those specific folders under `{workFolder}/changes/closed/temp/`, never "all of `closed/temp/`" blindly.
 
-## 7. Clean up `closed/temp/`
+## 6. Clean up `closed/temp/`
 
-Always run this step, whether or not deletion was confirmed (and whether it was full or partial). Run from the repo root:
+Always run this step. Run from the repo root:
 
 ```
 python .claude/skills/pv-internal-changelog/scripts/cleanup-temp-entries.py
 ```
 
-Moves any folder still left in `closed/temp/` (not deleted) back to `{workFolder}/changes/closed/` — so nothing declined for deletion is lost — and removes `closed/temp/` once it's empty.
+Under normal conditions `closed/temp/` is already empty at this point (every entry in it was just deleted in step 5) and this only removes the now-empty folder. It also covers the edge case where a folder in `closed/temp/` couldn't be deleted (e.g. `delete-closed-entries.py` reported it as `notFound`): moves it back to `{workFolder}/changes/closed/` instead of leaving it stranded.
 
-## 8. Confirm to the caller
+## 7. Confirm to the caller
 
-State the generated `changelog.md`'s path, how many entries landed in each section (New/Changed/Removed/Fixes), whether `closed/temp/`'s folders were deleted or not (and if so, which ones), and which ones (if any) were moved back to `closed/` in step 7.
+State the generated `changelog.md`'s path, how many entries landed in each section (New/Changed/Removed/Fixes), and confirm `closed/temp/`'s folded-in folders were deleted (listing any that unexpectedly couldn't be, and were moved back to `closed/` instead).

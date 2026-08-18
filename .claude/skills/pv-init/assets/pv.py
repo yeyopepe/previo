@@ -25,6 +25,10 @@ Two options modify something:
 "Check versions" opens a submenu that lists {workFolder}/versions/{XXXX}/
 folders and prints the chosen one's changelog.md.
 
+Design notes (screen types, colors, how to extend this menu) live in
+.claude/pv-design-onescript.es.md -- read it before adding a new menu,
+submenu, or screen type.
+
 Usage:
   python3 pv.py
 """
@@ -42,6 +46,19 @@ STATUS_SCRIPTS = ROOT / ".claude" / "skills" / "pv-status" / "scripts"
 WORKFLOW_SCRIPTS = ROOT / ".claude" / "skills" / "pv-internal-workflow" / "scripts"
 INIT_SCRIPTS = ROOT / ".claude" / "skills" / "pv-init" / "scripts"
 CONTEXT_PATH = ROOT / ".claude" / "pv-context.json"
+
+
+# =============================================================================
+# Rendering primitives (color, width, low-level text helpers)
+# =============================================================================
+#
+# Two-level color hierarchy, applied per whole screen block, never mixed
+# within the same block:
+#   - GOLD:      menu screens (print_header/run_menu) -- "you're navigating"
+#   - DARK_GRAY: selection and info screens (show_selection/show_info) --
+#                "you're viewing or picking data"
+# See .claude/pv-design-onescript.es.md > "Estilo por Tipo de Pantalla" for
+# the full rationale and exact mockups.
 
 WIDTH = 70
 COLOR_RESET = "\033[0m"
@@ -111,14 +128,8 @@ def enable_windows_ansi() -> None:
         )
 
 
-def hr(char: str = "=") -> None:
-    print(colorize(char * WIDTH, DARK_GRAY))
-
-
-def print_header(title: str) -> None:
-    hr()
-    print(colorize(title.center(WIDTH), GOLD))
-    hr()
+def hr(char: str = "=", color: str = DARK_GRAY) -> None:
+    print(colorize(char * WIDTH, color))
 
 
 def wrap(text: str, indent: str = "") -> str:
@@ -128,6 +139,7 @@ def wrap(text: str, indent: str = "") -> str:
         initial_indent=indent,
         subsequent_indent=" " * len(indent),
     )
+
 
 RING_ART = r"""
      ........
@@ -144,6 +156,90 @@ RING_ART = r"""
        .=*###+#****+**+--:
            :=+*###%#*=:.
 """
+
+
+# =============================================================================
+# Screen-type helpers
+# =============================================================================
+#
+# Every interactive screen in this file is one of these building blocks.
+# Adding a new menu, submenu, or list should mean calling one of these --
+# not hand-rolling hr()/print() calls. See .claude/pv-design-onescript.es.md
+# for the full catalogue of screen types and their exact appearance.
+
+
+def print_header(title: str) -> None:
+    """Menu-screen header: GOLD rule + centered GOLD title + GOLD rule."""
+    hr("=", GOLD)
+    print(colorize(title.center(WIDTH), GOLD))
+    hr("=", GOLD)
+
+
+def show_selection(
+    title: str, options: list[str], prompt: str, extra_option: tuple[str, str] | None = None
+) -> int | str | None:
+    """Selection screen: numbered list framed by DARK_GRAY '-' rules.
+
+    Returns the chosen option's 0-based index into `options`, the
+    extra_option's key (lowercased) if picked, or None if the user
+    cancelled (empty input) or entered something invalid. Returning an
+    index rather than the option's text avoids ambiguity when two options
+    render the same label. `extra_option` is a (key, label) pair for a
+    non-numeric choice, e.g. ("a", "Close all") -- see close_entry() for a
+    real usage.
+    """
+    print()
+    hr("-")
+    print(title)
+    for i, option in enumerate(options, start=1):
+        print(wrap(f"{i}. {option}", indent="  "))
+    if extra_option:
+        key, label = extra_option
+        print(wrap(f"{key}. {label}", indent="  "))
+    hr("-")
+
+    choice = input(prompt).strip()
+    if not choice:
+        return None
+
+    if extra_option and choice.lower() == extra_option[0].lower():
+        return choice.lower()
+
+    index = int(choice) - 1 if choice.lstrip("-").isdigit() else -1
+    if 0 <= index < len(options):
+        return index
+
+    print("Invalid option.")
+    return None
+
+
+def show_info(lines: list[str], framed: bool = True) -> None:
+    """Info screen: plain content, optionally framed by DARK_GRAY '-' rules.
+
+    Use framed=True for content worth setting apart (e.g. a changelog's raw
+    text); framed=False for a short paragraph that doesn't need a frame
+    (e.g. a one-off status message).
+    """
+    print()
+    if framed:
+        hr("-")
+    for line in lines:
+        print(line)
+    if framed:
+        hr("-")
+
+
+def confirm(question: str) -> bool:
+    """Yes/no confirmation, no frame of its own -- nests inside whatever
+    screen (usually a Selection) triggered it."""
+    print(wrap(question))
+    answer = input("(y/N): ").strip().lower()
+    return answer in ("y", "yes")
+
+
+# =============================================================================
+# Framework paths and shared lookups
+# =============================================================================
 
 
 def run_script(script: Path, *args: str) -> None:
@@ -168,6 +264,19 @@ def versions_dir() -> Path:
     return work_root() / "versions"
 
 
+# =============================================================================
+# Actions -- root menu
+# =============================================================================
+
+
+# render_status.py/list_todo.py/filter_status.py (below) draw their own
+# "--terminal" output via the sibling module pv-status/scripts/terminal_output.py
+# -- a separate color/hr()/title() implementation, not this file's. If a
+# screen delegated to one of these three scripts looks wrong, the fix is
+# there, not here. See .claude/pv-design-onescript.es.md > "Diagrama de
+# Componentes" / "Info delegada".
+
+
 def show_general_status() -> None:
     run_script(STATUS_SCRIPTS / "render_status.py", "--terminal")
 
@@ -186,27 +295,16 @@ def list_states() -> list[str]:
 def show_filtered_status() -> None:
     states = list_states()
     if not states:
-        print(wrap("There are no changes yet in this project."))
+        show_info([wrap("There are no changes yet in this project.")], framed=False)
         return
 
-    print()
-    hr("-")
-    print("Available states:")
-    for i, state in enumerate(states, start=1):
-        print(wrap(f"{i}. {state}", indent="  "))
-    hr("-")
-
-    choice = input("Choose a state (number, or empty to cancel): ").strip()
-    if not choice:
+    index = show_selection(
+        "Available states:", states, "Choose a state (number, or empty to cancel): "
+    )
+    if index is None:
         return
 
-    try:
-        state = states[int(choice) - 1]
-    except (ValueError, IndexError):
-        print("Invalid option.")
-        return
-
-    run_script(STATUS_SCRIPTS / "filter_status.py", state, "--terminal")
+    run_script(STATUS_SCRIPTS / "filter_status.py", states[index], "--terminal")
 
 
 def list_implemented_entries() -> list[tuple[str, str]]:
@@ -229,47 +327,34 @@ def list_implemented_entries() -> list[tuple[str, str]]:
 def close_entry() -> None:
     entries = list_implemented_entries()
     if not entries:
-        print(wrap("There's no entry in changes/implemented/ pending closure."))
+        show_info(
+            [wrap("There's no entry in changes/implemented/ pending closure.")], framed=False
+        )
         return
 
-    print()
-    hr("-")
-    print("Implemented entries, pending closure:")
-    for i, (code, name) in enumerate(entries, start=1):
-        print(wrap(f"{i}. {code} — {name}", indent="  "))
-    print(wrap("a. Close all", indent="  "))
-    hr("-")
-
-    choice = input(
-        "Choose an entry to close (number, 'a' to close all, or empty to cancel): "
-    ).strip().lower()
-    if not choice:
+    labels = [f"{code} — {name}" for code, name in entries]
+    choice = show_selection(
+        "Implemented entries, pending closure:",
+        labels,
+        "Choose an entry to close (number, 'a' to close all, or empty to cancel): ",
+        extra_option=("a", "Close all"),
+    )
+    if choice is None:
         return
 
     if choice == "a":
-        print(wrap(f"Confirm moving the {len(entries)} listed entries to changes/closed/?"))
-        confirm = input("(y/N): ").strip().lower()
-        if confirm not in ("y", "yes"):
+        if confirm(f"Confirm moving the {len(entries)} listed entries to changes/closed/?"):
+            for code, _ in entries:
+                close_change(code)
+        else:
             print("Cancelled.")
-            return
-
-        for code, _ in entries:
-            close_change(code)
         return
 
-    try:
-        code, name = entries[int(choice) - 1]
-    except (ValueError, IndexError):
-        print("Invalid option.")
-        return
-
-    print(wrap(f"Confirm moving '{code} — {name}' to changes/closed/?"))
-    confirm = input("(y/N): ").strip().lower()
-    if confirm not in ("y", "yes"):
+    code, _ = entries[choice]
+    if confirm(f"Confirm moving '{labels[choice]}' to changes/closed/?"):
+        close_change(code)
+    else:
         print("Cancelled.")
-        return
-
-    close_change(code)
 
 
 def close_change(code: str) -> None:
@@ -281,8 +366,29 @@ def close_change(code: str) -> None:
     )
 
 
+# =============================================================================
+# Actions -- Configuration submenu
+# =============================================================================
+
+
 def sync_skill_models() -> None:
     run_script(INIT_SCRIPTS / "sync-skill-models.py")
+
+
+def show_settings_menu() -> None:
+    run_menu(
+        "Previo: settings",
+        [("Sync skill models per pv-context.json", sync_skill_models)],
+        "Back",
+    )
+
+
+show_settings_menu.is_submenu = True
+
+
+# =============================================================================
+# Actions -- Versions submenu
+# =============================================================================
 
 
 def list_versions() -> list[str]:
@@ -295,64 +401,45 @@ def list_versions() -> list[str]:
 def show_version_changelog() -> None:
     versions = list_versions()
     if not versions:
-        print(wrap("There are no versions yet in this project."))
+        show_info([wrap("There are no versions yet in this project.")], framed=False)
         return
 
-    print()
-    hr("-")
-    print("Available versions:")
-    for i, version in enumerate(versions, start=1):
-        print(wrap(f"{i}. {version}", indent="  "))
-    hr("-")
-
-    choice = input("Choose a version (number, or empty to cancel): ").strip()
-    if not choice:
+    index = show_selection(
+        "Available versions:", versions, "Choose a version (number, or empty to cancel): "
+    )
+    if index is None:
         return
 
-    try:
-        version = versions[int(choice) - 1]
-    except (ValueError, IndexError):
-        print("Invalid option.")
-        return
-
+    version = versions[index]
     changelog_path = versions_dir() / version / "changelog.md"
     if not changelog_path.is_file():
-        print(wrap(f"'{version}' has no changelog.md."))
+        show_info([wrap(f"'{version}' has no changelog.md.")], framed=False)
         return
 
-    print()
-    hr("-")
-    print(changelog_path.read_text(encoding="utf-8"))
-    hr("-")
+    show_info([changelog_path.read_text(encoding="utf-8")])
 
 
 def check_closed_temp() -> None:
     temp_dir = changes_dir() / "closed" / "temp"
     if not temp_dir.is_dir():
-        print(wrap("changes/closed/temp/ doesn't exist. Nothing pending."))
+        show_info([wrap("changes/closed/temp/ doesn't exist. Nothing pending.")], framed=False)
         return
 
     entries = sorted(p.name for p in temp_dir.iterdir())
     if not entries:
-        print(wrap("changes/closed/temp/ exists but is empty. Nothing pending."))
+        show_info(
+            [wrap("changes/closed/temp/ exists but is empty. Nothing pending.")], framed=False
+        )
         return
 
-    print(
+    lines = [
         wrap(
             "changes/closed/temp/ isn't empty — the versioning process (pv-version) "
             "has either failed or is currently in progress:"
         )
-    )
-    for entry in entries:
-        print(wrap(f"- {entry}", indent="  "))
-
-
-def show_settings_menu() -> None:
-    run_menu(
-        "Previo: settings",
-        [("Sync skill models per pv-context.json", sync_skill_models)],
-        "Back",
-    )
+    ]
+    lines += [wrap(f"- {entry}", indent="  ") for entry in entries]
+    show_info(lines, framed=False)
 
 
 def show_versions_menu() -> None:
@@ -366,6 +453,18 @@ def show_versions_menu() -> None:
     )
 
 
+show_versions_menu.is_submenu = True
+
+
+# =============================================================================
+# Root menu definition
+# =============================================================================
+#
+# To add a new top-level option: write an action function above (or a new
+# `show_*_menu()` + mark it `.is_submenu = True` for a submenu), then append
+# a (label, action) tuple here. To add a new submenu, follow the pattern of
+# show_settings_menu()/show_versions_menu() above.
+
 MENU: list[tuple[str, "callable"]] = [
     ("General project status", show_general_status),
     ("Listing filtered by state (todo, inProgress, implemented...)", show_filtered_status),
@@ -374,6 +473,11 @@ MENU: list[tuple[str, "callable"]] = [
     ("Configuration", show_settings_menu),
     ("Check versions", show_versions_menu),
 ]
+
+
+# =============================================================================
+# Menu engine
+# =============================================================================
 
 
 def run_menu(
@@ -387,7 +491,7 @@ def run_menu(
         for i, (label, _) in enumerate(items, start=1):
             print(wrap(f"{i}. {label}", indent="  "))
         print(wrap(f"{last_index}. {last_label}", indent="  "))
-        hr()
+        hr("=", GOLD)
 
         choice = input("Choose an option: ").strip()
         if choice == "":
@@ -410,7 +514,8 @@ def run_menu(
 
         print()
         action()
-        input("\nPress Enter to return to the menu...")
+        if not getattr(action, "is_submenu", False):
+            input("\nPress Enter to return to the menu...")
 
 
 def main() -> None:
@@ -426,7 +531,7 @@ def main() -> None:
 
     print(colorize_ring_art(RING_ART))
 
-    run_menu("Previo: actions", MENU, "Exit")
+    run_menu("Previo Main Menu", MENU, "Exit")
 
 
 if __name__ == "__main__":

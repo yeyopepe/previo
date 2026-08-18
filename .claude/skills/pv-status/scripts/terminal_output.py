@@ -22,10 +22,6 @@ TITLE_COLOR = "\033[38;5;220m"
 COLOR_RESET = "\033[0m"
 
 
-def hr(char: str = "=") -> str:
-    return char * WIDTH
-
-
 def supports_color() -> bool:
     if os.environ.get("NO_COLOR"):
         return False
@@ -38,6 +34,10 @@ def colorize(text: str, color: str = TITLE_COLOR) -> str:
     return f"{color}{text}{COLOR_RESET}"
 
 
+def hr(char: str = "=") -> str:
+    return colorize(char * WIDTH)
+
+
 def title(text: str, subtitle: str = "") -> str:
     lines = [hr(), colorize(text.center(WIDTH))]
     if subtitle:
@@ -47,7 +47,7 @@ def title(text: str, subtitle: str = "") -> str:
 
 
 def heading(text: str) -> str:
-    underline = "-" * min(display_width(text), WIDTH)
+    underline = colorize("-" * min(display_width(text), WIDTH))
     return f"{colorize(text)}\n{underline}"
 
 

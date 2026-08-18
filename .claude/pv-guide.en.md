@@ -222,9 +222,15 @@ If you invoke `/pv-how` without an argument, it lists what's pending in `inProgr
 
 ## Preparing a release: `/pv-version`
 
-When there's work ready (`changes/implemented/`) and you want to cut a release, `/pv-version <XXXX>` packages everything into `{workFolder}/versions/{XXXX}/`: it generates the deliverable, zips and copies the current technical and functional documentation, and writes the functional changelog from what's been closed in `changes/closed/`. `{XXXX}` is free text you choose on each invocation (e.g. `00001`, `v1`, `beta3`) — unrelated to the `xxxx` numbering of changes/fixes, or to `src/_output/versions/` (the folder `build.py` already generates on its own with its own `NNNN` counter): they're three completely independent spaces.
+When there's work ready (`changes/implemented/`) and you want to prepare a release, `/pv-version <XXXX>` packages everything into `{workFolder}/versions/{XXXX}/`: it generates the deliverable, zips and copies the current technical and functional documentation, and writes the functional changelog from what's been closed in `changes/closed/`.
 
-If you invoke `/pv-version` just to report a change in the build procedure (e.g. "the build now also generates a rules PDF"), without asking to prepare a release, it updates `{workFolder}/stuff/how-to-compile-version.md` with that and asks whether you want to launch the versioning process now — it doesn't launch it on its own.
+`{XXXX}` is free text you choose on each invocation (e.g. `00001`, `v1`, `beta3`) — unrelated to the `xxxx` numbering of changes/fixes, or to `src/_output/versions/` (the folder `build.py` already generates on its own with its own `NNNN` counter): they're three completely independent spaces.
+
+> ❗**IMPORTANT:**
+> `/pv-version` uses the file `{workFolder}/stuff/how-to-compile-version.md` to know how to compile a version of your application. If that file doesn't exist or is empty when the time comes, it'll ask you about the process to document it and figure out what to do. <u>Before that point</u> you should already have your build pipeline ready (usually with scripts) so you can tell Previo what steps to follow.
+
+> ❗**IMPORTANT:**
+> If you invoke `/pv-version` just to report a change in the build procedure (e.g. "the build now also generates a rules PDF"), without asking to prepare a release, it updates `{workFolder}/stuff/how-to-compile-version.md` with that and asks whether you want to launch the versioning process now — it doesn't launch it on its own.
 
 ```mermaid
 flowchart LR
@@ -262,6 +268,10 @@ In prose:
 All the copying/deleting of files in this process (build artifact, documentation, `closed/` entries) is done by the skills' own scripts, never manual edits.
 
 You can ask "how does `/pv-version` work?" in the middle of the invocation and it'll show you this same diagram.
+
+> ❗**NOTE ON LARGER PROJECTS**:
+> Obviously, in larger projects, the process of releasing a new version doesn't end here — it probably still needs to go through many more stages (deployment across several environments, updating configuration values for each of those environments, automated test validation, etc).
+> `/pv-version` makes sure everything is ready so you have a version of your app with everything it needs. From that point on, if the project requires it, your pipelines can take this process's output from the `versions/{XXXX}` folder (the generated files, the changelog, the gathered documentation, etc.) and continue your delivery process from there. That's why it's important to design how and what a release includes, and have Previo save it in `{workFolder}/stuff/how-to-compile-version.md`.
 
 ## Full cycle example
 
