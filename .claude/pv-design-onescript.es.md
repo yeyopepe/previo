@@ -38,7 +38,7 @@ NIVEL 0 (Splash)
 └── RING_ART (ASCII + colores gradiente)
 
 NIVEL 1 (Main Navigation)
-└── "Previo Main Menu"
+└── "Previo MAIN MENU"
     ├── [1] Acción: Show Status (→ externo)
     ├── [2] Acción: Filter by State
     │   └── Selection: "Available states:"
@@ -69,7 +69,7 @@ NIVEL 1 (Main Navigation)
 graph TD
     A["🎬 Inicio<br/>pv.py ejecutado"]
     B["🎨 Splash Screen<br/>ASCII Ring Art"]
-    C["🏠 Main Menu<br/>Previo Main Menu"]
+    C["🏠 Main Menu<br/>Previo MAIN MENU"]
 
     D["📊 General Status<br/>render_status.py"]
     E["🔍 Filter by State<br/>Selección + filter_status.py"]
@@ -193,7 +193,7 @@ El fichero está dividido en bloques delimitados por comentarios `# ====...====`
 | `Rendering primitives` | `WIDTH`, colores (`GOLD`/`DARK_GRAY`), `colorize()`, `hr()`, `wrap()`, `RING_ART` | Casi nunca — cambia el sistema de color/ancho global |
 | `Screen-type helpers` | `print_header()`, `show_selection()`, `show_info()`, `confirm()` | Casi nunca — cambia el comportamiento de un tipo de pantalla en **todas** las opciones a la vez |
 | `Framework paths and shared lookups` | `work_root()`, `changes_dir()`, `versions_dir()`, `run_script()` | Al añadir una nueva ruta o subcarpeta del framework que varias opciones necesiten |
-| `Actions -- root menu` | Funciones de acción del menú raíz | Al añadir una opción nueva a "Previo Main Menu" |
+| `Actions -- root menu` | Funciones de acción del menú raíz | Al añadir una opción nueva a "Previo MAIN MENU" |
 | `Actions -- Configuration submenu` | Funciones de acción de "Previo: settings" | Al añadir una opción nueva a Configuration |
 | `Actions -- Versions submenu` | Funciones de acción de "Previo: versions" | Al añadir una opción nueva a Versions |
 | `Root menu definition` | La lista `MENU` | Al registrar cualquier opción nueva del menú raíz (último paso siempre) |
@@ -247,7 +247,7 @@ Todo en GOLD: la cabecera (arriba, título, abajo) y también el `hr("=", GOLD)`
 
 ```
 ══════════════════════════════════════════════════════════════════   ← GOLD
-                          Previo Main Menu                            ← GOLD, centrado
+                          Previo MAIN MENU                            ← GOLD, centrado
 ══════════════════════════════════════════════════════════════════   ← GOLD
   1. General project status
   2. Listing filtered by state (todo, inProgress, implemented...)

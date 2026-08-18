@@ -531,7 +531,7 @@ def main() -> None:
 
     print(colorize_ring_art(RING_ART))
 
-    run_menu("Previo Main Menu", MENU, "Exit")
+    run_menu("Previo MAIN MENU", MENU, "Exit")
 
 
 if __name__ == "__main__":
