@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """Deletes specific entries already folded into the changelog (pv-internal-changelog skill).
 
-Deletes, ONLY, the {workFolder}/changes/closed/ subfolders whose xxxx is
-explicitly passed in --xxxx-list -- never "all of closed/" blindly, in case
-new entries appeared between when they were listed (list-closed-entries.py)
-and the user confirming the deletion. Only invoked after the user's explicit
-confirmation: this action is irreversible and isn't decided by this script.
+Deletes, ONLY, the {workFolder}/changes/closed/temp/ subfolders whose xxxx
+is explicitly passed in --xxxx-list -- never "all of closed/temp/" blindly,
+in case listing (list-closed-entries.py) and the user confirming the
+deletion happened at different moments. Only invoked after the user's
+explicit confirmation: this action is irreversible and isn't decided by
+this script.
+
+By the time this runs, stage-closed-entries.py has already moved closed/'s
+entries into closed/temp/, so this only ever touches that staged copy --
+never closed/'s live contents.
 
 workFolder is read from .claude/pv-context.json (framework section) unless
 passed explicitly as a parameter.
@@ -14,7 +19,7 @@ Prints ONLY a JSON on stdout with what was actually deleted:
 
   {"deleted": ["00001", "00002"], "notFound": []}
 
-If any xxxx from --xxxx-list doesn't exist in closed/, it's reported in
+If any xxxx from --xxxx-list doesn't exist in closed/temp/, it's reported in
 "notFound" instead of failing -- that's not a reason to skip deleting the
 rest.
 
@@ -66,7 +71,7 @@ def main() -> None:
     parser.add_argument(
         "--xxxx-list",
         required=True,
-        help="Comma-separated list of xxxx codes to delete from closed/ (e.g. 00001,00002).",
+        help="Comma-separated list of xxxx codes to delete from closed/temp/ (e.g. 00001,00002).",
     )
     parser.add_argument(
         "--work-folder",
@@ -80,7 +85,7 @@ def main() -> None:
 
     root = repo_root()
     work_folder_rel = args.work_folder or load_work_folder(root)
-    closed_dir = resolve_changes_dir(root, work_folder_rel) / "closed"
+    closed_dir = resolve_changes_dir(root, work_folder_rel) / "closed" / "temp"
 
     xxxx_list = [x.strip() for x in args.xxxx_list.split(",") if x.strip()]
 

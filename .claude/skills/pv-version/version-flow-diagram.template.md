@@ -9,7 +9,7 @@ flowchart LR
     Folder["Create versions/XXXX\n(files/, docs/)"]
     Compile["Generate the deliverable\n(how-to-compile-version.md)"]
     Docs["Zip and copy current technical\nand functional documentation to docs/"]
-    Changelog["pv-internal-changelog\ndrafts changelog.md from closed/"]
+    Changelog["pv-internal-changelog\nmoves closed/ → closed/temp/,\ndrafts changelog.md, cleans up temp/"]
     Confirm["Confirm the release\nto the user"]
 
     Guard -- No --> Resolve --> Guard

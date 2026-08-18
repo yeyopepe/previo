@@ -212,6 +212,11 @@ def collect(changes_dir: Path) -> dict:
     for state_dir in state_dirs:
         entries = []
         for entry_dir in sorted(p for p in state_dir.iterdir() if p.is_dir()):
+            # closed/temp/ is pv-internal-changelog's transient staging area
+            # (while a version is being prepared, or leftover from a run
+            # interrupted before cleanup) -- not a real change/fix entry.
+            if state_dir.name == "closed" and entry_dir.name == "temp":
+                continue
             entry = build_entry(state_dir.name, entry_dir)
             entries.append(entry)
             if entry["type"] == "unknown":

@@ -1,32 +1,34 @@
 #!/usr/bin/env python3
-"""Lists the entries pending changelog inclusion in {workFolder}/changes/closed/temp/.
+"""Stages {workFolder}/changes/closed/'s current entries into closed/temp/.
 
-Walks {workFolder}/changes/closed/temp/'s direct subfolders and returns, for
-each one, its xxxx (folder name) and the path to its description.md
-(relative to the repo root). Doesn't read or interpret those
-description.md's content -- that's the pv-internal-changelog skill's job,
-which needs real judgment to classify each entry (New/Changed/Removed).
+Moves every direct subfolder of {workFolder}/changes/closed/ (except temp/
+itself) into {workFolder}/changes/closed/temp/, creating temp/ if it doesn't
+exist yet. From this point on, pv-internal-changelog reads/writes only
+closed/temp/, so any change/fix moved into closed/ afterwards (while this
+version is still being prepared) doesn't affect the changelog being drafted.
 
-By the time this runs, stage-closed-entries.py has already moved closed/'s
-entries into closed/temp/, so any change/fix closed afterwards (while this
-version is being prepared) is in closed/ and doesn't show up here.
+If temp/ already has entries (a previous versioning attempt was interrupted
+before cleanup), the newly staged folders are added alongside them --
+nothing already staged is touched or lost.
 
 workFolder is read from .claude/pv-context.json (framework section) unless
 passed explicitly as a parameter.
 
 Prints ONLY a JSON on stdout:
 
-  {"entries": [{"xxxx": "00001", "descriptionPath": "changes/closed/temp/00001/description.md"}, ...]}
+  {"staged": ["00001", "00002"], "conflicts": []}
 
-If closed/temp/ doesn't exist or is empty, "entries" is an empty list (not
-an error).
+"conflicts" lists any xxxx that couldn't be staged because that name
+already exists in temp/ (from a previous run) -- left untouched in closed/
+rather than overwriting temp/'s copy.
 
 Usage:
-  python list-closed-entries.py
+  python stage-closed-entries.py
 """
 
 import argparse
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -41,7 +43,7 @@ def load_work_folder(root: Path) -> str:
     if not context_path.is_file():
         raise SystemExit(
             f"Cannot find {context_path}. Run the pv-init skill before "
-            "listing entries from closed."
+            "staging entries from closed."
         )
 
     context = json.loads(context_path.read_text(encoding="utf-8"))
@@ -77,22 +79,27 @@ def main() -> None:
 
     root = repo_root()
     work_folder_rel = args.work_folder or load_work_folder(root)
-    closed_dir = resolve_changes_dir(root, work_folder_rel) / "closed" / "temp"
+    closed_dir = resolve_changes_dir(root, work_folder_rel) / "closed"
+    temp_dir = closed_dir / "temp"
 
-    entries = []
+    staged = []
+    conflicts = []
+
     if closed_dir.is_dir():
-        for entry_dir in sorted(p for p in closed_dir.iterdir() if p.is_dir()):
-            description_path = entry_dir / "description.md"
-            entries.append(
-                {
-                    "xxxx": entry_dir.name,
-                    "descriptionPath": description_path.relative_to(root).as_posix()
-                    if description_path.is_file()
-                    else None,
-                }
-            )
+        entries = sorted(
+            p for p in closed_dir.iterdir() if p.is_dir() and p.name != "temp"
+        )
+        if entries:
+            temp_dir.mkdir(parents=True, exist_ok=True)
+            for entry_dir in entries:
+                dest = temp_dir / entry_dir.name
+                if dest.exists():
+                    conflicts.append(entry_dir.name)
+                    continue
+                shutil.move(str(entry_dir), str(dest))
+                staged.append(entry_dir.name)
 
-    json.dump({"entries": entries}, sys.stdout, ensure_ascii=False)
+    json.dump({"staged": staged, "conflicts": conflicts}, sys.stdout, ensure_ascii=False)
     print()
 
 
