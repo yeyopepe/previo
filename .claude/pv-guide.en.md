@@ -390,9 +390,14 @@ Running it and you will see the menu with some useful options:
 2. **Listing filtered by state** (`todo`, `inProgress`, `implemented`...) — asks you to pick one from the list before showing it.
 3. **Ideas in `todo/`** — same as `/pv-status todo`.
 4. **Close an implemented entry** (move to `changes/closed/`) — lets you pick a specific entry or close all of them at once, asking for confirmation (`y`/`N`) before moving anything.
-5. **Sync skill models per `pv-context.json`** — applies changes you've made by hand to `skillModels` (see [Each skill's model/effort](#3-each-skills-modeleffort-skillmodels) above), without you having to run the script by hand or invoke `pv-init` again.
+5. **Configuration** — opens a submenu:
+   - **Sync skill models per `pv-context.json`** — applies changes you've made by hand to `skillModels` (see [Each skill's model/effort](#3-each-skills-modeleffort-skillmodels) above), without you having to run the script by hand or invoke `pv-init` again.
+6. **Check versions** — opens a submenu:
+   - **List versions and read their changelog** — lists the `{workFolder}/versions/{XXXX}/` folders and, once you pick one, prints its `changelog.md`.
+   - **Check `changes/closed/temp/` is clear** — this folder should always be empty or not exist; if it has anything in it, a `pv-version` run either failed partway through or is still in progress, and this option warns you and lists what's stuck there.
+7. **Exit**.
 
-No option spends tokens: they're all deterministic scripts, the same kind of operation you'd run yourself from a terminal. Useful for a quick look at the project or for closing changes without opening Claude Code.
+Each submenu has its own "Back" option to return to the main menu. No option spends tokens: they're all deterministic scripts, the same kind of operation you'd run yourself from a terminal. Useful for a quick look at the project or for closing changes without opening Claude Code.
 
 ## Other tricks
 

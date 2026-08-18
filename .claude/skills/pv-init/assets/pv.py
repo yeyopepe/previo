@@ -17,9 +17,13 @@ Two options modify something:
   pv-internal-workflow's move-change.py, which doesn't touch any file's
   content, only the folder), and always asks for explicit confirmation
   before moving anything.
-- "Sync skill models per pv-context.json": delegates to pv-init's
-  sync-skill-models.py, which propagates pv-context.json's skillModels to
-  each 'pv-*' SKILL.md's frontmatter (model/effort).
+- "Sync skill models per pv-context.json" (inside the "Configuration"
+  submenu): delegates to pv-init's sync-skill-models.py, which propagates
+  pv-context.json's skillModels to each 'pv-*' SKILL.md's frontmatter
+  (model/effort).
+
+"Check versions" opens a submenu that lists {workFolder}/versions/{XXXX}/
+folders and prints the chosen one's changelog.md.
 
 Usage:
   python3 pv.py
@@ -146,15 +150,22 @@ def run_script(script: Path, *args: str) -> None:
     subprocess.run([sys.executable, str(script), *args], cwd=ROOT)
 
 
-def changes_dir() -> Path:
+def work_root() -> Path:
     # workFolder is always relative to the repo root, whether or not it
     # carries a leading "/" (that's only a convention to make it visually
     # explicit) -- Path("/a") / "/b" would otherwise discard "a" entirely,
     # since pathlib treats a leading-slash operand as its own absolute path.
     context = json.loads(CONTEXT_PATH.read_text(encoding="utf-8"))
     work_folder_rel = context.get("framework", {}).get("workFolder", "/")
-    work_root = ROOT / (work_folder_rel or "").lstrip("/")
-    return work_root / "changes"
+    return ROOT / (work_folder_rel or "").lstrip("/")
+
+
+def changes_dir() -> Path:
+    return work_root() / "changes"
+
+
+def versions_dir() -> Path:
+    return work_root() / "versions"
 
 
 def show_general_status() -> None:
@@ -274,13 +285,132 @@ def sync_skill_models() -> None:
     run_script(INIT_SCRIPTS / "sync-skill-models.py")
 
 
+def list_versions() -> list[str]:
+    versions = versions_dir()
+    if not versions.is_dir():
+        return []
+    return sorted(p.name for p in versions.iterdir() if p.is_dir())
+
+
+def show_version_changelog() -> None:
+    versions = list_versions()
+    if not versions:
+        print(wrap("There are no versions yet in this project."))
+        return
+
+    print()
+    hr("-")
+    print("Available versions:")
+    for i, version in enumerate(versions, start=1):
+        print(wrap(f"{i}. {version}", indent="  "))
+    hr("-")
+
+    choice = input("Choose a version (number, or empty to cancel): ").strip()
+    if not choice:
+        return
+
+    try:
+        version = versions[int(choice) - 1]
+    except (ValueError, IndexError):
+        print("Invalid option.")
+        return
+
+    changelog_path = versions_dir() / version / "changelog.md"
+    if not changelog_path.is_file():
+        print(wrap(f"'{version}' has no changelog.md."))
+        return
+
+    print()
+    hr("-")
+    print(changelog_path.read_text(encoding="utf-8"))
+    hr("-")
+
+
+def check_closed_temp() -> None:
+    temp_dir = changes_dir() / "closed" / "temp"
+    if not temp_dir.is_dir():
+        print(wrap("changes/closed/temp/ doesn't exist. Nothing pending."))
+        return
+
+    entries = sorted(p.name for p in temp_dir.iterdir())
+    if not entries:
+        print(wrap("changes/closed/temp/ exists but is empty. Nothing pending."))
+        return
+
+    print(
+        wrap(
+            "changes/closed/temp/ isn't empty — the versioning process (pv-version) "
+            "has either failed or is currently in progress:"
+        )
+    )
+    for entry in entries:
+        print(wrap(f"- {entry}", indent="  "))
+
+
+def show_settings_menu() -> None:
+    run_menu(
+        "Previo: settings",
+        [("Sync skill models per pv-context.json", sync_skill_models)],
+        "Back",
+    )
+
+
+def show_versions_menu() -> None:
+    run_menu(
+        "Previo: versions",
+        [
+            ("List versions and read their changelog", show_version_changelog),
+            ("Check changes/closed/temp/ is clear", check_closed_temp),
+        ],
+        "Back",
+    )
+
+
 MENU: list[tuple[str, "callable"]] = [
     ("General project status", show_general_status),
     ("Listing filtered by state (todo, inProgress, implemented...)", show_filtered_status),
     ("Ideas in todo/", show_todo_ideas),
     ("Close an implemented entry (move to changes/closed/)", close_entry),
-    ("Sync skill models per pv-context.json", sync_skill_models),
+    ("Configuration", show_settings_menu),
+    ("Check versions", show_versions_menu),
 ]
+
+
+def run_menu(
+    title: str, items: list[tuple[str, "callable"]], last_label: str
+) -> None:
+    last_index = len(items) + 1
+
+    while True:
+        print()
+        print_header(title)
+        for i, (label, _) in enumerate(items, start=1):
+            print(wrap(f"{i}. {label}", indent="  "))
+        print(wrap(f"{last_index}. {last_label}", indent="  "))
+        hr()
+
+        choice = input("Choose an option: ").strip()
+        if choice == "":
+            continue
+
+        try:
+            index = int(choice)
+        except ValueError:
+            print("Invalid option.")
+            continue
+
+        if index == last_index:
+            return
+
+        try:
+            _, action = items[index - 1]
+        except IndexError:
+            print("Invalid option.")
+            continue
+
+        print()
+        action()
+        input("\nPress Enter to return to the menu...")
 
 
 def main() -> None:
@@ -296,38 +426,7 @@ def main() -> None:
 
     print(colorize_ring_art(RING_ART))
 
-    exit_index = len(MENU) + 1
-
-    while True:
-        print()
-        print_header("Previo: actions")
-        for i, (label, _) in enumerate(MENU, start=1):
-            print(wrap(f"{i}. {label}", indent="  "))
-        print(wrap(f"{exit_index}. Exit", indent="  "))
-        hr()
-
-        choice = input("Choose an option: ").strip()
-        if choice == "":
-            continue
-
-        try:
-            index = int(choice)
-        except ValueError:
-            print("Invalid option.")
-            continue
-
-        if index == exit_index:
-            break
-
-        try:
-            _, action = MENU[index - 1]
-        except IndexError:
-            print("Invalid option.")
-            continue
-
-        print()
-        action()
-        input("\nPress Enter to return to the menu...")
+    run_menu("Previo: actions", MENU, "Exit")
 
 
 if __name__ == "__main__":
