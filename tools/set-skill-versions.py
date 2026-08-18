@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""One-off: set every skill's version in its SKILL.md frontmatter.
+"""One-off: set every pv-* skill's version in its SKILL.md frontmatter.
 
 Rewrites the `  version: X.Y.Z` line under `metadata:` in every
-.claude/skills/*/SKILL.md. Run once from the repo root, then review the diff.
+.claude/skills/pv-*/SKILL.md. Run once from the repo root, then review the diff.
 """
 import re
 import sys
@@ -22,7 +22,7 @@ def main():
 
     changed = []
     skipped = []
-    for skill_md in sorted(SKILLS_DIR.glob("*/SKILL.md")):
+    for skill_md in sorted(SKILLS_DIR.glob("pv-*/SKILL.md")):
         content = skill_md.read_text(encoding="utf-8")
         new_content, count = VERSION_RE.subn(rf"\g<1>{TARGET_VERSION}\g<2>", content, count=1)
         if count == 0:
