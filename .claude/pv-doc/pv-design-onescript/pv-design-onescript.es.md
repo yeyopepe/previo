@@ -539,7 +539,7 @@ Puntos de fricción reales de este diseño — ten cuidado con ellos al añadir 
 - **Soporte Windows ANSI:** Activa ENABLE_VIRTUAL_TERMINAL_PROCESSING en Windows 11
 - **Sin color:** Detecta variable de entorno `NO_COLOR` y desactiva colores
 - **Responsivo a terminal:** Detecta `sys.stdout.isatty()` para colores
-- **Ancho máximo:** 70 caracteres para legibilidad en terminales pequeñas
+- **Ancho máximo:** 80 caracteres para legibilidad en terminales pequeñas
 - **Encodificación UTF-8:** Fuerza UTF-8 en salida de Python
 
 ---
@@ -547,7 +547,7 @@ Puntos de fricción reales de este diseño — ten cuidado con ellos al añadir 
 ## Archivo de Configuración de Referencia
 
 ```python
-WIDTH = 70                      # Ancho máximo de líneas
+WIDTH = 80                      # Ancho máximo de líneas
 COLOR_RESET = "\033[0m"         # ANSI reset
 GOLD = "\033[38;5;220m"         # Color dorado (menús, status delegado)
 DARK_GRAY = "\033[38;5;238m"    # Color gris oscuro (selección, info framed)

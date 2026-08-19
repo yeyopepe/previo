@@ -30,17 +30,17 @@
 | --- | --- | --- |
 {readyRows}
 
-### 🟡 Pending technical analysis (only `description.md`, pending planning with `pv-how`) — {pendingTotal}
-
-| Code | Description | Risk |
-| --- | --- | --- |
-{pendingRows}
-
 ### 🟠 Planned, pending implementation (`description.md` + `plan.md`, pending implementation) — {toImplementTotal}
 
 | Code | Description | Risk |
 | --- | --- | --- |
 {toImplementRows}
+
+### 🟡 Pending technical analysis (only `description.md`, pending planning with `pv-how`) — {pendingTotal}
+
+| Code | Description | Risk |
+| --- | --- | --- |
+{pendingRows}
 
 <!-- SECTION:noDescription -->
 -   **Entries without `description.md` (anomalous):** {noDescriptionRows}

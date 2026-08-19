@@ -539,7 +539,7 @@ Real friction points in this design — watch out for them when adding new code.
 - **Windows ANSI support:** Enables ENABLE_VIRTUAL_TERMINAL_PROCESSING on Windows 11
 - **No color:** Detects the `NO_COLOR` environment variable and disables colors
 - **Terminal-responsive:** Detects `sys.stdout.isatty()` for colors
-- **Maximum width:** 70 characters for readability in small terminals
+- **Maximum width:** 80 characters for readability in small terminals
 - **UTF-8 encoding:** Forces UTF-8 on Python's output
 
 ---
@@ -547,7 +547,7 @@ Real friction points in this design — watch out for them when adding new code.
 ## Reference Configuration File
 
 ```python
-WIDTH = 70                      # Maximum line width
+WIDTH = 80                      # Maximum line width
 COLOR_RESET = "\033[0m"         # ANSI reset
 GOLD = "\033[38;5;220m"         # Gold color (menus, delegated status)
 DARK_GRAY = "\033[38;5;238m"    # Dark gray color (selection, framed info)

@@ -93,7 +93,7 @@ SCRIPTS_ACCEPTING_WORK_FOLDER = {"filter_status.py", "render_status.py", "list_t
 # See .claude/pv-doc/pv-design-onescript/pv-design-onescript.es.md > "Estilo por Tipo de Pantalla" for
 # the full rationale and exact mockups.
 
-WIDTH = 70
+WIDTH = 80
 COLOR_RESET = "\033[0m"
 GOLD = "\033[38;5;220m"
 DARK_GRAY = "\033[38;5;238m"
