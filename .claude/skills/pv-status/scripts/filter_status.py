@@ -28,10 +28,12 @@ For each entry in the state folder, five columns are computed:
     formatted as YYYY-MM-DD; if there's no description.md, the folder's own
     mtime.
 
-A sixth field, name (description.md's '**Name**' field), is also computed
-but only surfaces in --terminal mode (pv.py) as each entry's second line --
-the markdown table below has no Name column, to stay consistent with
-STATUS.filtered.template.md.
+Two more fields, name (description.md's '**Name**' field) and planned_date
+(plan.md's '**Creation date**' field, same bold-inline format as
+description.md's -- None/"pending" if plan.md doesn't exist yet or lacks
+the field), are also computed but only surface in --terminal mode (pv.py)
+as part of each entry's detail card -- the markdown table below has no
+Name/Planned columns, to stay consistent with STATUS.filtered.template.md.
 
 The template (STATUS.filtered.template.md, in the skill's folder) defines
 the output format: a body with {state}, {generatedDate} and {rows}
@@ -213,7 +215,13 @@ def build_entry(state: str, entry_dir: Path) -> dict:
     else:
         date = mtime_str(entry_dir)
 
-    risk = extract_risk(plan_path.read_text(encoding="utf-8")) if plan_path.is_file() else None
+    plan_text = plan_path.read_text(encoding="utf-8") if plan_path.is_file() else None
+    risk = extract_risk(plan_text) if plan_text else None
+    # plan.md uses the same "**Creation date**: [YYYY-MM-DD]" bold-inline
+    # field as description.md (see PLAN.template.md) -- reuse extract_date()
+    # rather than a second date pattern. None here (no plan.md, or a plan.md
+    # missing the field) means "pending" to the caller, not "unknown yet".
+    planned_date = extract_date(plan_text) if plan_text else None
 
     return {
         "code": entry_dir.name,
@@ -222,6 +230,7 @@ def build_entry(state: str, entry_dir: Path) -> dict:
         "name": name,
         "description": description,
         "date": date,
+        "planned_date": planned_date,
         "risk": risk,
     }
 
@@ -383,14 +392,30 @@ def render_terminal(result: dict) -> str:
         return "\n".join(lines) + "\n"
 
     for entry in result["entries"]:
+        # Row format is the same regardless of mode (by state, by id, by
+        # content) -- the (state) prefix used to be search-only (redundant
+        # with the "Search by state" screen's own title), now it's always
+        # shown so every row looks identical no matter how you got there.
         type_ = TYPE_LABELS.get(entry["type"], entry["type"])
+        planned = entry["planned_date"] or "pending"
+        lines.append("")
+
+        if entry["state"] == "todo":
+            # todo/ ideas never have plan.md, so Risk/planned would always
+            # be "—"/"pending" -- shown as noise, not information. 3 lines
+            # instead of 4: no separate description line either (line 3's
+            # ## Idea text already doubles as both name and content).
+            lines.append(f"({entry['state']})  {entry['code']}  [{type_}]")
+            lines.append(f"created: {entry['date'] or '—'}")
+            lines.append(term.wrap(entry["name"] or "(no name)", indent="> "))
+            continue
+
         risk = f"{entry['risk']}/10" if entry["risk"] else "—"
         description = entry["description"] or "—"
         if len(description) > TERMINAL_DESCRIPTION_MAX_CHARS:
             description = description[:TERMINAL_DESCRIPTION_MAX_CHARS].rstrip() + "..."
-        state_prefix = f"({entry['state']})  " if is_search else ""
-        lines.append("")
-        lines.append(f"{state_prefix}{entry['code']}  [{type_}]  Risk: {risk}  {entry['date'] or '—'}")
+        lines.append(f"({entry['state']})  {entry['code']}  [{type_}]  Risk: {risk}")
+        lines.append(f"created: {entry['date'] or '—'}, planned: {planned}")
         lines.append(term.wrap(entry["name"] or "(no name)", indent="> "))
         lines.append(term.wrap(description, indent="  "))
 

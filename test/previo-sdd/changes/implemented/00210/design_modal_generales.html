@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — Reorganización de pestañas de propiedades (cambio 00210)</title>
+<style>
+  :root {
+    --bg-table: #c2c2c2;
+    --bg-card: #f5f5f5;
+    --accent-blue: #2c7dd8;
+    --accent-blue-dark: #123a66;
+    --text-primary: #1a1a1a;
+    --text-light: #ffffff;
+    --text-muted: #666666;
+    --border-neutral: #dcdcdc;
+    --bg-subtle: #f0f0f0;
+    --bg-hover: #e8e8e8;
+    --radius-sm: 4px;
+    --radius-lg: 8px;
+    --shadow-2: 0 4px 20px rgba(0,0,0,0.15);
+    --section-accent: #5b5f97;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #e5e5e5;
+    color: var(--text-primary);
+    padding: 2rem;
+  }
+  h1 {
+    font-size: 1.5rem;
+    margin: 0 0 0.25rem;
+    text-align: center;
+  }
+  p.note {
+    max-width: 60rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin: 0 auto 2rem;
+  }
+  .gallery {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .gallery__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .gallery__caption {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    text-align: center;
+    max-width: 22rem;
+  }
+  .modal {
+    width: 22rem;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-2);
+    overflow: hidden;
+  }
+  .modal__header {
+    background: #333333;
+    color: var(--text-light);
+    padding: 0.85rem 1rem;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+  .modal__tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-neutral);
+    background: var(--bg-subtle);
+  }
+  .modal__tab {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .modal__tab--active {
+    color: var(--accent-blue);
+    border-bottom: 2px solid var(--accent-blue);
+    background: var(--bg-card);
+    font-weight: 500;
+  }
+  .modal__body {
+    padding: 1rem;
+    min-height: 14rem;
+  }
+  .modal__section {
+    border: 1px solid var(--border-neutral);
+    border-radius: var(--radius-sm);
+    padding: 0.7rem;
+    margin: 0 0 0.85rem;
+  }
+  .modal__section-title {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--section-accent);
+    padding: 0 0.3rem;
+  }
+  .modal__field {
+    margin-bottom: 0.7rem;
+  }
+  .modal__field:last-child {
+    margin-bottom: 0;
+  }
+  .modal__field label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+  }
+  .modal__field select,
+  .modal__field input[type="number"],
+  .modal__field input[type="color"],
+  .modal__field input[type="text"] {
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border-neutral);
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    font-family: inherit;
+    background: white;
+  }
+  .modal__field input[type="color"] {
+    padding: 0.15rem;
+    height: 1.8rem;
+  }
+  .modal__field--checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .modal__field--checkbox label {
+    margin: 0;
+    font-weight: normal;
+  }
+  .help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 50%;
+    background: var(--bg-hover);
+    color: var(--text-muted);
+    font-size: 0.6rem;
+    font-style: italic;
+    font-family: Georgia, serif;
+  }
+  .field-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .field-row > div {
+    flex: 1;
+  }
+  .highlight-new {
+    outline: 2px dashed var(--accent-blue);
+    outline-offset: 4px;
+    border-radius: var(--radius-sm);
+    position: relative;
+    padding-top: 0.15rem;
+  }
+  .highlight-new::before {
+    content: 'NUEVO';
+    position: absolute;
+    top: -0.6rem;
+    left: 0.4rem;
+    background: var(--accent-blue);
+    color: var(--text-light);
+    font-size: 0.55rem;
+    font-weight: 500;
+    padding: 0.05rem 0.35rem;
+    border-radius: var(--radius-sm);
+    letter-spacing: 0.03em;
+  }
+  .highlight-moved {
+    outline: 2px dashed #9b6b1f;
+    outline-offset: 4px;
+    border-radius: var(--radius-sm);
+    position: relative;
+    padding-top: 0.15rem;
+  }
+  .highlight-moved::before {
+    content: 'MOVIDO DESDE GENERALES';
+    position: absolute;
+    top: -0.6rem;
+    left: 0.4rem;
+    background: #9b6b1f;
+    color: var(--text-light);
+    font-size: 0.55rem;
+    font-weight: 500;
+    padding: 0.05rem 0.35rem;
+    border-radius: var(--radius-sm);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 10rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: center;
+    font-style: italic;
+  }
+  .modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.7rem 1rem;
+    border-top: 1px solid var(--border-neutral);
+  }
+  .btn-cancel, .btn-accept {
+    padding: 0.4rem 0.85rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    border: none;
+  }
+  .btn-cancel { background: var(--bg-subtle); color: var(--text-primary); }
+  .btn-accept { background: var(--accent-blue); color: var(--text-light); }
+</style>
+</head>
+<body>
+
+<h1>Reorganización de la modal de propiedades</h1>
+<p class="note">
+  La modal de edición de componente pasa de 2 a 3 pestañas. Cada recuadro de abajo es la misma modal con una
+  pestaña distinta activa, para ver el resultado completo de la reorganización sin necesidad de interactividad.
+  Ejemplo con un componente "Tablero simple".
+</p>
+
+<div class="gallery">
+
+  <div class="gallery__item">
+    <div class="modal">
+      <div class="modal__header">Editar componente — "Torre Norte"</div>
+      <div class="modal__tabs">
+        <div class="modal__tab modal__tab--active">Generales</div>
+        <div class="modal__tab">Visuales</div>
+        <div class="modal__tab">Específicas</div>
+      </div>
+      <div class="modal__body">
+        <fieldset class="modal__section">
+          <legend class="modal__section-title">General</legend>
+          <div class="modal__field">
+            <label>Bloqueado</label>
+            <select disabled><option>Ninguno</option></select>
+          </div>
+          <div class="modal__field modal__field--checkbox">
+            <input type="checkbox" disabled>
+            <label>Oculto</label>
+            <span class="help-icon">i</span>
+          </div>
+          <div class="modal__field modal__field--checkbox">
+            <input type="checkbox" disabled>
+            <label>Subir al mover/interactuar</label>
+            <span class="help-icon">i</span>
+          </div>
+        </fieldset>
+        <fieldset class="modal__section">
+          <legend class="modal__section-title">Ayuda jugador</legend>
+          <div class="modal__field modal__field--checkbox">
+            <input type="checkbox" disabled>
+            <label>Mostrar tooltip</label>
+            <span class="help-icon">i</span>
+          </div>
+        </fieldset>
+      </div>
+      <div class="modal__footer">
+        <button class="btn-cancel">Cancelar</button>
+        <button class="btn-accept">Aceptar</button>
+      </div>
+    </div>
+    <div class="gallery__caption">"Generales" — ya NO tiene la sección "Tamaño" (se ha ido a "Visuales")</div>
+  </div>
+
+  <div class="gallery__item">
+    <div class="modal">
+      <div class="modal__header">Editar componente — "Torre Norte"</div>
+      <div class="modal__tabs">
+        <div class="modal__tab">Generales</div>
+        <div class="modal__tab modal__tab--active">Visuales</div>
+        <div class="modal__tab">Específicas</div>
+      </div>
+      <div class="modal__body">
+        <fieldset class="modal__section highlight-moved">
+          <legend class="modal__section-title">Tamaño</legend>
+          <div class="field-row">
+            <div><label>Alto (px)</label><input type="number" value="80"></div>
+            <div><label>Ancho (px)</label><input type="number" value="110"></div>
+          </div>
+          <div class="modal__field modal__field--checkbox" style="margin-top:0.6rem;">
+            <input type="checkbox" checked disabled>
+            <label>Mantener proporción</label>
+          </div>
+        </fieldset>
+
+        <fieldset class="modal__section highlight-new">
+          <legend class="modal__section-title">Extrusión</legend>
+          <div class="field-row">
+            <div><label>Profundidad</label><input type="number" min="0" max="40" value="12"></div>
+            <div><label>Color de extrusión</label><input type="color" value="#3f6c34"></div>
+          </div>
+        </fieldset>
+
+        <fieldset class="modal__section highlight-moved">
+          <legend class="modal__section-title">Visual</legend>
+          <div class="modal__field modal__field--checkbox">
+            <input type="checkbox" checked disabled>
+            <label>Biselado en el borde</label>
+          </div>
+          <div class="modal__field modal__field--checkbox">
+            <input type="checkbox" checked disabled>
+            <label>Sombra</label>
+          </div>
+          <div class="modal__field" style="margin-top:0.6rem;">
+            <div class="field-row">
+              <div><label>Color del borde</label><input type="color" value="#3f6c34"></div>
+              <div><label>Grosor</label><input type="number" min="1" max="20" value="3"></div>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+      <div class="modal__footer">
+        <button class="btn-cancel">Cancelar</button>
+        <button class="btn-accept">Aceptar</button>
+      </div>
+    </div>
+    <div class="gallery__caption">"Visuales" (nueva) — Tamaño + Extrusión (nuevo) + controles visuales del tipo (biselado/sombra/borde, movidos desde "Específicas")</div>
+  </div>
+
+  <div class="gallery__item">
+    <div class="modal">
+      <div class="modal__header">Editar componente — "Torre Norte"</div>
+      <div class="modal__tabs">
+        <div class="modal__tab">Generales</div>
+        <div class="modal__tab">Visuales</div>
+        <div class="modal__tab modal__tab--active">Específicas</div>
+      </div>
+      <div class="modal__body">
+        <div class="empty-state">Este objeto no tiene propiedades</div>
+      </div>
+      <div class="modal__footer">
+        <button class="btn-cancel">Cancelar</button>
+        <button class="btn-accept">Aceptar</button>
+      </div>
+    </div>
+    <div class="gallery__caption">"Específicas" — ejemplo de tipo que, tras mover lo visual a "Visuales", se queda sin nada más que configurar</div>
+  </div>
+
+</div>
+
+</body>
+</html>

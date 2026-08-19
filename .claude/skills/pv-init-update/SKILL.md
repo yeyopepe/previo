@@ -4,7 +4,7 @@ description: Audits the pv-* framework's health in the current project — .clau
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.5b6
+  version: 0.9.5b7
   uses: []
 ---
 

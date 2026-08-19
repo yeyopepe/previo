@@ -9,6 +9,7 @@
 - [File Organization](#file-organization)
 - [The Four Screen Helpers](#the-four-screen-helpers)
 - [Style by Screen Type](#style-by-screen-type)
+  - [The Detail Card](#the-detail-card)
 - [Command-Line Configuration](#command-line-configuration)
 - [How to Extend pv.py](#how-to-extend-pvpy)
   - [Guide for Extending pv.py](#guide-for-extending-pvpy)
@@ -159,6 +160,7 @@ graph TD
         RS -->|import terminal_output as term| TO
         FS -->|import terminal_output as term| TO
         LT -->|import terminal_output as term| TO
+        RS -->|"subprocess --search-id --terminal (detail card, --terminal only)"| FS
     end
 
     subgraph SKILL_WORKFLOW ["pv-internal-workflow skill (.claude/skills/pv-internal-workflow/scripts/)"]
@@ -201,6 +203,7 @@ graph TD
 - `terminal_output.py` (highlighted in gold, same as `pv.py`) is the **only other component that draws colored screens** — and it does so with its own code, without reusing any function from `pv.py`. If a "PROJECT STATUS" or "IDEAS IN TODO/" screen looks wrong, the fix belongs in `terminal_output.py`, never in `pv.py` (see the comment in `pv.py`'s own code, right before `show_general_status()`).
 - `move-change.py` and `sync-skill-models.py` are simple, single-step mutations with no rendering of their own — their output is plain text, no ANSI.
 - None of these components import each other, except `terminal_output.py` by `pv-status`'s three scripts — they're all independent processes connected only by argument convention (`--terminal`, `--xxxx`, etc.) and by the framework's paths (`changes/`, `versions/`).
+- `render_status.py` **does invoke** `filter_status.py` as a subprocess (`--search-id --terminal`, for the "detail card" at the end of page 3) — it's the only edge of this kind between two sibling `pv-status` scripts (every other one runs from `pv.py` toward a script, never between scripts). It's still not an `import`: each remains an independent process printing to stdout, `render_status.py` can't intercept or reformat what `filter_status.py` prints.
 - `pv-config-test.json` (dashed line, only active with the `--testconfig` flag — see "Command-Line Configuration") fully replaces `pv-context.json` as the source of `workFolder`, and also supplies `repoRoot` so `pv.py` can still locate the real `.claude/skills/...` scripts even when run as `test/pv-test.py`, outside the repo root. `pv.py` never reads both files in the same run — it's one or the other, never a mix.
 
 ---
@@ -358,6 +361,10 @@ Versions: 3                                                            ← no co
 ...
 ```
 
+**"Detail card" after page 3 — `show_change_detail_loop()`.** In `--terminal` mode only, after printing page 3 (`render_terminal_page_rest()`), `render_status.py` asks for an id in a loop (`Enter an id for its detail card, or press Enter to go back:`). Each id entered invokes `filter_status.py --search-id <id> --terminal` as a subprocess (`subprocess.run()`, the same mechanism as `pv.py`'s `run_script()`, but from inside a `pv-status` script, not `pv.py`) — meaning it shows exactly **the same "detail card"** already used by "Search by id" in `pv.py`'s "Changes info" submenu, including its "no match" message if the id doesn't match any state. After showing the card (found or not), it asks again — the loop only ends on empty input, which makes the script exit and hand control back to whoever invoked it (`pv.py`, which then shows its own "Press Enter to return to the menu..." pause), the same as before this prompt existed.
+
+This prompt **doesn't appear in markdown mode** (`render()`, used by `/pv-status` from chat) — it's `--terminal`-exclusive, since `filter_status.py --search-id` is itself `--terminal`-only.
+
 `filter_status.py` has **three entry points** from `pv.py`, all inside the "Changes info" submenu: `search_by_state()` invokes it with `<state> --terminal` (the original `show_filtered_status()`, just renamed); `search_by_id()` invokes it with `--search-id <text> --terminal`; and `search_by_content()` invokes it with `--search-content <text> --terminal`. The two searches were deliberately split into two menu options (and two separate CLI flags) instead of one combined search — that way each stays as fast as the kind of lookup it's actually doing: `--search-id` scans every state comparing only folder names (no `description.md` reads except the one match's), while `--search-content` has to read every entry's `description.md` to filter by content — no way around that. All three modes share `render_terminal()` — the title switches between `PROJECT STATUS — {state}` and `PROJECT STATUS — search: {text}`, and in search mode (by id or by content) each row prefixes the id with its origin state in parentheses (`(implemented)  1001  ...`), since results cross states.
 
 **`--search-id` ignores zero-padding.** Ids under `changes/{inProgress,implemented,closed}` are zero-padded numbers (`00001`), but `todo/`'s are short alphanumeric codes (`a3f9k`) that aren't. `ids_match()` compares both sides as integers when both are digits-only (so `1`, `01`, and `00001` all find the same entry) and falls back to a case-insensitive string comparison otherwise (so `todo/`'s alphanumeric ids keep working, and a numeric id never accidentally matches an alphanumeric one).
@@ -369,18 +376,40 @@ Versions: 3                                                            ← no co
 ══════════════════════════════════════════════════════════════════   ← GOLD
 ```
 
-**Row format in `filter_status.py --terminal` ("Filter by state").** Each listed entry spans three lines with no color of its own (the surrounding block's GOLD only applies to the title/closing rule, same as the rest of "Delegated info"):
+### The Detail Card
+
+The fixed name (along with "detail card") we use, in this document and in development conversation, for the block `render_terminal()` (in `filter_status.py`) prints per entry — it's the format shared by **all three** routes that reach `render_terminal()`: "Filter by state" (`<state>`), "Search by id" (`--search-id`), "Search by content" (`--search-content`), and also the id prompt at the end of "Project status" (`render_status.py`'s `show_change_detail_loop()`, which delegates to `filter_status.py --search-id`). All four routes produce exactly the same block — there's no fifth variant.
+
+No color of its own (inherits the GOLD of the surrounding block only for the screen's title/closing rule, the body stays uncolored, same as the rest of "Delegated info"). The format is the same regardless of mode — the `(state)` prefix on line 1 is always shown, even in "Filter by state" where the screen's own title already says it (unified on purpose so the card always looks the same, instead of having a slightly different format depending on how you got to it).
+
+There are **two content variants, with a different number of lines** — 4 lines for change/fix, 3 for idea (`todo/`, no `Risk`, no separate description line, see why below):
+
+#### Change/fix card (`inProgress`/`implemented`/`closed`)
 
 ```
-1001  [🆕 Change]  Risk: 6/10  2026-08-01     ← Line 1: id, type, date, risk
-> Add user authentication                     ← Line 2: name (description.md's **Name** field), "> " prefix
-  Lets users sign in with email and           ← Line 3: first 200 characters of the
+(implemented)  1001  [🆕 Change]  Risk: 6/10  ← Line 1: (state), id, type, risk — no date here
+created: 2026-08-01, planned: 2026-08-03      ← Line 2: created = description.md, planned = plan.md ("pending" if absent)
+> Add user authentication                     ← Line 3: name (description.md's **Name** field), "> " prefix
+  Lets users sign in with email and           ← Line 4: first 200 characters of the
   password, backed by a new sessions table…      description (## Full description), with "…" if truncated
 ```
 
-This line 3 uses **its own 200-character limit**, separate from and independent of the 250-character limit used by `/pv-status`'s markdown table (chat) — changing one doesn't affect the other; they're two separate rendering paths inside `filter_status.py` (`render_terminal()` vs `render_report()`), and only terminal mode shows the name at all (the markdown table has no Name column).
+- **`created`** (line 2): `description.md`'s `**Creation date**` field (bold inline); falls back to `description.md`'s mtime if absent.
+- **`planned`** (line 2): `plan.md`'s `**Creation date**` field (same bold-inline format, see `PLAN.template.md`) — the date `pv-how` wrote the plan on, not the change's creation date. If `plan.md` doesn't exist yet, or exists but lacks that field, shows literally **`pending`** (not a dash or "unknown" — explicitly signals planning hasn't happened yet). `build_entry()` computes this by reusing `extract_date()` on `plan.md`'s text, no new pattern needed — the field has the exact same format in both files.
+- **`Risk`** (line 1): `plan.md`'s `**Risk**` field, `{value}/10` format — `—` if there's no `plan.md` or the field isn't in that exact format.
+- Line 4 uses **its own 200-character limit**, separate from and independent of the 250-character limit used by `/pv-status`'s markdown table (chat) — changing one doesn't affect the other; they're two separate rendering paths inside `filter_status.py` (`render_terminal()` vs `render_report()`), and only terminal mode shows the detail card at all (the markdown table has no Name/Planned columns).
 
-**Special case: entries in `todo/`.** `description.md` in `todo/` doesn't follow `pv-new`/`pv-fix`'s `**Name**:`/`**Type**:`/`## Full description` format — it uses `pv-todo`'s own markdown headings (`## Idea`, `## Creation date`, `## Notes`), with no separation between "name" and "description". `build_entry()` detects `state == "todo"` and uses `parse_todo_description()` (reused from `collect_status.py`, the same one `list_todo.py` uses) to extract the `## Idea` text as line 2 (name); line 3 stays empty (`—`), since there's no description separate from the title. The date also uses its own pattern (`## Creation date`, a heading) instead of `**Creation date**` (bold inline).
+#### Idea card (`todo/`)
+
+Different, shorter format than the change/fix card — **3 lines, not 4**: no `Risk` (`todo/` never has `plan.md`, so it would always have been `—` — noise, not information) and no separate description line (the `## Idea` text already serves as the name, there's nothing else to show below it).
+
+```
+(todo)  a3f9k  [💡 Todo]                      ← Line 1: (state), id, type — no Risk
+created: 2026-08-15                            ← Line 2: created only — no "planned" (todo/ has no plan.md)
+> Dark mode                                   ← Line 3: the ## Idea text (see below), "> " prefix
+```
+
+`description.md` in `todo/` doesn't follow `pv-new`/`pv-fix`'s `**Name**:`/`**Type**:`/`## Full description` format — it uses `pv-todo`'s own markdown headings (`## Idea`, `## Creation date`, `## Notes`), with no separation between "name" and "description". `build_entry()` detects `state == "todo"` and uses `parse_todo_description()` (reused from `collect_status.py`, the same one `list_todo.py` uses) to extract the `## Idea` text as line 3 (name) — there's no line 4, `render_terminal()` stops there for this variant (`continue` after line 3, before the block that adds the description line). Line 2's `created` also uses its own pattern (`## Creation date`, a heading) instead of `**Creation date**` (bold inline) — `TODO_DATE_RE`, distinct from `DATE_RE`.
 
 **If you touch `terminal_output.py`:** its `hr()` is already GOLD by default (unlike `pv.py`'s `hr()`, which defaults to DARK_GRAY) — any new call to `term.hr(...)` in `render_status.py`/`filter_status.py`/`list_todo.py` comes out gold without needing to pass it a color, so there's no color parameter there (nor does one exist).
 
@@ -484,7 +513,7 @@ Real friction points in this design — watch out for them when adding new code.
 
 | Script | Location | Purpose |
 |--------|-----------|-----------|
-| `render_status.py` | `.claude/skills/pv-status/scripts/` | Show general status |
+| `render_status.py` | `.claude/skills/pv-status/scripts/` | Show general status; in `--terminal`, after page 3 delegates to `filter_status.py --search-id` to show an entered id's detail card |
 | `list_todo.py` | `.claude/skills/pv-status/scripts/` | List ideas in todo/ |
 | `filter_status.py` | `.claude/skills/pv-status/scripts/` | Filter changes by state (`<state>`), search by exact id across every state (`--search-id <text>`), or search by `description.md` content across every state (`--search-content <text>`) |
 | `sync-skill-models.py` | `.claude/skills/pv-init/scripts/` | Sync skill models |

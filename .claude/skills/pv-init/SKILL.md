@@ -4,7 +4,7 @@ description: Initializes the pv-* framework (change/fix/workflow) in the current
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.5b6
+  version: 0.9.5b7
   uses: [pv-init-update]
 ---
 

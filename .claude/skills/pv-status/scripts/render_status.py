@@ -27,6 +27,13 @@ The "Implemented fast changes" section is omitted by default even if there
 are fast entries: it's only included if --show-fast is passed (use only
 when the user explicitly asks for it).
 
+In --terminal mode only, after the third (final) page, an id prompt loops
+until empty input: entering an id shows that entry's detail card by
+delegating to filter_status.py --search-id --terminal (the same card
+pv.py's "Search by id" uses, including its own "no match" message), then
+asks again; empty input returns control to the caller (pv.py), same as
+before this prompt existed.
+
 Writes nothing to disk: prints the final markdown to stdout.
 
 Usage:
@@ -37,6 +44,7 @@ Usage:
 
 import argparse
 import re
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -44,6 +52,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from collect_status import collect, load_changes_dir, repo_root  # noqa: E402
 import terminal_output as term  # noqa: E402
+
+FILTER_STATUS_PATH = Path(__file__).resolve().parent / "filter_status.py"
 
 TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "STATUS.template.md"
 
@@ -389,6 +399,22 @@ def render_terminal_page_rest(result: dict, changes_dir: Path, show_fast: bool =
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
+def show_change_detail_loop(work_folder: str | None) -> None:
+    """Final-page prompt: reads an id, shows that change/idea's detail card
+    via filter_status.py --search-id --terminal (same card as pv.py's
+    "Search by id"), then asks again -- repeats until empty input, which
+    is the existing "go back" behavior, unchanged."""
+    while True:
+        query = input("Enter an id for its detail card, or press Enter to go back: ").strip()
+        if not query:
+            return
+
+        args = [sys.executable, str(FILTER_STATUS_PATH), "--search-id", query, "--terminal"]
+        if work_folder:
+            args += ["--work-folder", work_folder]
+        subprocess.run(args)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -426,6 +452,7 @@ def main() -> None:
         print(render_terminal_page_in_progress(result))
         input("Press Enter to continue...")
         print(render_terminal_page_rest(result, changes_dir, show_fast=args.show_fast))
+        show_change_detail_loop(args.work_folder)
     else:
         print(render(result, changes_dir, show_fast=args.show_fast))
 

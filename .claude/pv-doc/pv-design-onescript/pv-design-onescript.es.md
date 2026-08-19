@@ -9,6 +9,7 @@
 - [Organización del Fichero](#organización-del-fichero)
 - [Los Cuatro Helpers de Pantalla](#los-cuatro-helpers-de-pantalla)
 - [Estilo por Tipo de Pantalla](#estilo-por-tipo-de-pantalla)
+  - [La Ficha Detalle](#la-ficha-detalle)
 - [Configuración de Línea de Comandos](#configuración-de-línea-de-comandos)
 - [Cómo extender pv.py](#cómo-extender-pvpy)
   - [Guía para Extender pv.py](#guía-para-extender-pvpy)
@@ -159,6 +160,7 @@ graph TD
         RS -->|import terminal_output as term| TO
         FS -->|import terminal_output as term| TO
         LT -->|import terminal_output as term| TO
+        RS -->|"subprocess --search-id --terminal (ficha detalle, solo --terminal)"| FS
     end
 
     subgraph SKILL_WORKFLOW ["Skill pv-internal-workflow (.claude/skills/pv-internal-workflow/scripts/)"]
@@ -201,6 +203,7 @@ graph TD
 - `terminal_output.py` (resaltado en dorado, igual que `pv.py`) es el **único otro componente que dibuja pantallas con color** — y lo hace con su propio código, no reutilizando ninguna función de `pv.py`. Si una pantalla de "PROJECT STATUS" o "IDEAS IN TODO/" se ve mal, el fix está en `terminal_output.py`, nunca en `pv.py` (ver el comentario en el propio código de `pv.py`, justo antes de `show_general_status()`).
 - `move-change.py` y `sync-skill-models.py` son mutaciones simples de un solo paso, sin render propio — su salida es texto plano sin ANSI.
 - Ninguno de estos componentes se importa entre sí salvo `terminal_output.py` por los tres scripts de `pv-status` — son todos procesos independientes conectados solo por convención de argumentos (`--terminal`, `--xxxx`, etc.) y por las rutas del framework (`changes/`, `versions/`).
+- `render_status.py` **sí invoca** `filter_status.py` como subproceso (`--search-id --terminal`, para la "ficha detalle" al final de la página 3) — es la única arista de este tipo entre dos scripts hermanos de `pv-status` (todas las demás son de `pv.py` hacia un script, nunca entre scripts). Sigue sin ser un `import`: cada uno sigue siendo un proceso independiente que imprime a stdout, `render_status.py` no puede interceptar ni reformatear lo que `filter_status.py` imprime.
 - `pv-config-test.json` (línea discontinua, solo activa con el flag `--testconfig` — ver "Configuración de Línea de Comandos") sustituye por completo a `pv-context.json` como fuente de `workFolder`, y además aporta `repoRoot` para que `pv.py` siga localizando los scripts reales de `.claude/skills/...` aunque se ejecute como `test/pv-test.py`, fuera de la raíz del repo. `pv.py` nunca lee ambos ficheros en la misma ejecución — es uno u otro, nunca una mezcla.
 
 ---
@@ -358,6 +361,10 @@ Versions: 3                                                            ← sin c
 ...
 ```
 
+**"Ficha detalle" tras la página 3 — `show_change_detail_loop()`.** Solo en modo `--terminal`, después de imprimir la página 3 (`render_terminal_page_rest()`), `render_status.py` pide un id en bucle (`Enter an id for its detail card, or press Enter to go back:`). Cada id introducido invoca `filter_status.py --search-id <id> --terminal` como subproceso (`subprocess.run()`, mismo mecanismo que `pv.py`'s `run_script()` pero dentro de un script `pv-status`, no de `pv.py`) — es decir, muestra exactamente **la misma "ficha detalle"** que ya usa "Search by id" en el submenú "Changes info" de `pv.py`, incluido su mensaje de "no existe" si el id no matchea ningún estado. Tras mostrar la ficha (encontrada o no), vuelve a preguntar — el bucle solo termina con un input vacío, que hace que el script termine y devuelva el control a quien lo invocó (`pv.py`, que entonces muestra su propia pausa "Press Enter to return to the menu..."), igual que pasaba antes de que este prompt existiera.
+
+Este prompt **no aparece en el modo markdown** (`render()`, usado por `/pv-status` desde el chat) — es exclusivo de `--terminal`, ya que `filter_status.py --search-id` es en sí mismo `--terminal`-only.
+
 `filter_status.py` tiene **tres puntos de entrada** desde `pv.py`, todos dentro del submenú "Changes info": `search_by_state()` lo invoca con `<estado> --terminal` (el `show_filtered_status()` original, solo renombrado); `search_by_id()` lo invoca con `--search-id <texto> --terminal`; y `search_by_content()` lo invoca con `--search-content <texto> --terminal`. Las dos búsquedas se separaron deliberadamente en dos opciones de menú (y dos flags CLI distintos) en vez de una sola combinada — así cada una es tan rápida como el tipo de búsqueda que hace de verdad: `--search-id` recorre todos los estados comparando solo el nombre de carpeta (sin leer ningún `description.md` salvo el de la entrada que ya matcheó), mientras `--search-content` sí necesita leer el `description.md` de cada entrada para poder filtrar por contenido — no hay forma de evitarlo. Los tres modos comparten `render_terminal()` — el título cambia entre `PROJECT STATUS — {estado}` y `PROJECT STATUS — search: {texto}`, y en modo búsqueda (por id o por contenido) cada fila añade el estado de origen entre paréntesis antes del id (`(implemented)  1001  ...`), ya que los resultados cruzan estados.
 
 **`--search-id` ignora el padding de ceros.** Los ids de `changes/{inProgress,implemented,closed}` son números con ceros a la izquierda (`00001`), pero los de `todo/` son códigos alfanuméricos cortos (`a3f9k`) que no lo son. `ids_match()` compara ambos lados como enteros cuando los dos son solo dígitos (así `1`, `01` y `00001` encuentran la misma entrada) y cae a comparación de string case-insensitive en cualquier otro caso (para no romper los ids alfanuméricos de `todo/`, ni matchear un id numérico con uno alfanumérico por casualidad).
@@ -369,18 +376,40 @@ Versions: 3                                                            ← sin c
 ══════════════════════════════════════════════════════════════════   ← GOLD
 ```
 
-**Formato de fila en `filter_status.py --terminal` ("Filter by state").** Cada entrada listada ocupa tres líneas sin color propio (heredan el GOLD del bloque que las contiene solo en el título/cierre, el cuerpo va sin colorear, igual que el resto de "Info delegada"):
+### La Ficha Detalle
+
+Es el nombre fijo (junto con "ficha de detalle") con el que nos referimos, en este documento y en la conversación de desarrollo, al bloque que `render_terminal()` (en `filter_status.py`) imprime por cada entrada — es el formato compartido por **las tres** rutas que llegan a `render_terminal()`: "Filter by state" (`<estado>`), "Search by id" (`--search-id`), "Search by content" (`--search-content`), y también el prompt de id al final de "Project status" (`render_status.py`'s `show_change_detail_loop()`, que delega en `filter_status.py --search-id`). Las cuatro rutas producen exactamente el mismo bloque — no hay una quinta variante.
+
+Sin color propio (hereda el GOLD del bloque que la contiene solo en el título/cierre de la pantalla, el cuerpo va sin colorear, igual que el resto de "Info delegada"). El formato es el mismo sea cual sea el modo — el prefijo `(estado)` de la línea 1 se muestra siempre, incluso en "Filter by state" donde el título de la pantalla ya lo indica (unificado a propósito para que la ficha se vea siempre igual, en vez de tener un formato ligeramente distinto según cómo se llegó a ella).
+
+Hay **dos variantes de contenido, con distinto número de líneas** — 4 líneas para cambio/fix, 3 para idea (`todo/`, sin `Risk` ni descripción separada, ver más abajo por qué):
+
+#### Ficha de un cambio/fix (`inProgress`/`implemented`/`closed`)
 
 ```
-1001  [🆕 Change]  Risk: 6/10  2026-08-01     ← Línea 1: id, tipo, fecha, riesgo
-> Add user authentication                     ← Línea 2: nombre (description.md, campo **Name**), prefijo "> "
-  Lets users sign in with email and           ← Línea 3: primeros 200 caracteres de la
+(implemented)  1001  [🆕 Change]  Risk: 6/10  ← Línea 1: (estado), id, tipo, riesgo — sin fecha aquí
+created: 2026-08-01, planned: 2026-08-03      ← Línea 2: created = description.md, planned = plan.md ("pending" si no existe)
+> Add user authentication                     ← Línea 3: nombre (description.md, campo **Name**), prefijo "> "
+  Lets users sign in with email and           ← Línea 4: primeros 200 caracteres de la
   password, backed by a new sessions table…      descripción (## Full description), con "…" si se trunca
 ```
 
-Esta línea 3 usa **su propio límite de 200 caracteres**, distinto e independiente de los 250 caracteres que usa la tabla markdown de `/pv-status` (chat) — cambiar uno no afecta al otro; son dos rutas de render separadas dentro de `filter_status.py` (`render_terminal()` vs `render_report()`), y solo el modo terminal muestra el nombre en absoluto (la tabla markdown no tiene columna Name).
+- **`created`** (línea 2): `description.md`'s campo `**Creation date**` (bold inline); si no existe, cae al mtime de `description.md`.
+- **`planned`** (línea 2): `plan.md`'s campo `**Creation date**` (mismo formato bold-inline, ver `PLAN.template.md`) — es la fecha en que `pv-how` escribió el plan, no la de creación del cambio. Si `plan.md` no existe todavía, o existe pero le falta ese campo, se muestra literalmente **`pending`** (no un guion ni "unknown" — indica explícitamente que la planificación aún no ha ocurrido). `build_entry()` calcula esto reutilizando `extract_date()` sobre el texto de `plan.md`, sin un patrón nuevo — el campo tiene exactamente el mismo formato en ambos ficheros.
+- **`Risk`** (línea 1): `plan.md`'s campo `**Risk**`, formato `{valor}/10` — `—` si no hay `plan.md` o el campo no tiene ese formato exacto.
+- La línea 4 usa **su propio límite de 200 caracteres**, distinto e independiente de los 250 caracteres que usa la tabla markdown de `/pv-status` (chat) — cambiar uno no afecta al otro; son dos rutas de render separadas dentro de `filter_status.py` (`render_terminal()` vs `render_report()`), y solo el modo terminal muestra la ficha detalle en absoluto (la tabla markdown no tiene columnas Name/Planned).
 
-**Caso especial: entradas en `todo/`.** `description.md` en `todo/` no sigue el formato `**Name**:`/`**Type**:`/`## Full description` de `pv-new`/`pv-fix` — usa encabezados markdown propios de `pv-todo` (`## Idea`, `## Creation date`, `## Notes`), sin separación entre "nombre" y "descripción". `build_entry()` detecta `state == "todo"` y usa `parse_todo_description()` (reutilizada de `collect_status.py`, la misma que usa `list_todo.py`) para extraer el texto de `## Idea` como línea 2 (nombre); la línea 3 queda vacía (`—`), ya que no hay una descripción separada del título. La fecha también usa su propio patrón (`## Creation date`, heading) en vez de `**Creation date**` (bold inline).
+#### Ficha de una idea (`todo/`)
+
+Formato distinto y más corto que el de cambio/fix — **3 líneas, no 4**: sin `Risk` (`todo/` nunca tiene `plan.md`, así que siempre habría sido `—` — ruido, no información) y sin línea de descripción separada (el texto de `## Idea` ya hace de nombre, no hay nada más que mostrar debajo).
+
+```
+(todo)  a3f9k  [💡 Todo]                      ← Línea 1: (estado), id, tipo — sin Risk
+created: 2026-08-15                            ← Línea 2: solo created — sin "planned" (todo/ no tiene plan.md)
+> Modo oscuro                                 ← Línea 3: el texto de ## Idea (ver más abajo), prefijo "> "
+```
+
+`description.md` en `todo/` no sigue el formato `**Name**:`/`**Type**:`/`## Full description` de `pv-new`/`pv-fix` — usa encabezados markdown propios de `pv-todo` (`## Idea`, `## Creation date`, `## Notes`), sin separación entre "nombre" y "descripción". `build_entry()` detecta `state == "todo"` y usa `parse_todo_description()` (reutilizada de `collect_status.py`, la misma que usa `list_todo.py`) para extraer el texto de `## Idea` como línea 3 (nombre) — no hay línea 4, `render_terminal()` corta ahí para esta variante (`continue` tras la línea 3, antes del bloque que añade la línea de descripción). El `created` de la línea 2 también usa su propio patrón (`## Creation date`, heading) en vez de `**Creation date**` (bold inline) — `TODO_DATE_RE`, distinto de `DATE_RE`.
 
 **Si tocas `terminal_output.py`:** su `hr()` ya es GOLD por defecto (a diferencia del `hr()` de `pv.py`, que es DARK_GRAY por defecto) — cualquier llamada nueva a `term.hr(...)` en `render_status.py`/`filter_status.py`/`list_todo.py` sale dorada sin tener que pasarle color, así que no hace falta (ni existe) un parámetro de color ahí.
 
@@ -484,7 +513,7 @@ Puntos de fricción reales de este diseño — ten cuidado con ellos al añadir 
 
 | Script | Ubicación | Propósito |
 |--------|-----------|-----------|
-| `render_status.py` | `.claude/skills/pv-status/scripts/` | Mostrar estado general |
+| `render_status.py` | `.claude/skills/pv-status/scripts/` | Mostrar estado general; en `--terminal`, tras la página 3 delega en `filter_status.py --search-id` para mostrar la ficha detalle de un id introducido |
 | `list_todo.py` | `.claude/skills/pv-status/scripts/` | Listar ideas en todo/ |
 | `filter_status.py` | `.claude/skills/pv-status/scripts/` | Filtrar cambios por estado (`<estado>`), buscar por id exacto en todos los estados (`--search-id <texto>`), o buscar por contenido de `description.md` en todos los estados (`--search-content <texto>`) |
 | `sync-skill-models.py` | `.claude/skills/pv-init/scripts/` | Sincronizar modelos de skills |
