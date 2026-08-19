@@ -40,8 +40,13 @@ NIVEL 0 (Splash)
 NIVEL 1 (Main Navigation)
 └── "Previo MAIN MENU"
     ├── [1] Acción: Show Status (→ externo)
-    ├── [2] Acción: Filter by State
-    │   └── Selection: "Available states:"
+    ├── [2] Submenu: Changes info
+    │   └── "Previo: changes info"
+    │       ├── [1] Acción: Search change (id or content)
+    │       │   └── Input: texto de búsqueda (→ externo, todos los estados)
+    │       ├── [2] Acción: Search by state
+    │       │   └── Selection: "Available states:" (→ externo, un estado)
+    │       └── [3] Back
     ├── [3] Acción: Show Ideas (→ externo)
     ├── [4] Acción: Close Entry
     │   └── Selection: "Implemented entries..."
@@ -72,12 +77,14 @@ graph TD
     C["🏠 Main Menu<br/>Previo MAIN MENU"]
 
     D["📊 General Status<br/>render_status.py"]
-    E["🔍 Filter by State<br/>Selección + filter_status.py"]
+    N["🔎 Changes info Submenu<br/>Previo: changes info"]
     F["💡 Ideas<br/>list_todo.py"]
     G["✅ Close Entry<br/>Selección + Confirmación"]
     H["⚙️ Config Submenu<br/>Previo: settings"]
     I["📦 Versions Submenu<br/>Previo: versions"]
 
+    O["🔍 Search change<br/>Input + filter_status.py --search"]
+    P["🔍 Search by state<br/>Selección + filter_status.py"]
     J["🔄 Sync Models<br/>sync-skill-models.py"]
     K["📜 Read Changelog<br/>Selección + Mostrar"]
     L["🧹 Check Temp<br/>Mostrar estado"]
@@ -90,8 +97,12 @@ graph TD
     C -->|1| D
     D -->|Return| C
 
-    C -->|2| E
-    E -->|Return| C
+    C -->|2| N
+    N -->|Back| C
+    N -->|Search change| O
+    O -->|Return| N
+    N -->|Search by state| P
+    P -->|Return| N
 
     C -->|3| F
     F -->|Return| C
@@ -121,6 +132,7 @@ graph TD
     style M fill:#DEB887
     style H fill:#EEE8AA
     style I fill:#EEE8AA
+    style N fill:#EEE8AA
 ```
 
 ---
@@ -196,6 +208,7 @@ El fichero está dividido en bloques delimitados por comentarios `# ====...====`
 | `Actions -- root menu` | Funciones de acción del menú raíz | Al añadir una opción nueva a "Previo MAIN MENU" |
 | `Actions -- Configuration submenu` | Funciones de acción de "Previo: settings" | Al añadir una opción nueva a Configuration |
 | `Actions -- Versions submenu` | Funciones de acción de "Previo: versions" | Al añadir una opción nueva a Versions |
+| `Actions -- Changes info submenu` | Funciones de acción de "Previo: changes info" (`search_change()`, `search_by_state()`, `list_states()`) | Al añadir una opción nueva a Changes info |
 | `Root menu definition` | La lista `MENU` | Al registrar cualquier opción nueva del menú raíz (último paso siempre) |
 | `Menu engine` | `run_menu()`, `main()` | Casi nunca — cambia el bucle de navegación para **todos** los menús a la vez |
 
@@ -250,7 +263,7 @@ Todo en GOLD: la cabecera (arriba, título, abajo) y también el `hr("=", GOLD)`
                           Previo MAIN MENU                            ← GOLD, centrado
 ══════════════════════════════════════════════════════════════════   ← GOLD
   1. General project status
-  2. Listing filtered by state (todo, inProgress, implemented...)
+  2. Changes info
   ...
   7. Exit
 ══════════════════════════════════════════════════════════════════   ← GOLD
@@ -303,12 +316,25 @@ has either failed or is currently in progress:                            sin re
 
 Estas tres opciones no usan los helpers de `pv.py` — invocan un script externo con `run_script(..., "--terminal")`, y ese script controla su propio render usando el módulo hermano `.claude/skills/pv-status/scripts/terminal_output.py`. Ese módulo tiene su **propia** paleta (mismo valor GOLD, `\033[38;5;220m`) y su propio `hr()`/`title()`/`heading()`, independiente de `pv.py` — no comparten código, solo el valor de color. Todo el bloque que genera (título, separadores internos de tabla, subrayados de sección, línea de cierre) sale en GOLD uniforme, siguiendo la misma regla de "un color por pantalla completa".
 
+`filter_status.py` tiene **dos puntos de entrada** desde `pv.py`, ambos dentro del submenú "Changes info": `search_by_state()` lo invoca con `<estado> --terminal` (el `show_filtered_status()` original, solo renombrado), y `search_change()` lo invoca con `--search <texto> --terminal` (recorre todos los estados, filtra por id exacto o por coincidencia de texto en `description.md`). Ambos modos comparten `render_terminal()` — el título cambia entre `PROJECT STATUS — {estado}` y `PROJECT STATUS — search: {texto}`, y en modo búsqueda cada fila añade el estado de origen entre paréntesis antes del id (`(implemented)  1001  ...`), ya que los resultados cruzan estados.
+
 ```
 ══════════════════════════════════════════════════════════════════   ← GOLD (terminal_output.hr)
                       PROJECT STATUS — closed                         ← GOLD (terminal_output.title)
                        Generated: 2026-08-18
 ══════════════════════════════════════════════════════════════════   ← GOLD
 ```
+
+**Formato de fila en `filter_status.py --terminal` ("Filter by state").** Cada entrada listada ocupa tres líneas sin color propio (heredan el GOLD del bloque que las contiene solo en el título/cierre, el cuerpo va sin colorear, igual que el resto de "Info delegada"):
+
+```
+1001  [🆕 Change]  Risk: 6/10  2026-08-01     ← Línea 1: id, tipo, fecha, riesgo
+> Add user authentication                     ← Línea 2: nombre (description.md, campo **Name**), prefijo "> "
+  Lets users sign in with email and           ← Línea 3: primeros 200 caracteres de la
+  password, backed by a new sessions table…      descripción (## Full description), con "…" si se trunca
+```
+
+Esta línea 3 usa **su propio límite de 200 caracteres**, distinto e independiente de los 250 caracteres que usa la tabla markdown de `/pv-status` (chat) — cambiar uno no afecta al otro; son dos rutas de render separadas dentro de `filter_status.py` (`render_terminal()` vs `render_report()`), y solo el modo terminal muestra el nombre en absoluto (la tabla markdown no tiene columna Name).
 
 **Si tocas `terminal_output.py`:** su `hr()` ya es GOLD por defecto (a diferencia del `hr()` de `pv.py`, que es DARK_GRAY por defecto) — cualquier llamada nueva a `term.hr(...)` en `render_status.py`/`filter_status.py`/`list_todo.py` sale dorada sin tener que pasarle color, así que no hace falta (ni existe) un parámetro de color ahí.
 
@@ -392,7 +418,7 @@ Puntos de fricción reales de este diseño — ten cuidado con ellos al añadir 
 |--------|-----------|-----------|
 | `render_status.py` | `.claude/skills/pv-status/scripts/` | Mostrar estado general |
 | `list_todo.py` | `.claude/skills/pv-status/scripts/` | Listar ideas en todo/ |
-| `filter_status.py` | `.claude/skills/pv-status/scripts/` | Filtrar cambios por estado |
+| `filter_status.py` | `.claude/skills/pv-status/scripts/` | Filtrar cambios por estado (`<estado>`) o buscar por id/contenido en todos los estados (`--search <texto>`) |
 | `sync-skill-models.py` | `.claude/skills/pv-init/scripts/` | Sincronizar modelos de skills |
 | `move-change.py` | `.claude/skills/pv-internal-workflow/scripts/` | Mover entrada a closed |
 | `terminal_output.py` | `.claude/skills/pv-status/scripts/` | Módulo de rendering compartido por los tres scripts de `pv-status` (no un script ejecutable, se importa) |
