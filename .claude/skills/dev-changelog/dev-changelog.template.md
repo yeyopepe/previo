@@ -2,12 +2,12 @@
 
 ## New
 
-- **{Name}** — {functional summary}.
+- **{Title describing the change}** — {functional summary}.
 
 ## Changed
 
-- **{Name}** — {functional summary}.
+- **{Title describing the change}** — {functional summary}.
 
 ## Deleted
 
-- **{Name}** — {functional summary}.
+- **{Title describing the change}** — {functional summary}.
