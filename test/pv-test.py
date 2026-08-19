@@ -66,6 +66,7 @@ ROOT = Path(__file__).resolve().parent
 STATUS_SCRIPTS = ROOT / ".claude" / "skills" / "pv-status" / "scripts"
 WORKFLOW_SCRIPTS = ROOT / ".claude" / "skills" / "pv-internal-workflow" / "scripts"
 INIT_SCRIPTS = ROOT / ".claude" / "skills" / "pv-init" / "scripts"
+INIT_SKILL_PATH = ROOT / ".claude" / "skills" / "pv-init" / "SKILL.md"
 CONTEXT_PATH = ROOT / ".claude" / "pv-context.json"
 
 # Set by main() when --testconfig is passed: the workFolder value to use
@@ -129,6 +130,8 @@ RING_CHAR_COLORS = {
 }
 
 NAME_RE = re.compile(r"\*\*Name\*\*\s*[:—-]\s*(.+)")
+VERSION_RE = re.compile(r"^\s*version:\s*(\S+)", re.MULTILINE)
+VERSION_RE = re.compile(r"^\s*version:\s*(\S+)", re.MULTILINE)
 
 
 def supports_color() -> bool:
@@ -329,6 +332,15 @@ def changes_dir() -> Path:
 
 def versions_dir() -> Path:
     return work_root() / "versions"
+
+
+def framework_version() -> str:
+    """Reads the pv-* framework's own version from pv-init/SKILL.md's YAML
+    frontmatter (metadata.version) -- not the project's own version under
+    versions/{XXXX}/, which is a separate, project-specific number."""
+    text = INIT_SKILL_PATH.read_text(encoding="utf-8")
+    match = VERSION_RE.search(text)
+    return match.group(1) if match else "?"
 
 
 def load_test_config(path: Path) -> dict[str, str]:
@@ -650,7 +662,7 @@ def run_menu(
 
 
 def main() -> None:
-    global ROOT, STATUS_SCRIPTS, WORKFLOW_SCRIPTS, INIT_SCRIPTS, CONTEXT_PATH, TEST_WORK_FOLDER
+    global ROOT, STATUS_SCRIPTS, WORKFLOW_SCRIPTS, INIT_SCRIPTS, INIT_SKILL_PATH, CONTEXT_PATH, TEST_WORK_FOLDER
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -673,6 +685,7 @@ def main() -> None:
         STATUS_SCRIPTS = ROOT / ".claude" / "skills" / "pv-status" / "scripts"
         WORKFLOW_SCRIPTS = ROOT / ".claude" / "skills" / "pv-internal-workflow" / "scripts"
         INIT_SCRIPTS = ROOT / ".claude" / "skills" / "pv-init" / "scripts"
+        INIT_SKILL_PATH = ROOT / ".claude" / "skills" / "pv-init" / "SKILL.md"
         CONTEXT_PATH = ROOT / ".claude" / "pv-context.json"
         TEST_WORK_FOLDER = config["workFolder"]
 
@@ -688,7 +701,7 @@ def main() -> None:
 
     print(colorize_ring_art(RING_ART))
 
-    run_menu("Previo: MAIN MENU", MENU, "Exit")
+    run_menu(f"Previo v{framework_version()}: MAIN MENU", MENU, "Exit")
 
 
 if __name__ == "__main__":

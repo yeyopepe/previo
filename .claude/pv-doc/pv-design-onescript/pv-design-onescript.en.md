@@ -39,7 +39,7 @@ LEVEL 0 (Splash)
 └── RING_ART (ASCII + gradient colors)
 
 LEVEL 1 (Main Navigation)
-└── "Previo: MAIN MENU"
+└── "Previo v{version}: MAIN MENU" ({version} = pv-init/SKILL.md's metadata.version)
     ├── [1] Action: Show Status (→ external)
     ├── [2] Submenu: Changes info
     │   └── "Previo: Changes info"
@@ -77,7 +77,7 @@ LEVEL 1 (Main Navigation)
 graph TD
     A["🎬 Start<br/>pv.py launched"]
     B["🎨 Splash Screen<br/>ASCII Ring Art"]
-    C["🏠 Main Menu<br/>Previo: MAIN MENU"]
+    C["🏠 Main Menu<br/>Previo v{version}: MAIN MENU"]
 
     D["📊 General Status<br/>render_status.py"]
     N["🔎 Changes info Submenu<br/>Previo: Changes info"]
@@ -216,7 +216,7 @@ The file is split into blocks delimited by `# ====...====` comments, in this fix
 |---|---|---|
 | `Rendering primitives` | `WIDTH`, colors (`GOLD`/`DARK_GRAY`), `colorize()`, `hr()`, `wrap()`, `RING_ART` | Almost never — changes the global color/width system |
 | `Screen-type helpers` | `print_header()`, `show_selection()`, `show_info()`, `confirm()` | Almost never — changes the behavior of a screen type across **all** options at once |
-| `Framework paths and shared lookups` | `work_root()`, `changes_dir()`, `versions_dir()`, `run_script()`, `load_test_config()` | When adding a new framework path or subfolder several options need |
+| `Framework paths and shared lookups` | `work_root()`, `changes_dir()`, `versions_dir()`, `framework_version()`, `run_script()`, `load_test_config()` | When adding a new framework path or subfolder several options need |
 | `Actions -- root menu` | Action functions for the root menu | When adding a new option to "Previo: MAIN MENU" |
 | `Actions -- Configuration submenu` | Action functions for "Previo: settings" | When adding a new option to Configuration |
 | `Actions -- Versions submenu` | Action functions for "Previo: versions" | When adding a new option to Versions |
@@ -279,7 +279,7 @@ Everything in GOLD: the header (top, title, bottom) and also the `hr("=", GOLD)`
 
 ```
 ══════════════════════════════════════════════════════════════════   ← GOLD
-                          Previo: MAIN MENU                            ← GOLD, centered
+                       Previo v0.9.5b7: MAIN MENU                      ← GOLD, centered
 ══════════════════════════════════════════════════════════════════   ← GOLD
   1. General project status
   2. Changes info
@@ -525,6 +525,7 @@ Real friction points in this design — watch out for them when adding new code.
 | Path | Purpose |
 |------|-----------|
 | `pv-context.json` | Framework configuration |
+| `pv-init/SKILL.md` | Read (not executed) by `framework_version()` to get the `pv-*` framework's own version (YAML frontmatter's `metadata.version`) shown in the main menu's title — distinct from the project's own version under `versions/{XXXX}/` |
 | `changes/` | Changes directory (states) |
 | `changes/implemented/` | Completed changes |
 | `changes/closed/` | Closed changes |

@@ -39,7 +39,7 @@ NIVEL 0 (Splash)
 └── RING_ART (ASCII + colores gradiente)
 
 NIVEL 1 (Main Navigation)
-└── "Previo: MAIN MENU"
+└── "Previo v{version}: MAIN MENU" ({version} = metadata.version de pv-init/SKILL.md)
     ├── [1] Acción: Show Status (→ externo)
     ├── [2] Submenu: Changes info
     │   └── "Previo: Changes info"
@@ -77,7 +77,7 @@ NIVEL 1 (Main Navigation)
 graph TD
     A["🎬 Inicio<br/>pv.py ejecutado"]
     B["🎨 Splash Screen<br/>ASCII Ring Art"]
-    C["🏠 Main Menu<br/>Previo: MAIN MENU"]
+    C["🏠 Main Menu<br/>Previo v{version}: MAIN MENU"]
 
     D["📊 General Status<br/>render_status.py"]
     N["🔎 Changes info Submenu<br/>Previo: Changes info"]
@@ -216,7 +216,7 @@ El fichero está dividido en bloques delimitados por comentarios `# ====...====`
 |---|---|---|
 | `Rendering primitives` | `WIDTH`, colores (`GOLD`/`DARK_GRAY`), `colorize()`, `hr()`, `wrap()`, `RING_ART` | Casi nunca — cambia el sistema de color/ancho global |
 | `Screen-type helpers` | `print_header()`, `show_selection()`, `show_info()`, `confirm()` | Casi nunca — cambia el comportamiento de un tipo de pantalla en **todas** las opciones a la vez |
-| `Framework paths and shared lookups` | `work_root()`, `changes_dir()`, `versions_dir()`, `run_script()`, `load_test_config()` | Al añadir una nueva ruta o subcarpeta del framework que varias opciones necesiten |
+| `Framework paths and shared lookups` | `work_root()`, `changes_dir()`, `versions_dir()`, `framework_version()`, `run_script()`, `load_test_config()` | Al añadir una nueva ruta o subcarpeta del framework que varias opciones necesiten |
 | `Actions -- root menu` | Funciones de acción del menú raíz | Al añadir una opción nueva a "Previo: MAIN MENU" |
 | `Actions -- Configuration submenu` | Funciones de acción de "Previo: settings" | Al añadir una opción nueva a Configuration |
 | `Actions -- Versions submenu` | Funciones de acción de "Previo: versions" | Al añadir una opción nueva a Versions |
@@ -279,7 +279,7 @@ Todo en GOLD: la cabecera (arriba, título, abajo) y también el `hr("=", GOLD)`
 
 ```
 ══════════════════════════════════════════════════════════════════   ← GOLD
-                          Previo: MAIN MENU                            ← GOLD, centrado
+                       Previo v0.9.5b7: MAIN MENU                      ← GOLD, centrado
 ══════════════════════════════════════════════════════════════════   ← GOLD
   1. General project status
   2. Changes info
@@ -525,6 +525,7 @@ Puntos de fricción reales de este diseño — ten cuidado con ellos al añadir 
 | Ruta | Propósito |
 |------|-----------|
 | `pv-context.json` | Configuración del framework |
+| `pv-init/SKILL.md` | Leído (no ejecutado) por `framework_version()` para obtener la versión del propio framework `pv-*` (`metadata.version` de su frontmatter YAML), mostrada en el título del menú principal — distinta de la versión del proyecto bajo `versions/{XXXX}/` |
 | `changes/` | Directorio de cambios (estados) |
 | `changes/implemented/` | Cambios completados |
 | `changes/closed/` | Cambios cerrados |
