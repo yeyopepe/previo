@@ -309,7 +309,8 @@ def render_terminal_entries(title_text: str, entries: list[dict]) -> list[str]:
         for entry in entries:
             name = entry["name"] or "(no name)"
             risk = format_risk(entry)
-            block.append(term.wrap(f"- {entry['code']} — {name} (Risk: {risk})", indent="  "))
+            icon = TYPE_ICONS.get(entry["type"], "❓")
+            block.append(term.wrap(f"{entry['code']} [{icon} {entry['type']}] — {name} (Risk: {risk})", indent="  "))
     return block
 
 
