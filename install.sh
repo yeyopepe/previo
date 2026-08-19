@@ -56,6 +56,11 @@ for doc in pv-guide.en.md pv-guide.es.md; do
   fi
 done
 
+# Sincroniza el changelog del framework.
+if [ -f "$TMP/.claude/pv-changelog.en.md" ]; then
+  cp "$TMP/.claude/pv-changelog.en.md" ".claude/pv-changelog.en.md"
+fi
+
 # Sincroniza el lanzador pv.py en la raíz del repo (fichero generado, se sobrescribe siempre).
 if [ -f "$SRC_SKILLS/pv-init/assets/pv.py" ]; then
   cp "$SRC_SKILLS/pv-init/assets/pv.py" "pv.py"

@@ -67,6 +67,12 @@ try {
         }
     }
 
+    # Sincroniza el changelog del framework.
+    $SrcChangelog = Join-Path $Tmp ".claude\pv-changelog.en.md"
+    if (Test-Path $SrcChangelog) {
+        Copy-Item -Path $SrcChangelog -Destination (Join-Path ".claude" "pv-changelog.en.md") -Force
+    }
+
     # Sincroniza el lanzador pv.py en la raíz del repo (fichero generado, se sobrescribe siempre).
     $SrcPvPy = Join-Path $SrcSkills "pv-init\assets\pv.py"
     if (Test-Path $SrcPvPy) {
