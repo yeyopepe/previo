@@ -45,7 +45,7 @@ It brings the control and traceability of *spec-driven development* without the 
 |<u>**Folder structure and documentation**</u>|Define where everything lives — the changes folder, source code, architecture documentation, style, and features — to fit Previo into the structure your project already has.|
 |<u>**Model per skill**</u>|Assign whichever model and effort level you prefer to each skill (for example, a lighter one for lookup tasks and a more capable one for technical analysis).|
 
-See the [user guide](.claude/pv-guide.en.md#more-ways-to-customize-previo) for the detail on each option.
+See the [user guide](.claude/pv-doc/pv-guide.en.md#more-ways-to-customize-previo) for the detail on each option.
 
 ## ⚠️Weaknesses and what's coming next
 
@@ -69,7 +69,7 @@ curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.sh
 irm https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.ps1 | iex
 ```
 
-This installs (or updates) `.claude/skills` and the documentation (`pv-guide.md`, `pv-design.md`, and their `.en.md` versions) with the framework's content, without touching your configuration (`pv-context.json`, `settings.json`) or any custom skill that doesn't start with `pv-`. Running it again at any time updates the framework to the latest version: it adds new skills, updates existing ones, and removes any that are no longer part of Previo.
+This installs (or updates) `.claude/skills` and the documentation (`pv-guide.md` and its `.en.md` version) with the framework's content, without touching your configuration (`pv-context.json`, `settings.json`) or any custom skill that doesn't start with `pv-`. Running it again at any time updates the framework to the latest version: it adds new skills, updates existing ones, and removes any that are no longer part of Previo.
 
 Then, from that project's root, run once:
 
@@ -147,10 +147,10 @@ Optional skills that complement the minimal cycle: jotting down ideas before com
 
 
 ### ⭐The Full Experience
-See the [user guide](.claude/pv-guide.en.md) for everything you can do with Previo.
+See the [user guide](.claude/pv-doc/pv-guide.en.md) for everything you can do with Previo.
 
 ## 📐How it's built, in detail
-If you want to see how it's built (the framework's skill map, how they invoke each other, the reasoning behind its architecture, etc), here's the [design document](.claude/pv-design.en.md).
+If you want to see how it's built (the framework's skill map, how they invoke each other, the reasoning behind its architecture, etc), here's the [design document](.claude/pv-doc/pv-design/pv-design.en.md).
 
 ## ⚖️License
 

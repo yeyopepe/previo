@@ -298,7 +298,7 @@ Any `docs` field left unconfigured means the corresponding step is skipped witho
 
 ## The `pv.py` launcher
 
-A self-contained Python script for anyone who wants to check or close out framework changes directly from a terminal, without going through Claude Code. Full design (screens, navigation flow, dependencies) in [`pv-design-onescript.es.md`](pv-design-onescript.es.md).
+A self-contained Python script for anyone who wants to check or close out framework changes directly from a terminal, without going through Claude Code. Full design (screens, navigation flow, dependencies) in [`pv-design-onescript.es.md`](../pv-design-onescript/pv-design-onescript.es.md).
 
 ## Full folder and file structure
 
@@ -310,8 +310,12 @@ Complete view of what the framework creates and where, with the default configur
 ├── src/                               # sourcecodeDir (default "/src") — the only path relative to the repo root
 ├── .claude/
 │   ├── pv-context.json                # single point of configuration (written by pv-init)
-│   ├── pv-design.{es,en}.md           # this document
-│   ├── pv-guide.{es,en}.md            # usage guide
+│   ├── pv-doc/
+│   │   ├── pv-guide.{es,en}.md        # usage guide (distributed by install.sh/install.ps1)
+│   │   ├── pv-design/
+│   │   │   └── pv-design.{es,en}.md   # this document
+│   │   └── pv-design-onescript/
+│   │       └── pv-design-onescript.{es,en}.md  # pv.py design
 │   └── skills/
 │       ├── pv-init/                   # initializes/completes pv-context.json
 │       ├── pv-new/                    # documents a change

@@ -45,7 +45,7 @@ Aporta el control y la trazabilidad del *spec-driven development* sin la sobreca
 |<u>**Estructura de carpetas y documentación**</u>|Define dónde vive cada cosa — carpeta de cambios, código fuente, documentación de arquitectura, estilo y funcionalidades — para encajar Previo en la estructura que ya tiene tu proyecto.|
 |<u>**Modelo por skill**</u>|Asigna el modelo y el nivel de esfuerzo que prefieras a cada skill (por ejemplo, uno más ligero para tareas de consulta y uno más potente para el análisis técnico).|
 
-Consulta la [`Guía de usuario`](.claude/pv-guide.es.md#más-formas-de-personalizar-previo) para el detalle de cada opción.
+Consulta la [`Guía de usuario`](.claude/pv-doc/pv-guide.es.md#más-formas-de-personalizar-previo) para el detalle de cada opción.
 
 ## ⚠️Puntos menos fuertes y lo que está por llegar
 - <u>**Contextos grandes.**</u> A medida que el proyecto crezca, el contexto necesario para que Previo haga su trabajo también crecerá (y el consumo de tokens). Hemos priorizado la calidad de los resultados frente al supuesto ahorro de tokens (aunque no los hemos olvidado) porque nuestra experiencia nos dice que el retrabajo siempre sale más caro que un buen análisis previo.
@@ -68,7 +68,7 @@ curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.sh
 irm https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.ps1 | iex
 ```
 
-Esto instala (o actualiza) `.claude/skills` y la documentación (`pv-guide.md`, `pv-design.md` y sus versiones `.en.md`) con el contenido del framework, sin tocar tu configuración (`pv-context.json`, `settings.json`) ni ninguna skill propia que no empiece por `pv-`. Volver a ejecutarlo en cualquier momento actualiza el framework a la última versión: añade skills nuevas, actualiza las existentes y elimina las que ya no formen parte de Previo.
+Esto instala (o actualiza) `.claude/skills` y la documentación (`pv-guide.md` y su versión `.en.md`) con el contenido del framework, sin tocar tu configuración (`pv-context.json`, `settings.json`) ni ninguna skill propia que no empiece por `pv-`. Volver a ejecutarlo en cualquier momento actualiza el framework a la última versión: añade skills nuevas, actualiza las existentes y elimina las que ya no formen parte de Previo.
 
 Después, desde la raíz de ese proyecto, ejecuta una vez:
 
@@ -146,11 +146,11 @@ Skills opcionales que complementan el ciclo mínimo: anotar ideas antes de compr
 
 
 ## ⭐La experiencia completa
-Consulta en la [`Guía de usuario`](.claude/pv-guide.es.md) todo lo que puedes hacer con Previo.
+Consulta en la [`Guía de usuario`](.claude/pv-doc/pv-guide.es.md) todo lo que puedes hacer con Previo.
 
 
 ## 📐Cómo está hecho, al detalle
-Si lo quieres es ver cómo está hecho (el mapa de skills del framework, cómo se invocan entre sí, las decisiones detrás de su arquitectura, etc), aquí tienes el [`documento de diseño`](.claude/pv-design.es.md).
+Si lo quieres es ver cómo está hecho (el mapa de skills del framework, cómo se invocan entre sí, las decisiones detrás de su arquitectura, etc), aquí tienes el [`documento de diseño`](.claude/pv-doc/pv-design/pv-design.es.md).
 
 ## ⚖️Licencia
 

@@ -1,5 +1,4 @@
 /.claude/settings.json
 /.claude/settings.local.json
 .claude/**/__pycache__/*
-tools/__pycache__/*
-
+/tools/__pycache__

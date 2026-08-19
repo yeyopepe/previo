@@ -12,11 +12,11 @@ metadata:
 
 Implements changes to `pv.py`, the `pv-*` framework's interactive one-file launcher. This skill owns the file's design consistency across every future change to it — it's the only entry point that should ever touch `pv.py`'s source.
 
-**The master copy lives at `.claude/skills/pv-init/assets/pv.py`.** The repo-root `pv.py` is a generated artifact — `scaffold-project.py` (from `pv-init`) overwrites it unconditionally from the master copy, and `pv-init-update`'s audit (`pvpy-stale`) flags root `pv.py` as broken the moment it stops matching the master byte-for-byte. **Never edit `{repo root}/pv.py` directly** — always edit `.claude/skills/pv-init/assets/pv.py`, then propagate (step 5) by re-running `scaffold-project.py`, which copies it back to the root.
+**The master copy lives at `.claude/skills/pv-init/assets/pv.py`.** The repo-root `{repo root}/pv.py` is a generated artifact, but it's **not this skill's job to produce it** — it only exists there once a user actually installs/updates the framework in their project (via `install.sh`/`install.ps1`, or `pv-init`'s `scaffold-project.py` running as part of that flow). While developing `pv.py` itself with this skill, **never touch `{repo root}/pv.py`, and never run `scaffold-project.py`** — always edit `.claude/skills/pv-init/assets/pv.py`, then propagate (step 5) to `test/pv-test.py` only, the dedicated dev/test copy. `pv-init-update`'s audit (`pvpy-stale`) only ever compares `{repo root}/pv.py` against the master when that root copy already exists from a real install — an absent or untouched root `pv.py` during development is not a problem this skill needs to fix.
 
 ## 1. Read the design doc first, always
 
-Before writing or even planning any change, read [`../../pv-design-onescript.en.md`](../../pv-design-onescript.en.md) in full (or its Spanish twin `pv-design-onescript.es.md` if you're operating in Spanish — both describe the exact same design, keep using whichever matches the conversation's language). This is not optional context, it's the spec: screen hierarchy, navigation flow, file block organization, the four screen helpers, style-per-screen-type rules, and the extension guide with its common-mistakes list. Do not skip this step even for a change that looks trivial — most of `pv.py`'s design mistakes come from a change that looked trivial in isolation but broke a global convention (color leaking between screen types, `hr()` defaulting to the wrong color, comparing `show_selection()`'s result the wrong way).
+Before writing or even planning any change, read [`../../pv-doc/pv-design-onescript/pv-design-onescript.en.md`](../../pv-doc/pv-design-onescript/pv-design-onescript.en.md) in full (or its Spanish twin `pv-doc/pv-design-onescript/pv-design-onescript.es.md` if you're operating in Spanish — both describe the exact same design, keep using whichever matches the conversation's language). This is not optional context, it's the spec: screen hierarchy, navigation flow, file block organization, the four screen helpers, style-per-screen-type rules, and the extension guide with its common-mistakes list. Do not skip this step even for a change that looks trivial — most of `pv.py`'s design mistakes come from a change that looked trivial in isolation but broke a global convention (color leaking between screen types, `hr()` defaulting to the wrong color, comparing `show_selection()`'s result the wrong way).
 
 If the requested change isn't covered by the design doc's "How to Extend" guide (e.g. it's a change to the rendering primitives, the menu engine itself, or something structurally new), read the doc's "File Organization" and "Component Diagram" sections carefully before proposing where it belongs — don't guess.
 
@@ -52,29 +52,29 @@ Never skip straight to editing an external script because it seems more convenie
 
 Edit `.claude/skills/pv-init/assets/pv.py` directly. If the module-level docstring's option summary (the "Most options are read-only..." paragraph near the top of the file) becomes inaccurate because of the change, update it in the same edit — it's the file's own quick-reference for anyone opening it without the design doc.
 
-## 5. Propagate to the repo-root copy
+## 5. Propagate to the dev/test copy
 
-After editing the master copy, refresh `{repo root}/pv.py` so it isn't left stale (which `pv-init-update`'s audit would flag as `pvpy-stale`). Run from the repo root:
+After editing the master copy, refresh `test/pv-test.py` so it isn't left stale — it's a plain byte-for-byte copy of the master, with no code of its own (see `test/pv-config-test.json` and the design doc's "Command-Line Configuration" section for how the `--testconfig` test harness works). Simply overwrite it:
 
 ```
-python .claude/skills/pv-init/scripts/scaffold-project.py
+cp .claude/skills/pv-init/assets/pv.py test/pv-test.py
 ```
 
-This overwrites `{repo root}/pv.py` unconditionally from the master copy and leaves every other scaffolded path untouched (folders/placeholders are only created where missing, never overwritten) — safe to run after any `pv.py` change. Confirm afterward that the two files are identical (e.g. diff them) before considering the change done.
+(or the equivalent copy command for the current shell). Confirm afterward that the two files are identical (e.g. diff them) before considering the change done. **Do not run `scaffold-project.py` and do not touch `{repo root}/pv.py`** as part of this workflow — that copy is only ever produced by a real install/update, never by developing `pv.py` itself.
 
 ## 6. Test the change
 
-Since this is an interactive terminal tool, static review isn't enough — actually run it:
+Since this is an interactive terminal tool, static review isn't enough — actually run it against the test fixtures, never against the real project's `workFolder`:
 
 ```
-python3 pv.py
+python test/pv-test.py --testconfig
 ```
 
-from the repo root, and exercise the new/changed option end to end (including the "Press Enter to return..." pause behavior if you added or changed a submenu — verify `is_submenu = True` is set correctly per the design doc's step 2 of "Adding a new submenu", since forgetting it causes a double pause). Also sanity-check `NO_COLOR=1 python3 pv.py` if the change touches anything color-related, and confirm existing unrelated menu options still work (a regression check, not just the new path).
+(this reads `test/pv-config-test.json` automatically, pointing every screen at `test/previo-sdd/`'s fixture data instead of the real `changes/`/`versions/`). Exercise the new/changed option end to end (including the "Press Enter to return..." pause behavior if you added or changed a submenu — verify `is_submenu = True` is set correctly per the design doc's step 2 of "Adding a new submenu", since forgetting it causes a double pause). Also sanity-check `NO_COLOR=1 python test/pv-test.py --testconfig` if the change touches anything color-related, and confirm existing unrelated menu options still work (a regression check, not just the new path).
 
 ## 7. Update both design docs
 
-Once the change is implemented, tested, and propagated, update **both** [`../../pv-design-onescript.es.md`](../../pv-design-onescript.es.md) and [`../../pv-design-onescript.en.md`](../../pv-design-onescript.en.md) to reflect it — always both, kept in sync as exact translations of each other, never one without the other. Depending on what changed, this typically means:
+Once the change is implemented, tested, and propagated, update **both** [`../../pv-doc/pv-design-onescript/pv-design-onescript.es.md`](../../pv-doc/pv-design-onescript/pv-design-onescript.es.md) and [`../../pv-doc/pv-design-onescript/pv-design-onescript.en.md`](../../pv-doc/pv-design-onescript/pv-design-onescript.en.md) to reflect it — always both, kept in sync as exact translations of each other, never one without the other. Depending on what changed, this typically means:
 
 - A new root menu option or submenu → update "Screen Hierarchy", the Mermaid graph in "Navigation Flow", and possibly "External Dependencies" if it introduced a new script.
 - A new external script dependency → add it to the "External Dependencies" tables and, if it introduces a new skill boundary, update the "Component Diagram".

@@ -38,15 +38,17 @@ NIVEL 0 (Splash)
 └── RING_ART (ASCII + colores gradiente)
 
 NIVEL 1 (Main Navigation)
-└── "Previo MAIN MENU"
+└── "Previo: MAIN MENU"
     ├── [1] Acción: Show Status (→ externo)
     ├── [2] Submenu: Changes info
-    │   └── "Previo: changes info"
-    │       ├── [1] Acción: Search change (id or content)
-    │       │   └── Input: texto de búsqueda (→ externo, todos los estados)
-    │       ├── [2] Acción: Search by state
+    │   └── "Previo: Changes info"
+    │       ├── [1] Acción: Search by id
+    │       │   └── Input: id de búsqueda (→ externo, todos los estados, sin leer description.md salvo del match)
+    │       ├── [2] Acción: Search by content
+    │       │   └── Input: texto de búsqueda (→ externo, todos los estados, lee description.md de cada entrada)
+    │       ├── [3] Acción: Search by state
     │       │   └── Selection: "Available states:" (→ externo, un estado)
-    │       └── [3] Back
+    │       └── [4] Back
     ├── [3] Acción: Show Ideas (→ externo)
     ├── [4] Acción: Close Entry
     │   └── Selection: "Implemented entries..."
@@ -74,16 +76,17 @@ NIVEL 1 (Main Navigation)
 graph TD
     A["🎬 Inicio<br/>pv.py ejecutado"]
     B["🎨 Splash Screen<br/>ASCII Ring Art"]
-    C["🏠 Main Menu<br/>Previo MAIN MENU"]
+    C["🏠 Main Menu<br/>Previo: MAIN MENU"]
 
     D["📊 General Status<br/>render_status.py"]
-    N["🔎 Changes info Submenu<br/>Previo: changes info"]
+    N["🔎 Changes info Submenu<br/>Previo: Changes info"]
     F["💡 Ideas<br/>list_todo.py"]
     G["✅ Close Entry<br/>Selección + Confirmación"]
     H["⚙️ Config Submenu<br/>Previo: settings"]
     I["📦 Versions Submenu<br/>Previo: versions"]
 
-    O["🔍 Search change<br/>Input + filter_status.py --search"]
+    O["🔍 Search by id<br/>Input + filter_status.py --search-id"]
+    Q["🔍 Search by content<br/>Input + filter_status.py --search-content"]
     P["🔍 Search by state<br/>Selección + filter_status.py"]
     J["🔄 Sync Models<br/>sync-skill-models.py"]
     K["📜 Read Changelog<br/>Selección + Mostrar"]
@@ -99,8 +102,10 @@ graph TD
 
     C -->|2| N
     N -->|Back| C
-    N -->|Search change| O
+    N -->|Search by id| O
     O -->|Return| N
+    N -->|Search by content| Q
+    Q -->|Return| N
     N -->|Search by state| P
     P -->|Return| N
 
@@ -165,6 +170,7 @@ graph TD
     end
 
     CTX[("pv-context.json<br/>(workFolder)")]
+    TESTCFG[("pv-config-test.json<br/>(repoRoot, workFolder)<br/><i>solo con --testconfig</i>")]
     CHANGES[("changes/<br/>(todo, inProgress,<br/>implemented, closed)")]
     VERSIONS[("versions/{XXXX}/<br/>changelog.md")]
 
@@ -174,7 +180,8 @@ graph TD
     PV -->|"subprocess"| MC
     PV -->|"subprocess"| SSM
 
-    PV -->|lee| CTX
+    PV -->|"lee (modo normal)"| CTX
+    PV -.->|"lee en vez de CTX (--testconfig)"| TESTCFG
     PV -->|lee/lista| CHANGES
     PV -->|lee/lista| VERSIONS
     MC -->|mueve carpeta dentro de| CHANGES
@@ -186,6 +193,7 @@ graph TD
     style LT fill:#EEE8AA
     style MC fill:#DEB887
     style SSM fill:#DEB887
+    style TESTCFG fill:#DEB887
 ```
 
 **Lectura clave del diagrama:**
@@ -193,6 +201,7 @@ graph TD
 - `terminal_output.py` (resaltado en dorado, igual que `pv.py`) es el **único otro componente que dibuja pantallas con color** — y lo hace con su propio código, no reutilizando ninguna función de `pv.py`. Si una pantalla de "PROJECT STATUS" o "IDEAS IN TODO/" se ve mal, el fix está en `terminal_output.py`, nunca en `pv.py` (ver el comentario en el propio código de `pv.py`, justo antes de `show_general_status()`).
 - `move-change.py` y `sync-skill-models.py` son mutaciones simples de un solo paso, sin render propio — su salida es texto plano sin ANSI.
 - Ninguno de estos componentes se importa entre sí salvo `terminal_output.py` por los tres scripts de `pv-status` — son todos procesos independientes conectados solo por convención de argumentos (`--terminal`, `--xxxx`, etc.) y por las rutas del framework (`changes/`, `versions/`).
+- `pv-config-test.json` (línea discontinua, solo activa con el flag `--testconfig` — ver "Configuración de Línea de Comandos") sustituye por completo a `pv-context.json` como fuente de `workFolder`, y además aporta `repoRoot` para que `pv.py` siga localizando los scripts reales de `.claude/skills/...` aunque se ejecute como `test/pv-test.py`, fuera de la raíz del repo. `pv.py` nunca lee ambos ficheros en la misma ejecución — es uno u otro, nunca una mezcla.
 
 ---
 
@@ -204,11 +213,11 @@ El fichero está dividido en bloques delimitados por comentarios `# ====...====`
 |---|---|---|
 | `Rendering primitives` | `WIDTH`, colores (`GOLD`/`DARK_GRAY`), `colorize()`, `hr()`, `wrap()`, `RING_ART` | Casi nunca — cambia el sistema de color/ancho global |
 | `Screen-type helpers` | `print_header()`, `show_selection()`, `show_info()`, `confirm()` | Casi nunca — cambia el comportamiento de un tipo de pantalla en **todas** las opciones a la vez |
-| `Framework paths and shared lookups` | `work_root()`, `changes_dir()`, `versions_dir()`, `run_script()` | Al añadir una nueva ruta o subcarpeta del framework que varias opciones necesiten |
-| `Actions -- root menu` | Funciones de acción del menú raíz | Al añadir una opción nueva a "Previo MAIN MENU" |
+| `Framework paths and shared lookups` | `work_root()`, `changes_dir()`, `versions_dir()`, `run_script()`, `load_test_config()` | Al añadir una nueva ruta o subcarpeta del framework que varias opciones necesiten |
+| `Actions -- root menu` | Funciones de acción del menú raíz | Al añadir una opción nueva a "Previo: MAIN MENU" |
 | `Actions -- Configuration submenu` | Funciones de acción de "Previo: settings" | Al añadir una opción nueva a Configuration |
 | `Actions -- Versions submenu` | Funciones de acción de "Previo: versions" | Al añadir una opción nueva a Versions |
-| `Actions -- Changes info submenu` | Funciones de acción de "Previo: changes info" (`search_change()`, `search_by_state()`, `list_states()`) | Al añadir una opción nueva a Changes info |
+| `Actions -- Changes info submenu` | Funciones de acción de "Previo: Changes info" (`search_by_id()`, `search_by_content()`, `search_by_state()`, `list_states()`) | Al añadir una opción nueva a Changes info |
 | `Root menu definition` | La lista `MENU` | Al registrar cualquier opción nueva del menú raíz (último paso siempre) |
 | `Menu engine` | `run_menu()`, `main()` | Casi nunca — cambia el bucle de navegación para **todos** los menús a la vez |
 
@@ -239,11 +248,18 @@ Muestra líneas de texto ya formateadas. `framed=True` las enmarca con `hr("-")`
 ### `confirm(question) -> bool`
 Pregunta `y/N` sin cabecera propia — se anida siempre dentro de otra pantalla (normalmente tras un `show_selection()`). Devuelve `True` solo si la respuesta es `"y"` o `"yes"` (case-insensitive); cualquier otra cosa, incluido vacío, es `False`.
 
+### `read_input(prompt) -> str`
+
+Envoltorio de `input()` — no es uno de los cuatro tipos de pantalla, pero es el único punto por el que debe pasar cualquier `input()` que espere una respuesta real (no la pausa "Press Enter to return..."). Si el usuario escribe `"exit"` (case-insensitive, ignorando espacios), termina el programa entero al instante (`sys.exit(0)`), sin confirmar ni imprimir nada — funciona igual que elegir la opción numerada "Exit" del menú raíz, pero disponible desde **cualquier** pantalla que pida texto: el prompt de `run_menu()`, `show_selection()`, `confirm()`, o el `input()` libre de una acción como `search_by_id()`/`search_by_content()`.
+
+Los tres helpers (`show_selection`, `confirm`) y `run_menu()` ya usan `read_input()` internamente — cualquier función de acción que necesite pedir texto libre directamente (fuera de esos tres) debe usar `read_input()` también, nunca `input()` a secas, para que "exit" siga funcionando ahí. La única excepción deliberada es la pausa `input("\nPress Enter to return to the menu...")` en `run_menu()`: esa pausa no pide una respuesta real, cualquier texto (incluido "exit") simplemente continúa.
+
 ### Lo que NO hay que hacer
 
 - No llamar a `hr()` directamente desde una función de acción — solo los cuatro helpers y `run_menu()` lo hacen.
 - No mezclar `hr("=", GOLD)` y `hr("-")` (DARK_GRAY) dentro de la misma pantalla lógica — cada pantalla usa un único color de principio a fin (ver "Estilo por Tipo de Pantalla").
 - No comparar el resultado de `show_selection()` con `if not resultado` — usa `if resultado is None`.
+- No llamar a `input()` directamente en una función de acción para pedir texto libre — usa `read_input()`, o "exit" dejará de funcionar en esa pantalla concreta (excepción: la pausa "Press Enter to return...", que sí usa `input()` a propósito).
 
 ---
 
@@ -260,7 +276,7 @@ Todo en GOLD: la cabecera (arriba, título, abajo) y también el `hr("=", GOLD)`
 
 ```
 ══════════════════════════════════════════════════════════════════   ← GOLD
-                          Previo MAIN MENU                            ← GOLD, centrado
+                          Previo: MAIN MENU                            ← GOLD, centrado
 ══════════════════════════════════════════════════════════════════   ← GOLD
   1. General project status
   2. Changes info
@@ -285,6 +301,17 @@ Available states:                                                     ← sin co
 ──────────────────────────────────────────────────────────────────   ← DARK_GRAY
 Choose a state (number, or empty to cancel):
 ```
+
+**Excepción: "Available states" (`search_by_state()`).** Es el único `show_selection()` cuyas opciones individuales llevan color propio, uno por estado — el marco (`hr("-")`, título) sigue siendo DARK_GRAY sin cambios, solo el texto de cada línea de la lista se tiñe según a qué estado pertenece:
+
+| Estado | Color |
+|---|---|
+| `todo` | Azul (`STATE_BLUE`, `\033[38;5;75m`) |
+| `inProgress` | Amarillo (`STATE_YELLOW`, `\033[38;5;220m`) |
+| `implemented` | Verde (`STATE_GREEN`, `\033[38;5;114m`) |
+| `closed` | Blanco (`STATE_WHITE`, `\033[38;5;255m`) |
+
+`search_by_state()` construye la lista de etiquetas coloreadas (`colorize(state, STATE_COLORS[state])`) **antes** de pasarla a `show_selection()`, y mantiene por separado la lista `states` sin colorear para indexar el resultado — `show_selection()` en sí no sabe nada de colores por estado, solo recibe strings ya formateados (así es como está diseñado: "Recibe una lista de strings ya formateados para mostrar", ver más abajo). Si se añade un nuevo estado al framework, hay que añadir su entrada a `STATE_COLORS` o cae en el fallback DARK_GRAY (sin distinguir).
 
 ### Confirmación — vía `confirm()`
 
@@ -316,7 +343,9 @@ has either failed or is currently in progress:                            sin re
 
 Estas tres opciones no usan los helpers de `pv.py` — invocan un script externo con `run_script(..., "--terminal")`, y ese script controla su propio render usando el módulo hermano `.claude/skills/pv-status/scripts/terminal_output.py`. Ese módulo tiene su **propia** paleta (mismo valor GOLD, `\033[38;5;220m`) y su propio `hr()`/`title()`/`heading()`, independiente de `pv.py` — no comparten código, solo el valor de color. Todo el bloque que genera (título, separadores internos de tabla, subrayados de sección, línea de cierre) sale en GOLD uniforme, siguiendo la misma regla de "un color por pantalla completa".
 
-`filter_status.py` tiene **dos puntos de entrada** desde `pv.py`, ambos dentro del submenú "Changes info": `search_by_state()` lo invoca con `<estado> --terminal` (el `show_filtered_status()` original, solo renombrado), y `search_change()` lo invoca con `--search <texto> --terminal` (recorre todos los estados, filtra por id exacto o por coincidencia de texto en `description.md`). Ambos modos comparten `render_terminal()` — el título cambia entre `PROJECT STATUS — {estado}` y `PROJECT STATUS — search: {texto}`, y en modo búsqueda cada fila añade el estado de origen entre paréntesis antes del id (`(implemented)  1001  ...`), ya que los resultados cruzan estados.
+`filter_status.py` tiene **tres puntos de entrada** desde `pv.py`, todos dentro del submenú "Changes info": `search_by_state()` lo invoca con `<estado> --terminal` (el `show_filtered_status()` original, solo renombrado); `search_by_id()` lo invoca con `--search-id <texto> --terminal`; y `search_by_content()` lo invoca con `--search-content <texto> --terminal`. Las dos búsquedas se separaron deliberadamente en dos opciones de menú (y dos flags CLI distintos) en vez de una sola combinada — así cada una es tan rápida como el tipo de búsqueda que hace de verdad: `--search-id` recorre todos los estados comparando solo el nombre de carpeta (sin leer ningún `description.md` salvo el de la entrada que ya matcheó), mientras `--search-content` sí necesita leer el `description.md` de cada entrada para poder filtrar por contenido — no hay forma de evitarlo. Los tres modos comparten `render_terminal()` — el título cambia entre `PROJECT STATUS — {estado}` y `PROJECT STATUS — search: {texto}`, y en modo búsqueda (por id o por contenido) cada fila añade el estado de origen entre paréntesis antes del id (`(implemented)  1001  ...`), ya que los resultados cruzan estados.
+
+**`--search-id` ignora el padding de ceros.** Los ids de `changes/{inProgress,implemented,closed}` son números con ceros a la izquierda (`00001`), pero los de `todo/` son códigos alfanuméricos cortos (`a3f9k`) que no lo son. `ids_match()` compara ambos lados como enteros cuando los dos son solo dígitos (así `1`, `01` y `00001` encuentran la misma entrada) y cae a comparación de string case-insensitive en cualquier otro caso (para no romper los ids alfanuméricos de `todo/`, ni matchear un id numérico con uno alfanumérico por casualidad).
 
 ```
 ══════════════════════════════════════════════════════════════════   ← GOLD (terminal_output.hr)
@@ -336,6 +365,8 @@ Estas tres opciones no usan los helpers de `pv.py` — invocan un script externo
 
 Esta línea 3 usa **su propio límite de 200 caracteres**, distinto e independiente de los 250 caracteres que usa la tabla markdown de `/pv-status` (chat) — cambiar uno no afecta al otro; son dos rutas de render separadas dentro de `filter_status.py` (`render_terminal()` vs `render_report()`), y solo el modo terminal muestra el nombre en absoluto (la tabla markdown no tiene columna Name).
 
+**Caso especial: entradas en `todo/`.** `description.md` en `todo/` no sigue el formato `**Name**:`/`**Type**:`/`## Full description` de `pv-new`/`pv-fix` — usa encabezados markdown propios de `pv-todo` (`## Idea`, `## Creation date`, `## Notes`), sin separación entre "nombre" y "descripción". `build_entry()` detecta `state == "todo"` y usa `parse_todo_description()` (reutilizada de `collect_status.py`, la misma que usa `list_todo.py`) para extraer el texto de `## Idea` como línea 2 (nombre); la línea 3 queda vacía (`—`), ya que no hay una descripción separada del título. La fecha también usa su propio patrón (`## Creation date`, heading) en vez de `**Creation date**` (bold inline).
+
 **Si tocas `terminal_output.py`:** su `hr()` ya es GOLD por defecto (a diferencia del `hr()` de `pv.py`, que es DARK_GRAY por defecto) — cualquier llamada nueva a `term.hr(...)` en `render_status.py`/`filter_status.py`/`list_todo.py` sale dorada sin tener que pasarle color, así que no hace falta (ni existe) un parámetro de color ahí.
 
 ### Resumen
@@ -354,9 +385,31 @@ Esta línea 3 usa **su propio límite de 200 caracteres**, distinto e independie
 python3 pv.py
 ```
 
-Sin argumentos. Lee configuración de:
+Sin argumentos, en el uso normal. Lee configuración de:
 - `pv-context.json` para `workFolder`
 - Verifica existencia de directorio framework
+
+### `--testconfig` — solo para probar `pv.py`, no para uso normal
+
+```bash
+python3 test/pv-test.py --testconfig
+```
+
+Flag exclusivo del test harness del propio framework (`test/pv-test.py`, una copia idéntica de `pv.py` sin lógica propia, colocada en `test/` por comodidad). **No recibe ningún argumento** — asume que hay un fichero llamado `pv-config-test.json` en la misma carpeta que el script que se está ejecutando (`Path(__file__).resolve().parent`), y sale con error si no existe ahí. Cuando se pasa, `pv.py` **no lee** `.claude/pv-context.json` para resolver `workFolder` — en su lugar lee ese `pv-config-test.json`, con dos campos obligatorios:
+
+```json
+{
+  "repoRoot": "..",
+  "workFolder": "/test/previo-sdd"
+}
+```
+
+- `repoRoot`: ruta a la raíz real del repo (donde vive `.claude/skills/...`), **resuelta relativa a la ubicación del propio fichero de config** (que a su vez está siempre junto al script), no al directorio desde el que se invoca. Necesaria porque `pv.py` sigue invocando los scripts reales del framework (`filter_status.py`, `render_status.py`, etc.) — nunca copias — así que necesita saber dónde están.
+- `workFolder`: el `workFolder` de prueba a usar en vez del configurado en `pv-context.json` (p.ej. `/test/previo-sdd`), para no tocar los datos reales del proyecto.
+
+`run_script()` reenvía este `workFolder` como `--work-folder <valor>` a los 4 scripts que ya soportan ese override (`filter_status.py`, `render_status.py`, `list_todo.py`, `move-change.py`) — `sync-skill-models.py` queda excluido porque no toca `changes/`/`workFolder` en absoluto y no tiene ese flag.
+
+Si `pv-config-test.json` no existe junto al script, tiene JSON inválido, o le falta `repoRoot`/`workFolder`, `pv.py` termina con un mensaje de error claro (`sys.exit`, sin traceback) — nunca sigue adelante con un valor por defecto silencioso.
 
 ---
 
@@ -418,7 +471,7 @@ Puntos de fricción reales de este diseño — ten cuidado con ellos al añadir 
 |--------|-----------|-----------|
 | `render_status.py` | `.claude/skills/pv-status/scripts/` | Mostrar estado general |
 | `list_todo.py` | `.claude/skills/pv-status/scripts/` | Listar ideas en todo/ |
-| `filter_status.py` | `.claude/skills/pv-status/scripts/` | Filtrar cambios por estado (`<estado>`) o buscar por id/contenido en todos los estados (`--search <texto>`) |
+| `filter_status.py` | `.claude/skills/pv-status/scripts/` | Filtrar cambios por estado (`<estado>`), buscar por id exacto en todos los estados (`--search-id <texto>`), o buscar por contenido de `description.md` en todos los estados (`--search-content <texto>`) |
 | `sync-skill-models.py` | `.claude/skills/pv-init/scripts/` | Sincronizar modelos de skills |
 | `move-change.py` | `.claude/skills/pv-internal-workflow/scripts/` | Mover entrada a closed |
 | `terminal_output.py` | `.claude/skills/pv-status/scripts/` | Módulo de rendering compartido por los tres scripts de `pv-status` (no un script ejecutable, se importa) |
@@ -454,4 +507,11 @@ WIDTH = 70                      # Ancho máximo de líneas
 COLOR_RESET = "\033[0m"         # ANSI reset
 GOLD = "\033[38;5;220m"         # Color dorado (menús, status delegado)
 DARK_GRAY = "\033[38;5;238m"    # Color gris oscuro (selección, info framed)
+
+# Solo para colorear cada opción de "Available states:" (search_by_state()) --
+# excepción puntual a "un color por pantalla", ver "Selección — vía show_selection()".
+STATE_BLUE = "\033[38;5;75m"    # todo
+STATE_YELLOW = "\033[38;5;220m" # inProgress
+STATE_GREEN = "\033[38;5;114m"  # implemented
+STATE_WHITE = "\033[38;5;255m"  # closed
 ```

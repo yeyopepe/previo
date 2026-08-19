@@ -292,14 +292,11 @@ def render_terminal_entries(title_text: str, entries: list[dict]) -> list[str]:
     return block
 
 
-def render_terminal(result: dict, changes_dir: Path, show_fast: bool = False) -> str:
+def render_terminal_page_summary(result: dict) -> str:
+    """Page 1: title, state bars, and the totals table -- the "at a glance"
+    view, with no per-entry detail."""
     states = result["states"]
     totals = result["totalsByType"]
-
-    to_implement, pending, no_description = split_in_progress(states)
-    implemented_entries = states.get("implemented", {}).get("entries", [])
-    fast_entries = collect_fast_entries(states)
-    todo_entries = states.get("todo", {}).get("entries", [])
 
     lines = [
         term.title("PROJECT STATUS", f"Generated: {datetime.now().strftime('%Y-%m-%d')}"),
@@ -310,9 +307,18 @@ def render_terminal(result: dict, changes_dir: Path, show_fast: bool = False) ->
         *render_terminal_table(states, totals, result["grandTotal"]),
         term.hr("-"),
         "",
-        term.heading("🔧 IN PROGRESS"),
+        term.hr(),
     ]
+    return "\n".join(lines).rstrip("\n") + "\n"
 
+
+def render_terminal_page_in_progress(result: dict) -> str:
+    """Page 2: the "IN PROGRESS" breakdown (ready/pending/planned)."""
+    states = result["states"]
+    to_implement, pending, no_description = split_in_progress(states)
+    implemented_entries = states.get("implemented", {}).get("entries", [])
+
+    lines = [term.heading("🔧 IN PROGRESS")]
     lines += render_terminal_entries("🟢 Ready to review and close", implemented_entries)
     lines += render_terminal_entries("🟡 Pending technical analysis", pending)
     lines += render_terminal_entries("🟠 Planned, pending implementation", to_implement)
@@ -326,16 +332,30 @@ def render_terminal(result: dict, changes_dir: Path, show_fast: bool = False) ->
             )
         )
 
+    lines.append("")
+    lines.append(term.hr())
+    return "\n".join(lines).rstrip("\n") + "\n"
+
+
+def render_terminal_page_rest(result: dict, changes_dir: Path, show_fast: bool = False) -> str:
+    """Page 3: everything after IN PROGRESS -- fast changes (if
+    --show-fast), todo/ ideas, and warnings."""
+    states = result["states"]
+    implemented_entries = states.get("implemented", {}).get("entries", [])
+    fast_entries = collect_fast_entries(states)
+    todo_entries = states.get("todo", {}).get("entries", [])
+
+    lines = []
+
     if show_fast and fast_entries:
-        lines.append("")
         lines.append(term.heading("⚡ IMPLEMENTED FAST CHANGES"))
         for entry in fast_entries:
             state_dir = "implemented" if entry in implemented_entries else "closed"
             date = extract_date(changes_dir / state_dir / entry["code"])
             name = entry["name"] or "(no name)"
             lines.append(term.wrap(f"- {entry['code']} — {name} ({date})", indent="  "))
+        lines.append("")
 
-    lines.append("")
     lines.append(term.heading("💡 IDEAS IN TODO/"))
     if todo_entries:
         for entry in todo_entries:
@@ -385,7 +405,14 @@ def main() -> None:
     changes_dir = load_changes_dir(root, args.work_folder)
     result = collect(changes_dir)
     if args.terminal:
-        print(render_terminal(result, changes_dir, show_fast=args.show_fast))
+        # Three pages, paced with an Enter prompt between them, so the
+        # summary (glanceable) isn't buried under the full in-progress/
+        # ideas/warnings detail on a small terminal.
+        print(render_terminal_page_summary(result))
+        input("Press Enter to see IN PROGRESS detail...")
+        print(render_terminal_page_in_progress(result))
+        input("Press Enter to continue...")
+        print(render_terminal_page_rest(result, changes_dir, show_fast=args.show_fast))
     else:
         print(render(result, changes_dir, show_fast=args.show_fast))
 

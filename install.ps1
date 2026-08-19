@@ -57,9 +57,11 @@ try {
     }
 
     # Sincroniza la documentación del framework.
+    $DestDocDir = Join-Path ".claude" "pv-doc"
+    New-Item -ItemType Directory -Force -Path $DestDocDir | Out-Null
     foreach ($doc in @("pv-guide.en.md", "pv-guide.es.md")) {
-        $DestDoc = Join-Path ".claude" $doc
-        $SrcDoc = Join-Path $Tmp ".claude\$doc"
+        $DestDoc = Join-Path $DestDocDir $doc
+        $SrcDoc = Join-Path $Tmp ".claude\pv-doc\$doc"
         if (Test-Path $SrcDoc) {
             Copy-Item -Path $SrcDoc -Destination $DestDoc -Force
         }
