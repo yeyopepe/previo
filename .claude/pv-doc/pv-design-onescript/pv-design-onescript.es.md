@@ -343,6 +343,21 @@ has either failed or is currently in progress:                            sin re
 
 Estas tres opciones no usan los helpers de `pv.py` — invocan un script externo con `run_script(..., "--terminal")`, y ese script controla su propio render usando el módulo hermano `.claude/skills/pv-status/scripts/terminal_output.py`. Ese módulo tiene su **propia** paleta (mismo valor GOLD, `\033[38;5;220m`) y su propio `hr()`/`title()`/`heading()`, independiente de `pv.py` — no comparten código, solo el valor de color. Todo el bloque que genera (título, separadores internos de tabla, subrayados de sección, línea de cierre) sale en GOLD uniforme, siguiendo la misma regla de "un color por pantalla completa".
 
+**`render_status.py` — "Versions: N" antes de las barras.** La página 1 (`render_terminal_page_summary()`) muestra el número total de versiones (subcarpetas de `versions/`) justo debajo del título, antes de las barras por estado — es lo primero que ve el usuario tras la cabecera. `count_versions(changes_dir)` deriva `versions_dir` como `changes_dir.parent / "versions"` (hermano de `changes/` bajo el mismo `workFolder`) en vez de duplicar la resolución de `workFolder` que ya hace `collect_status.py` — `collect_status.py` solo conoce `changes_dir`, nunca `versions_dir`. El mismo dato (`versionsTotal`) también se añadió al modo markdown (`render()`/`STATUS.template.md`, campo `**Versions:** {versionsTotal}` justo antes de `## Summary`), así que `/pv-status` desde el chat lo muestra igual — ambos modos comparten `count_versions()`, ningún cálculo duplicado.
+
+```
+======================================================================
+                            PROJECT STATUS                             ← GOLD (terminal_output.title)
+                        Generated: 2026-08-19
+======================================================================
+
+Versions: 3                                                            ← sin color, primera línea tras la cabecera
+
+💡 Todo         ████████████████████  2
+🔧 In progress  ████████████████████  2
+...
+```
+
 `filter_status.py` tiene **tres puntos de entrada** desde `pv.py`, todos dentro del submenú "Changes info": `search_by_state()` lo invoca con `<estado> --terminal` (el `show_filtered_status()` original, solo renombrado); `search_by_id()` lo invoca con `--search-id <texto> --terminal`; y `search_by_content()` lo invoca con `--search-content <texto> --terminal`. Las dos búsquedas se separaron deliberadamente en dos opciones de menú (y dos flags CLI distintos) en vez de una sola combinada — así cada una es tan rápida como el tipo de búsqueda que hace de verdad: `--search-id` recorre todos los estados comparando solo el nombre de carpeta (sin leer ningún `description.md` salvo el de la entrada que ya matcheó), mientras `--search-content` sí necesita leer el `description.md` de cada entrada para poder filtrar por contenido — no hay forma de evitarlo. Los tres modos comparten `render_terminal()` — el título cambia entre `PROJECT STATUS — {estado}` y `PROJECT STATUS — search: {texto}`, y en modo búsqueda (por id o por contenido) cada fila añade el estado de origen entre paréntesis antes del id (`(implemented)  1001  ...`), ya que los resultados cruzan estados.
 
 **`--search-id` ignora el padding de ceros.** Los ids de `changes/{inProgress,implemented,closed}` son números con ceros a la izquierda (`00001`), pero los de `todo/` son códigos alfanuméricos cortos (`a3f9k`) que no lo son. `ids_match()` compara ambos lados como enteros cuando los dos son solo dígitos (así `1`, `01` y `00001` encuentran la misma entrada) y cae a comparación de string case-insensitive en cualquier otro caso (para no romper los ids alfanuméricos de `todo/`, ni matchear un id numérico con uno alfanumérico por casualidad).

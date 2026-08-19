@@ -79,6 +79,16 @@ def render_bars(counts: dict[str, int]) -> str:
     return "\n".join(lines)
 
 
+def count_versions(changes_dir: Path) -> int:
+    # versions/ is a sibling of changes/ under the same workFolder --
+    # collect_status.py only resolves changes_dir, so versions_dir is
+    # derived from it here rather than duplicating workFolder resolution.
+    versions_dir = changes_dir.parent / "versions"
+    if not versions_dir.is_dir():
+        return 0
+    return sum(1 for p in versions_dir.iterdir() if p.is_dir())
+
+
 def extract_date(entry_dir: Path) -> str:
     description_path = entry_dir / "description.md"
     if description_path.is_file():
@@ -183,6 +193,7 @@ def render(result: dict, changes_dir: Path, show_fast: bool = False) -> str:
 
     body = body.format(
         generatedDate=datetime.now().strftime("%Y-%m-%d"),
+        versionsTotal=count_versions(changes_dir),
         summaryBars=render_bars(
             {state: states.get(state, {}).get("total", 0) for state in STATE_ORDER}
         ),
@@ -292,14 +303,16 @@ def render_terminal_entries(title_text: str, entries: list[dict]) -> list[str]:
     return block
 
 
-def render_terminal_page_summary(result: dict) -> str:
-    """Page 1: title, state bars, and the totals table -- the "at a glance"
-    view, with no per-entry detail."""
+def render_terminal_page_summary(result: dict, changes_dir: Path) -> str:
+    """Page 1: title, version count, state bars, and the totals table --
+    the "at a glance" view, with no per-entry detail."""
     states = result["states"]
     totals = result["totalsByType"]
 
     lines = [
         term.title("PROJECT STATUS", f"Generated: {datetime.now().strftime('%Y-%m-%d')}"),
+        "",
+        f"Versions: {count_versions(changes_dir)}",
         "",
         render_bars({state: states.get(state, {}).get("total", 0) for state in STATE_ORDER}),
         "",
@@ -408,7 +421,7 @@ def main() -> None:
         # Three pages, paced with an Enter prompt between them, so the
         # summary (glanceable) isn't buried under the full in-progress/
         # ideas/warnings detail on a small terminal.
-        print(render_terminal_page_summary(result))
+        print(render_terminal_page_summary(result, changes_dir))
         input("Press Enter to see IN PROGRESS detail...")
         print(render_terminal_page_in_progress(result))
         input("Press Enter to continue...")

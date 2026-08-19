@@ -343,6 +343,21 @@ has either failed or is currently in progress:                            no rul
 
 These three options don't use `pv.py`'s helpers — they invoke an external script with `run_script(..., "--terminal")`, and that script controls its own rendering using the sibling module `.claude/skills/pv-status/scripts/terminal_output.py`. That module has its **own** palette (same GOLD value, `\033[38;5;220m`) and its own `hr()`/`title()`/`heading()`, independent from `pv.py` — they share no code, only the color value. The entire block it generates (title, internal table separators, section underlines, closing line) comes out in uniform GOLD, following the same "one color per full screen" rule.
 
+**`render_status.py` — "Versions: N" before the bars.** Page 1 (`render_terminal_page_summary()`) shows the total number of versions (subfolders of `versions/`) right under the title, before the per-state bars — it's the first thing the user sees after the header. `count_versions(changes_dir)` derives `versions_dir` as `changes_dir.parent / "versions"` (a sibling of `changes/` under the same `workFolder`) instead of duplicating the `workFolder` resolution `collect_status.py` already does — `collect_status.py` only ever knows `changes_dir`, never `versions_dir`. The same value (`versionsTotal`) was also added to the markdown mode (`render()`/`STATUS.template.md`, field `**Versions:** {versionsTotal}` right before `## Summary`), so `/pv-status` from chat shows it too — both modes share `count_versions()`, no duplicated calculation.
+
+```
+======================================================================
+                            PROJECT STATUS                             ← GOLD (terminal_output.title)
+                        Generated: 2026-08-19
+======================================================================
+
+Versions: 3                                                            ← no color, first line after the header
+
+💡 Todo         ████████████████████  2
+🔧 In progress  ████████████████████  2
+...
+```
+
 `filter_status.py` has **three entry points** from `pv.py`, all inside the "Changes info" submenu: `search_by_state()` invokes it with `<state> --terminal` (the original `show_filtered_status()`, just renamed); `search_by_id()` invokes it with `--search-id <text> --terminal`; and `search_by_content()` invokes it with `--search-content <text> --terminal`. The two searches were deliberately split into two menu options (and two separate CLI flags) instead of one combined search — that way each stays as fast as the kind of lookup it's actually doing: `--search-id` scans every state comparing only folder names (no `description.md` reads except the one match's), while `--search-content` has to read every entry's `description.md` to filter by content — no way around that. All three modes share `render_terminal()` — the title switches between `PROJECT STATUS — {state}` and `PROJECT STATUS — search: {text}`, and in search mode (by id or by content) each row prefixes the id with its origin state in parentheses (`(implemented)  1001  ...`), since results cross states.
 
 **`--search-id` ignores zero-padding.** Ids under `changes/{inProgress,implemented,closed}` are zero-padded numbers (`00001`), but `todo/`'s are short alphanumeric codes (`a3f9k`) that aren't. `ids_match()` compares both sides as integers when both are digits-only (so `1`, `01`, and `00001` all find the same entry) and falls back to a case-insensitive string comparison otherwise (so `todo/`'s alphanumeric ids keep working, and a numeric id never accidentally matches an alphanumeric one).

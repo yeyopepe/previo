@@ -2,6 +2,8 @@
 
 *Generated: {generatedDate}*
 
+**Versions:** {versionsTotal}
+
 🆕 Change · 👾 Fix · ⚡ Fast · 💡 Todo   🟢 Ready to close · 🟡 Unplanned · 🟠 Planned
 
 ## Summary
