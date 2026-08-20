@@ -15,6 +15,8 @@ A shared ruleset for **how** to write `docs.tech.architectureDocDir`/`styleBible
 
 **This skill writes nothing itself and takes no parameters.** Invoke it (Skill tool) right before drafting or editing `docs.tech` content, to load these rules into context; the caller (`pv-do`) still drafts and edits the file directly, applying the rules below instead of its default writing style.
 
+**Language.** This skill doesn't decide or write the document's language — it only prescribes writing style, applied on top of whatever `docs.tech.language` the caller (`pv-do`) has already resolved (default `interaction.language`). Only the fixed English tags in rule 6 stay in English regardless of that language.
+
 ## Audience: these documents are for me, not for a human
 
 `docs.tech` exists to be read by `pv-internal-tech-analysis` and, from there, by `pv-do`/`pv-how` in future cycles — not by a person browsing the repo. That changes what "clear" means: dense and fact-first beats narrative and explanatory. Every sentence that could be a fragment, and every fragment that could be a table row, is wasted context.
