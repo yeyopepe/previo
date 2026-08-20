@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
-"""Sincroniza .claude/pv-context.json#skillModels con el frontmatter de cada SKILL.md 'pv-*'.
+"""Syncs .claude/pv-context.json#skillModels with each 'pv-*' SKILL.md's frontmatter.
 
-El harness de Claude Code decide que modelo/esfuerzo usa una skill leyendo
-los campos 'model'/'effort' del frontmatter de su propio SKILL.md, en el
-momento de cargarla -- no lee .claude/pv-context.json. Por eso la seccion
-'skillModels' de pv-context.json es solo la fuente de verdad "humana": este
-script es el que de verdad propaga esos valores al frontmatter real.
+The Claude Code harness decides which model/effort a skill uses by reading
+the 'model'/'effort' fields from its own SKILL.md's frontmatter, at load
+time -- it doesn't read .claude/pv-context.json. That's why pv-context.json's
+'skillModels' section is only the "human" source of truth: this script is
+what actually propagates those values to the real frontmatter.
 
-Reglas:
-- Recorre .claude/skills/pv-*/SKILL.md (ignora skills que no empiecen por 'pv-').
-- Para cada skill, resuelve su modelo/esfuerzo: 'overrides[<name>]' si existe,
-  si no 'default'. Si no hay seccion 'skillModels' en pv-context.json, no toca nada.
-- Inserta o actualiza (en el nivel superior del frontmatter, junto a 'name'/
-  'description') las claves 'model:' y 'effort:', justo antes de 'metadata:'
-  (o antes del cierre '---' si esa skill no tiene bloque 'metadata:').
-- Si el valor resuelto cambia respecto al que ya tenia el fichero, incrementa
-  en 1 el patch de 'metadata.version' (x.y.z -> x.y.(z+1)). Si no cambia nada,
-  no toca el fichero (ni su version).
+Rules:
+- Walks .claude/skills/pv-*/SKILL.md (skips skills not starting with 'pv-').
+- For each skill, resolves its model/effort: 'overrides[<name>]' if present,
+  otherwise 'default'. If pv-context.json has no 'skillModels' section, does
+  nothing.
+- Inserts or updates (at the top level of the frontmatter, alongside 'name'/
+  'description') the 'model:' and 'effort:' keys, right before 'metadata:'
+  (or before the closing '---' if that skill has no 'metadata:' block).
+- If the resolved value differs from what the file already had, bumps
+  'metadata.version''s patch by 1 (x.y.z -> x.y.(z+1)). If nothing changes,
+  leaves the file (and its version) untouched.
 
-Uso:
+Usage:
   python .claude/skills/pv-init/scripts/sync-skill-models.py [--dry-run]
 """
 
@@ -30,16 +31,19 @@ from pathlib import Path
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/pv-init/scripts/
+    # This script lives at {repo}/.claude/skills/pv-init/scripts/
     return Path(__file__).resolve().parents[4]
 
 
 def bump_patch(version: str) -> str:
-    match = re.match(r"^(\d+)\.(\d+)\.(\d+)$", version.strip())
+    # Versions in this framework aren't strict semver -- they carry an
+    # optional 'bN' beta suffix with no separator (e.g. "0.9.5b8"), which
+    # must be preserved as-is across the bump, not stripped or reset.
+    match = re.match(r"^(\d+)\.(\d+)\.(\d+)([a-zA-Z][\w.-]*)?$", version.strip())
     if not match:
         return version
-    major, minor, patch = match.groups()
-    return f"{major}.{minor}.{int(patch) + 1}"
+    major, minor, patch, suffix = match.groups()
+    return f"{major}.{minor}.{int(patch) + 1}{suffix or ''}"
 
 
 def sync_skill_file(path: Path, model: str, effort: str) -> str | None:
@@ -86,7 +90,7 @@ def sync_skill_file(path: Path, model: str, effort: str) -> str | None:
 
     # Bump metadata.version patch, if a metadata block with a version exists.
     for i, line in enumerate(new_lines):
-        version_match = re.match(r"^(\s+)version:\s*([0-9]+\.[0-9]+\.[0-9]+)\s*$", line)
+        version_match = re.match(r"^(\s+)version:\s*([0-9]+\.[0-9]+\.[0-9]+[a-zA-Z]?[\w.-]*)\s*$", line)
         if version_match:
             indent, version = version_match.groups()
             new_lines[i] = f"{indent}version: {bump_patch(version)}\n"
@@ -102,7 +106,7 @@ def main() -> None:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Muestra que ficheros cambiarian sin escribir nada.",
+        help="Shows which files would change without writing anything.",
     )
     args = parser.parse_args()
 
@@ -112,13 +116,13 @@ def main() -> None:
     root = repo_root()
     context_path = root / ".claude/pv-context.json"
     if not context_path.is_file():
-        print("No existe .claude/pv-context.json -- nada que sincronizar.")
+        print("No .claude/pv-context.json -- nothing to sync.")
         return
 
     context = json.loads(context_path.read_text(encoding="utf-8"))
     skill_models = context.get("skillModels")
     if not skill_models or "default" not in skill_models:
-        print("No hay seccion 'skillModels.default' en pv-context.json -- nada que sincronizar.")
+        print("No 'skillModels.default' section in pv-context.json -- nothing to sync.")
         return
 
     default = skill_models["default"]
@@ -145,11 +149,11 @@ def main() -> None:
             changed.append(f"{skill_name}: -> {model}/{effort}")
 
     if changed:
-        print(("[dry-run] " if args.dry_run else "") + "Actualizado:")
+        print(("[dry-run] " if args.dry_run else "") + "Updated:")
         for line in changed:
             print(f"  - {line}")
     else:
-        print("Todo el frontmatter ya estaba sincronizado con pv-context.json.")
+        print("All frontmatter was already in sync with pv-context.json.")
 
 
 if __name__ == "__main__":

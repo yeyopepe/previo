@@ -1,23 +1,22 @@
 #!/usr/bin/env python3
-"""Genera un codigo alfanumerico unico para una idea nueva de pv-todo.
+"""Generates a unique alphanumeric code for a new pv-todo idea.
 
-Lista las subcarpetas ya existentes bajo {workFolder}/changes/todo/ y genera
-un codigo aleatorio corto ([a-z0-9], 5 caracteres por defecto) que no
-colisione con ninguna de ellas. Este codigo es local a
-{workFolder}/changes/todo/ y no tiene ninguna relacion con el 'xxxx'
-numerico de change/fix (ver next-change-number.py en pv-internal-workflow):
-ninguna otra skill del framework cuenta ni consulta estas carpetas al
-numerar.
+Lists the subfolders already existing under {workFolder}/changes/todo/ and
+generates a short random code ([a-z0-9], 5 characters by default) that
+doesn't collide with any of them. This code is local to
+{workFolder}/changes/todo/ and has no relation to change/fix's numeric
+'xxxx' (see next-change-number.py in pv-internal-workflow): no other skill
+in the framework counts or checks these folders when numbering.
 
-workFolder se lee de .claude/pv-context.json (seccion framework) salvo que
-se pase explicitamente por parametro. Es opcional (default "/", la raiz del
-repo); la subcarpeta "changes" dentro de el es siempre de nombre fijo, no
+workFolder is read from .claude/pv-context.json (framework section) unless
+passed explicitly as a parameter. It's optional (default "/", the repo
+root); the "changes" subfolder inside it always has a fixed name, not
 configurable.
 
-Imprime UNICAMENTE el codigo generado en stdout (p.ej. "a3f9k"), para poder
-capturarlo directamente desde la skill sin parsear texto extra.
+Prints ONLY the generated code on stdout (e.g. "a3f9k"), so it can be
+captured directly from the skill without parsing extra text.
 
-Uso:
+Usage:
   python new-todo-code.py
   a3f9k
 """
@@ -34,13 +33,16 @@ MAX_ATTEMPTS = 1000
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/pv-todo/scripts/
+    # This script lives at {repo}/.claude/skills/pv-todo/scripts/
     return Path(__file__).resolve().parents[4]
 
 
 def resolve_changes_dir(root: Path, work_folder_rel: str) -> Path:
-    work_folder_rel = work_folder_rel or "/"
-    work_root = root if work_folder_rel in ("/", "") else root / work_folder_rel
+    # workFolder is always relative to the repo root, whether or not it
+    # carries a leading "/" (that's only a convention to make it visually
+    # explicit) -- Path("/a") / "/b" would otherwise discard "a" entirely,
+    # since pathlib treats a leading-slash operand as its own absolute path.
+    work_root = root / (work_folder_rel or "").lstrip("/")
     return work_root / "changes"
 
 
@@ -51,15 +53,15 @@ def load_changes_dir(root: Path, override: str | None) -> Path:
     context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
-            "generar un codigo de idea."
+            f"Cannot find {context_path}. Run the pv-init skill before "
+            "generating an idea code."
         )
     context = json.loads(context_path.read_text(encoding="utf-8"))
     framework = context.get("framework")
     if not framework:
         raise SystemExit(
-            f"{context_path} no tiene la seccion 'framework'. Ejecuta pv-init "
-            "para completarlo."
+            f"{context_path} has no 'framework' section. Run pv-init "
+            "to complete it."
         )
     return resolve_changes_dir(root, framework.get("workFolder", "/"))
 
@@ -76,8 +78,8 @@ def generate_code(existing: set[str], length: int) -> str:
         if candidate not in existing:
             return candidate
     raise SystemExit(
-        f"No se ha podido generar un codigo unico de {length} caracteres tras "
-        f"{MAX_ATTEMPTS} intentos (demasiadas colisiones)."
+        f"Could not generate a unique {length}-character code after "
+        f"{MAX_ATTEMPTS} attempts (too many collisions)."
     )
 
 
@@ -85,14 +87,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--work-folder",
-        help="Ruta a workFolder relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/pv-context.json (default '/').",
+        help="Path to workFolder relative to the repo root. If not given, "
+        "read from .claude/pv-context.json (default '/').",
     )
     parser.add_argument(
         "--length",
         type=int,
         default=5,
-        help="Numero de caracteres del codigo generado (por defecto 5).",
+        help="Number of characters in the generated code (default 5).",
     )
     args = parser.parse_args()
 

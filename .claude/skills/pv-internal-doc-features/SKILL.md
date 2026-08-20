@@ -1,73 +1,75 @@
 ---
 name: pv-internal-doc-features
-description: Procedimiento compartido, agnóstico al proyecto, para leer y mantener actualizada la documentación funcional de `docs.functional.featuresDocPathDir` cuando esa ruta es una carpeta (un fichero por funcionalidad, cada uno con un número identificador estable delante del título, más un `INDEX.md` generado). Ofrece dos acciones: `find` (localizar si una funcionalidad ya tiene entrada propia, antes de decidir si se crea una nueva o se edita la existente) y `upsert` (escribir el fichero final de una funcionalidad, ya redactado por quien invoca, asignando número nuevo solo si es una funcionalidad nueva, y regenerar el índice). Uso interno de la skill pv-do.
+description: Shared, project-agnostic procedure to read and keep `docs.functional.featuresDocPathDir` up to date when that path is a folder (one file per feature, each with a stable identifying number before the title, plus a generated `INDEX.md`). Offers two actions: `find` (locate whether a feature already has its own entry, before deciding whether to create a new one or edit the existing one) and `upsert` (write a feature's final file, already drafted by the caller, assigning a new number only if it's a new feature, and regenerate the index). Internal use by the pv-do skill.
 user-invocable: false
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.2
+  version: 0.9.5b10
   uses: []
 ---
 
 # pv-internal-doc-features
 
-Procedimiento único y compartido para organizar `docs.functional.featuresDocPathDir` como una carpeta con un fichero por funcionalidad, en vez de un único documento monolítico — pensado para que analizar o actualizar una única funcionalidad no requiera leer el listado completo. Solo lo invoca `pv-do` (quien escribe esta documentación tras implementar un cambio/fix) — no está pensado para invocación directa por el usuario.
+A single, shared procedure to organize `docs.functional.featuresDocPathDir` as a folder with one file per feature, instead of a single monolithic document — designed so that analyzing or updating one feature doesn't require reading the entire listing. Only invoked by `pv-do` (which writes this documentation after implementing a change/fix) — not meant for direct invocation by the user.
 
-**Esta skill no decide qué dice la documentación.** No redacta descripciones funcionales ni decide si una funcionalidad existente cambia de comportamiento — eso lo hace siempre `pv-do`, que ya conoce el cambio implementado. Esta skill solo sabe **dónde** y **cómo** debe vivir esa documentación una vez redactada: nombrar el fichero, mantener el índice consistente y devolver el fichero relevante cuando hace falta comprobar si ya existe.
+**Language.** This skill doesn't talk to the user directly. The content it writes to each feature file and to `INDEX.md` follows `docs.functional.language` (default `interaction.language`, English if neither is configured) — the caller (`pv-do`) tells it, since this skill doesn't read `.claude/pv-context.json` itself. The labels wrapped in `[[[...]]]` in `FEATURE.template.md` (`Area`, `Available in`, `Code`, `Since`, `Last modified`, and the `NNN` numeric prefix in the title) stay fixed in English always, regardless of `docs.functional.language` — write them without the brackets (see the "Marker convention in templates" section of `pv-design.en.md`). `rebuild-index.py` parses `**Area**` literally to group `INDEX.md`, and `next-feature-number.py` parses the `NNN` prefix; only the free-text content following each label follows the configured language.
 
-## Convención de la carpeta
+**This skill doesn't decide what the documentation says.** It doesn't draft functional descriptions nor decide whether an existing feature's behavior changed — that's always `pv-do`'s job, which already knows the implemented change. This skill only knows **where** and **how** that documentation should live once drafted: naming the file, keeping the index consistent, and returning the relevant file when it needs checking whether it already exists.
 
-Dada `docs.functional.featuresDocPathDir` (p.ej. `design/docs/features/`):
+## Folder convention
 
-- `INDEX.md` — tabla de contenidos agrupada por área funcional, con enlaces a cada fichero. **Nunca se edita a mano**: lo regenera siempre [`scripts/rebuild-index.py`](scripts/rebuild-index.py) a partir del resto de ficheros.
-- Un fichero `{NNN}-{slug}.md` por funcionalidad (plano, sin subcarpetas por área; el nombre de fichero lleva el mismo número que el título, para que el listado de ficheros de la carpeta quede ordenado igual que `INDEX.md`), siguiendo [`FEATURE.template.md`](FEATURE.template.md):
-  - `# {NNN} — {Nombre de la funcionalidad}` — el número identificador es estable: se asigna una vez al crear la funcionalidad (ver acción `upsert`) y no vuelve a cambiar aunque el título se edite después ni aunque otra funcionalidad se borre (tanto en el título como en el nombre de fichero). Sirve para localizarla rápido, no para ordenar nada por relevancia.
-  - `**Área**: {Área funcional}`
-  - Cuerpo funcional (una o más frases/párrafos).
-  - Diagramas funcionales (opcional) — cero o más bloques ```mermaid```, cada uno representando un flujo/caso de uso de esta funcionalidad desde el punto de vista del usuario. Nunca diagramas técnicos (flujo interno, secuencia entre componentes): esos viven en la documentación técnica, no aquí.
-  - `- **Disponible en**: ...`
-  - `- **Código**: {xxxx}, {xxxx}, ...` — todos los códigos de change/fix que han creado o modificado esta entrada, no solo el último.
-  - `- **Desde**: {AAAA-MM-DD}` — fecha en la que se creó esta entrada (el primer `xxxx` de **Código**). No cambia nunca tras asignarse.
-  - `- **Última modificación**: {AAAA-MM-DD}` — fecha de la última vez que se editó esta entrada (hoy, cada vez que se pasa por `upsert`).
-- Los enlaces cruzados entre funcionalidades usan la ruta relativa al fichero destino (`[texto](NNN-otro-slug.md)`), nunca anclas `#` — cada funcionalidad vive en su propio fichero.
+Given `docs.functional.featuresDocPathDir` (e.g. `docs/features/`):
 
-## Entrada esperada de quien invoca
+- `INDEX.md` — table of contents grouped by functional area, with links to each file. **Never edited by hand**: always regenerated by [`scripts/rebuild-index.py`](scripts/rebuild-index.py) from the rest of the files.
+- One `{NNN}-{slug}.md` file per feature (flat, no subfolders per area; the filename carries the same number as the title, so the folder's file listing stays ordered the same as `INDEX.md`), following [`FEATURE.template.md`](FEATURE.template.md):
+  - `# {NNN} — {Feature name}` — the identifying number is stable: assigned once when the feature is created (see the `upsert` action) and never changes again even if the title is edited later or another feature is deleted (both in the title and the filename). It's for locating it quickly, not for ordering by relevance.
+  - `**Area**: {Functional area}`
+  - Functional body (one or more sentences/paragraphs).
+  - Functional diagrams (optional) — zero or more ```mermaid``` blocks, each representing a flow/use case for this feature from the user's point of view. Never technical diagrams (internal flow, sequence between components): those live in the technical documentation, not here.
+  - `- **Available in**: ...`
+  - `- **Code**: {xxxx}, {xxxx}, ...` — all the change/fix codes that created or modified this entry, not just the last one.
+  - `- **Since**: {YYYY-MM-DD}` — date this entry was created (the first `xxxx` in **Code**). Never changes once assigned.
+  - `- **Last modified**: {YYYY-MM-DD}` — date this entry was last edited (today, every time it goes through `upsert`).
+- Cross-links between features use the path relative to the destination file (`[text](NNN-other-slug.md)`), never `#` anchors — each feature lives in its own file.
 
-Quien invoca debe indicar la `action` (`find` o `upsert`) y sus parámetros propios (ver más abajo). Si `docs.functional.featuresDocPathDir` no está configurado en `.claude/pv-context.json`, dilo y detente — quien invoca decide qué hacer (normalmente, omitir el paso sin preguntar nada).
+## Expected input from the caller
 
-## Acción `find`
+The caller must give the `action` (`find` or `upsert`) and its own parameters (see below). If `docs.functional.featuresDocPathDir` isn't configured in `.claude/pv-context.json`, say so and stop — it's up to the caller to decide what to do (normally, skip the step without asking anything).
 
-La invoca `pv-do` antes de redactar, para saber si la funcionalidad que va a documentar ya tiene una entrada propia (y así editarla in place) o es nueva.
+## Action `find`
 
-Parámetros: una descripción breve de la funcionalidad a buscar (nombre aproximado, área, o de qué trata).
+Invoked by `pv-do` before drafting, to know whether the feature it's about to document already has its own entry (so it can edit it in place) or is new.
 
-1. Si la carpeta de `featuresDocPathDir` no existe todavía, no hay ninguna funcionalidad documentada — devuelve que no hay coincidencias y detente aquí.
-2. Lee `INDEX.md` (si no existe pero la carpeta sí, regenéralo primero con `scripts/rebuild-index.py` antes de leerlo). Es un listado corto — número, nombre de funcionalidad y área, no el contenido completo.
-3. Valora por el nombre/área si alguna entrada del índice coincide semánticamente con lo que describe quien invoca (no hace falta coincidencia literal). Si hay 1-2 candidatas plausibles, lee esos ficheros completos (son pequeños) para confirmar antes de responder.
-4. Devuelve a quien invoca: la ruta del fichero que coincide (si lo hay, con su contenido actual ya leído) o que no existe ninguna entrada equivalente todavía.
+Parameters: a brief description of the feature to look for (approximate name, area, or what it's about).
 
-## Acción `upsert`
+1. If `featuresDocPathDir`'s folder doesn't exist yet, there's no documented feature — return that there are no matches and stop here.
+2. Read `INDEX.md` (if it doesn't exist but the folder does, regenerate it first with `scripts/rebuild-index.py` before reading it). It's a short listing — number, feature name and area, not the full content.
+3. Judge by name/area whether any index entry semantically matches what the caller describes (no need for a literal match). If there are 1-2 plausible candidates, read those files in full (they're small) to confirm before responding.
+4. Return to the caller: the path of the matching file (if any, with its current content already read) or that no equivalent entry exists yet.
 
-La invoca `pv-do` con el contenido ya completamente redactado (esta skill no reformula nada).
+## Action `upsert`
 
-Parámetros:
-- `area` — nombre del área funcional (tal cual debe aparecer en `**Área**:` y agrupar en el índice).
-- `título` — nombre de la funcionalidad (tal cual debe aparecer como `# ...`).
-- `cuerpo` — descripción funcional completa ya redactada (una o más frases/párrafos, con enlaces cruzados ya en formato `[texto](otro-slug.md)` si aplica).
-- `diagramas` — opcional; lista completa de diagramas funcionales que deben quedar en el fichero final, cada uno ya como bloque ```mermaid``` completo (si es una edición in place, la lista resultante tras añadir/actualizar/quitar lo que corresponda, no solo los nuevos). Omitido o lista vacía si la funcionalidad no tiene ningún diagrama funcional.
-- `disponible_en` — contenido de la línea `- **Disponible en**:`.
-- `códigos` — lista completa de códigos `xxxx` que deben quedar en `- **Código**:` (si es una edición in place, la lista completa resultante tras añadir el nuevo, no solo el nuevo).
-- `fichero_existente` — ruta devuelta por una llamada previa a `find`, si esto es una edición in place; omitido si es una funcionalidad nueva.
+Invoked by `pv-do` with the content already fully drafted (this skill doesn't rephrase anything).
 
-Pasos:
+Parameters:
+- `area` — functional area name (exactly as it should appear in `**Area**:` and group by in the index).
+- `title` — feature name (exactly as it should appear as `# ...`).
+- `body` — full functional description already drafted (one or more sentences/paragraphs, with cross-links already in `[text](other-slug.md)` format if applicable).
+- `diagrams` — optional; the complete list of functional diagrams that should end up in the final file, each already as a complete ```mermaid``` block (if it's an in-place edit, the resulting list after adding/updating/removing as applicable, not just the new ones). Omitted or empty list if the feature has no functional diagram.
+- `available_in` — content of the `- **Available in**:` line.
+- `codes` — the complete list of `xxxx` codes that should end up in `- **Code**:` (if it's an in-place edit, the full resulting list after adding the new one, not just the new one).
+- `existing_file` — path returned by a previous call to `find`, if this is an in-place edit; omitted if it's a new feature.
 
-1. Si la carpeta de `featuresDocPathDir` no existe todavía, créala.
-2. **Si hay `fichero_existente`**: usa ese mismo nombre de fichero (no lo renombres aunque el título haya cambiado ligeramente, para no romper enlaces cruzados de otras funcionalidades que ya apunten a él), **conserva el número identificador** que ya tenía en su `#` original (no lo recalcules) y **conserva su `- **Desde**:`** original tal cual. Calcula `- **Última modificación**:` como la fecha de hoy.
-3. **Si no hay `fichero_existente`** (funcionalidad nueva):
-   - Calcula el número identificador con `python .claude/skills/pv-internal-doc-features/scripts/next-feature-number.py --folder {featuresDocPathDir}`.
-   - Calcula el slug del título con `python .claude/skills/pv-internal-doc-features/scripts/slugify.py "{título}"`.
-   - El nombre de fichero es `{número}-{slug}.md`.
-   - Tanto `- **Desde**:` como `- **Última modificación**:` son la fecha de hoy.
-4. Escribe (crea o sobrescribe por completo) `{featuresDocPathDir}/{NNN}-{slug}.md` siguiendo [`FEATURE.template.md`](FEATURE.template.md) con los parámetros recibidos, con `# {número} — {título}` como primera línea. Si `diagramas` viene vacío u omitido, no dejes la sección de diagramas del template en el fichero final — omítela por completo.
-5. Ejecuta `python .claude/skills/pv-internal-doc-features/scripts/rebuild-index.py --folder {featuresDocPathDir}` para regenerar `INDEX.md` de forma determinista a partir de todos los ficheros de la carpeta — no edites `INDEX.md` a mano.
-6. Devuelve a quien invoca la ruta del fichero escrito.
+Steps:
+
+1. If `featuresDocPathDir`'s folder doesn't exist yet, create it.
+2. **If there's an `existing_file`**: use that same filename (don't rename it even if the title changed slightly, so as not to break cross-links from other features already pointing to it), **keep the identifying number** it already had in its original `#` (don't recompute it) and **keep its original `- **Since**:`** as-is. Compute `- **Last modified**:` as today's date.
+3. **If there's no `existing_file`** (new feature):
+   - Compute the identifying number with `python .claude/skills/pv-internal-doc-features/scripts/next-feature-number.py --folder {featuresDocPathDir}`.
+   - Compute the title's slug with `python .claude/skills/pv-internal-doc-features/scripts/slugify.py "{title}"`.
+   - The filename is `{number}-{slug}.md`.
+   - Both `- **Since**:` and `- **Last modified**:` are today's date.
+4. Write (create or fully overwrite) `{featuresDocPathDir}/{NNN}-{slug}.md` following [`FEATURE.template.md`](FEATURE.template.md) with the received parameters, with `# {number} — {title}` as the first line. If `diagrams` comes empty or omitted, don't leave the template's diagrams section in the final file — omit it entirely.
+5. Run `python .claude/skills/pv-internal-doc-features/scripts/rebuild-index.py --folder {featuresDocPathDir}` to regenerate `INDEX.md` deterministically from all the folder's files — don't edit `INDEX.md` by hand.
+6. Return the written file's path to the caller.

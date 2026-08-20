@@ -1,13 +1,13 @@
 # Features
 
-## [Área funcional]
+## [Functional area]
 
-### [Nombre de la funcionalidad]
+### [Feature name]
 
-Descripción funcional en una o dos frases: qué permite hacer, no cómo está implementado por dentro.
+Functional description in one or two sentences: what it lets you do, not how it's implemented internally.
 
-[Opcional — uno o más diagramas Mermaid **funcionales** (nunca técnicos) de un flujo/caso de uso relevante de esta funcionalidad, cada uno en su propio bloque ```mermaid```. Omite esta parte si no aplica.]
+[Optional — one or more **functional** (never technical) Mermaid diagrams of a relevant flow/use case for this feature, each in its own ```mermaid``` block. Omit this part if it doesn't apply.]
 
-- **Disponible en**: dónde se ve/usa (modo, pantalla, componente...).
-- **Código**: xxxx, xxxx, ...
+- **[[[Available in]]]**: where it's seen/used (mode, screen, component...).
+- **[[[Code]]]**: xxxx, xxxx, ...
 

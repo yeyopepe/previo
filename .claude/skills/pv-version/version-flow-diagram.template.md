@@ -1,19 +1,19 @@
-# Cómo funciona `/pv-version`
+# How `/pv-version` works
 
-Diagrama general del proceso de preparar una entrega, sin detalle de scripts ni nombres de parámetros — pensado para mostrarse tal cual si el usuario pregunta "¿cómo funciona `/pv-version`?" durante la invocación, o como referencia en la documentación del proyecto.
+General diagram of the release-preparation process, with no script or parameter-name detail — meant to be shown as-is if the user asks "how does `/pv-version` work?" during invocation, or as a reference in the project's documentation.
 
 ```mermaid
 flowchart LR
-    Guard{"implemented/\n¿vacío?"}
-    Resolve["Resolver cada entrada\n(usuario confirma → closed)"]
-    Folder["Crear versions/XXXX\n(files/, docs/)"]
-    Compile["Generar el entregable\n(how-to-compile-version.md)"]
-    Docs["Comprimir y copiar documentación\ntécnica y funcional vigente a docs/"]
-    Changelog["pv-internal-changelog\nredacta changelog.md desde closed/"]
-    Confirm["Confirmar entrega\nal usuario"]
+    Guard{"implemented/\nempty?"}
+    Resolve["Resolve each entry\n(user confirms → closed)"]
+    Folder["Create versions/XXXX\n(files/, docs/)"]
+    Compile["Generate the deliverable\n(how-to-compile-version.md)"]
+    Docs["Zip and copy current technical\nand functional documentation to docs/"]
+    Changelog["pv-internal-changelog\nmoves closed/ → closed/temp/,\ndrafts changelog.md, cleans up temp/"]
+    Confirm["Confirm the release\nto the user"]
 
     Guard -- No --> Resolve --> Guard
-    Guard -- Sí --> Folder --> Compile --> Docs --> Changelog --> Confirm
+    Guard -- Yes --> Folder --> Compile --> Docs --> Changelog --> Confirm
 
     classDef guardrail fill:#e03131,color:#fff
     classDef core fill:#2b6cb0,color:#fff
@@ -25,4 +25,4 @@ flowchart LR
     class Confirm done
 ```
 
-Leyenda: rojo = guardarraíl de `implemented/` (bloquea hasta resolverse); azul = pasos mecánicos de `pv-version`; morado = delegado en `pv-internal-changelog`; verde = fin del proceso.
+Legend: red = `implemented/` guardrail (blocks until resolved); blue = `pv-version`'s mechanical steps; purple = delegated to `pv-internal-changelog`; green = end of the process.

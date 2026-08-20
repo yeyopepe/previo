@@ -1,24 +1,29 @@
 #!/usr/bin/env python3
-"""Borra entradas concretas ya incorporadas al changelog (skill pv-internal-changelog).
+"""Deletes specific entries already folded into the changelog (pv-internal-changelog skill).
 
-Borra, UNICAMENTE, las subcarpetas de {workFolder}/changes/closed/ cuyo xxxx
-se pase explicitamente en --xxxx-list -- nunca "todo closed/" a ciegas, por
-si aparecieron entradas nuevas entre que se listaron (list-closed-entries.py)
-y que el usuario confirmara el borrado. Solo se invoca tras confirmacion
-explicita del usuario: esta accion es irreversible y no la decide este
-script.
+Deletes, ONLY, the {workFolder}/changes/closed/temp/ subfolders whose xxxx
+is explicitly passed in --xxxx-list -- never "all of closed/temp/" blindly,
+in case listing (list-closed-entries.py) and the user confirming the
+deletion happened at different moments. Only invoked after the user's
+explicit confirmation: this action is irreversible and isn't decided by
+this script.
 
-workFolder se lee de .claude/pv-context.json (seccion framework) salvo que
-se pase explicitamente por parametro.
+By the time this runs, stage-closed-entries.py has already moved closed/'s
+entries into closed/temp/, so this only ever touches that staged copy --
+never closed/'s live contents.
 
-Imprime UNICAMENTE un JSON en stdout con lo realmente borrado:
+workFolder is read from .claude/pv-context.json (framework section) unless
+passed explicitly as a parameter.
+
+Prints ONLY a JSON on stdout with what was actually deleted:
 
   {"deleted": ["00001", "00002"], "notFound": []}
 
-Si algun xxxx de --xxxx-list no existe en closed/, se reporta en "notFound"
-en vez de fallar -- no es motivo para no borrar el resto.
+If any xxxx from --xxxx-list doesn't exist in closed/temp/, it's reported in
+"notFound" instead of failing -- that's not a reason to skip deleting the
+rest.
 
-Uso:
+Usage:
   python delete-closed-entries.py --xxxx-list 00001,00002
 """
 
@@ -30,7 +35,7 @@ from pathlib import Path
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/pv-internal-changelog/scripts/
+    # This script lives at {repo}/.claude/skills/pv-internal-changelog/scripts/
     return Path(__file__).resolve().parents[4]
 
 
@@ -38,23 +43,26 @@ def load_work_folder(root: Path) -> str:
     context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
-            "borrar entradas de closed."
+            f"Cannot find {context_path}. Run the pv-init skill before "
+            "deleting entries from closed."
         )
 
     context = json.loads(context_path.read_text(encoding="utf-8"))
     framework = context.get("framework")
     if not framework:
         raise SystemExit(
-            f"{context_path} no tiene la seccion 'framework'. Ejecuta la skill "
-            "pv-init para completarla."
+            f"{context_path} has no 'framework' section. Run the pv-init "
+            "skill to complete it."
         )
     return framework.get("workFolder", "/")
 
 
 def resolve_changes_dir(root: Path, work_folder_rel: str) -> Path:
-    work_folder_rel = work_folder_rel or "/"
-    work_root = root if work_folder_rel in ("/", "") else root / work_folder_rel
+    # workFolder is always relative to the repo root, whether or not it
+    # carries a leading "/" (that's only a convention to make it visually
+    # explicit) -- Path("/a") / "/b" would otherwise discard "a" entirely,
+    # since pathlib treats a leading-slash operand as its own absolute path.
+    work_root = root / (work_folder_rel or "").lstrip("/")
     return work_root / "changes"
 
 
@@ -63,12 +71,12 @@ def main() -> None:
     parser.add_argument(
         "--xxxx-list",
         required=True,
-        help="Lista de codigos xxxx a borrar de closed/, separados por comas (p.ej. 00001,00002).",
+        help="Comma-separated list of xxxx codes to delete from closed/temp/ (e.g. 00001,00002).",
     )
     parser.add_argument(
         "--work-folder",
-        help="Ruta a workFolder relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/pv-context.json (default '/').",
+        help="Path to workFolder relative to the repo root. If not given, "
+        "read from .claude/pv-context.json (default '/').",
     )
     args = parser.parse_args()
 
@@ -77,7 +85,7 @@ def main() -> None:
 
     root = repo_root()
     work_folder_rel = args.work_folder or load_work_folder(root)
-    closed_dir = resolve_changes_dir(root, work_folder_rel) / "closed"
+    closed_dir = resolve_changes_dir(root, work_folder_rel) / "closed" / "temp"
 
     xxxx_list = [x.strip() for x in args.xxxx_list.split(",") if x.strip()]
 

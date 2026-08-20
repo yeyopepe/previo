@@ -1,119 +1,121 @@
 ---
 name: pv-internal-tech-mermaid
-description: Procedimiento compartido, agnóstico al proyecto, para generar diagramas Mermaid (funcionales o técnicos — flujo, secuencia) que representan un caso de uso, historia de usuario, flujo de trabajo o comunicación entre componentes. Recibe la lista de diagramas a generar (tipo, qué debe representar cada uno) y devuelve el código Mermaid de cada uno, sin decidir por sí misma qué diagramas hacen falta ni dónde se insertan. Uso interno de las skills pv-internal-workflow, pv-new, pv-fix y pv-how, invocada por el nombre configurado en `framework.skills.diagrams` de `.claude/pv-context.json` (por defecto, esta misma skill).
+description: Shared, project-agnostic procedure to generate Mermaid diagrams (functional or technical — flow, sequence) representing a use case, user story, workflow, or communication between components. Receives the list of diagrams to generate (type, what each should represent) and returns each one's Mermaid code, without deciding on its own which diagrams are needed or where they're inserted. Internal use by the pv-internal-workflow, pv-new, pv-fix and pv-how skills, invoked by the name configured in `.claude/pv-context.json`'s `framework.skills.diagrams` (by default, this same skill).
 user-invocable: false
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.2
+  version: 0.9.5b10
   uses: []
 ---
 
 # pv-internal-tech-mermaid
 
-Procedimiento único y compartido para generar diagramas Mermaid que representan el comportamiento de un cambio/fix — nunca su aspecto visual (eso es `design_*.html`, otra skill) ni la navegación entre pantallas de UI (eso son los `design_navigation_*.md`, que escribe directamente `pv-new`). Solo lo invocan otras skills del framework `pv-*` — no está pensado para invocación directa por el usuario.
+A single, shared procedure to generate Mermaid diagrams representing a change/fix's behavior — never its visual look (that's `design_*.html`, another skill) nor navigation between UI screens (that's `design_navigation_*.md`, which `pv-new` writes directly). Only invoked by other `pv-*` framework skills — not meant for direct invocation by the user.
 
-**Esta skill no decide qué diagramas hacen falta, ni si un diagrama es la herramienta adecuada frente a prosa, ni dónde se inserta el resultado.** Eso lo decide siempre quien invoca: esta skill solo se invoca cuando ya se sabe que hace falta generar al menos un diagrama Mermaid, nunca "por si acaso". Presentar el resultado al usuario para que lo confirme también es responsabilidad de quien invoca.
+**Language.** This skill doesn't talk to the user. The diagram code itself (node/actor labels, message text) follows the target language the caller passes it as input (see "Expected input" below) — this skill doesn't read `.claude/pv-context.json` itself, since it doesn't know which final document each diagram will be inserted into; each caller (`pv-internal-workflow`, `pv-new`, `pv-fix`, `pv-how`) must resolve the right `language` (`changes.language` or `docs.tech.language`, depending on the destination document) before invoking this skill.
 
-Si un proyecto configura otra skill en `framework.skills.diagrams` para generar los diagramas de otra forma (otra notación, una herramienta externa), esa skill alternativa debe cumplir el mismo contrato de entrada/salida descrito aquí para poder sustituir a esta sin que `pv-internal-workflow`/`pv-new`/`pv-fix`/`pv-how` necesiten cambiar nada.
+**This skill doesn't decide which diagrams are needed, nor whether a diagram is the right tool versus prose, nor where the result is inserted.** That's always decided by the caller: this skill is only invoked once it's already known that at least one Mermaid diagram needs generating, never "just in case". Presenting the result to the user for confirmation is also the caller's responsibility.
 
-## Entrada esperada de quien invoca
+If a project configures another skill in `framework.skills.diagrams` to generate diagrams a different way (another notation, an external tool), that alternative skill must fulfill the same input/output contract described here so it can replace this one without `pv-internal-workflow`/`pv-new`/`pv-fix`/`pv-how` needing to change anything.
 
-Una lista de diagramas a generar. Por cada uno:
+## Expected input from the caller
 
-- **Tipo**: uno de los tres definidos en "Reglas generales" más abajo — `funcional`, `flujo-técnico` o `secuencia-técnica`.
-- **Qué debe representar**: el caso de uso/historia de usuario concreto (si es `funcional`) o el flujo/comunicación concreta (si es técnico) — pasos, decisiones, casos límite, o los actores/componentes involucrados y qué se intercambian, según corresponda.
-- **Contexto de apoyo** que quien invoca ya tenga (p.ej. nombres reales de componentes/módulos si es `secuencia-técnica`, o el vocabulario del dominio del proyecto) para que el diagrama use terminología precisa en vez de genérica.
+A list of diagrams to generate. For each one:
 
-## Reglas generales (agnósticas de Mermaid)
+- **Type**: one of the three defined in "General rules" below — `functional`, `technical-flow` or `technical-sequence`.
+- **What it should represent**: the specific use case/user story (if `functional`) or the specific flow/communication (if technical) — steps, decisions, edge cases, or the actors/components involved and what they exchange, as applicable.
+- **Supporting context** the caller already has (e.g. real component/module names if `technical-sequence`, or the project's domain vocabulary) so the diagram uses precise terminology instead of generic.
 
-Estas reglas gobiernan **qué** representar y **cómo dividir** los diagramas, independientemente de la sintaxis usada para dibujarlos.
+## General rules (Mermaid-agnostic)
 
-### Diagramas funcionales
+These rules govern **what** to represent and **how to split** the diagrams, regardless of the syntax used to draw them.
 
-- Representan la experiencia directa del usuario: qué hace, qué decide, qué ve como resultado — nunca cómo lo resuelve el sistema por dentro (sin nombres de componentes, funciones, estructuras de datos, llamadas de red, etc.).
-- **Un diagrama por cada caso de uso o historia de usuario, nunca menos.** No mezcles dos casos o historias distintos en el mismo diagrama, aunque compartan pasos — si comparten pasos, cada diagrama los repite desde su propio punto de entrada. Si quien invoca pide representar varios casos/historias, genera un diagrama independiente por cada uno.
-- Si un caso de uso no tiene ramas ni decisiones (es una secuencia lineal de una sola vía, sin alternativas), sigue mereciendo diagrama igualmente: no lo descartes por "demasiado simple" — esa decisión (si el diagrama aporta o no frente a una frase) es de quien invoca, no de esta skill.
+### Functional diagrams
 
-### Diagramas técnicos
+- Represent the user's direct experience: what they do, what they decide, what they see as a result — never how the system solves it internally (no component names, functions, data structures, network calls, etc.).
+- **One diagram per use case or user story, never fewer.** Don't mix two different cases or stories in the same diagram, even if they share steps — if they share steps, each diagram repeats them from its own entry point. If the caller asks to represent several cases/stories, generate an independent diagram for each.
+- If a use case has no branches or decisions (it's a single-path linear sequence, no alternatives), it still deserves a diagram: don't discard it for being "too simple" — that decision (whether the diagram adds value over a sentence) belongs to the caller, not this skill.
 
-- **Diagrama de flujo** (workflow): para representar un proceso interno con pasos y decisiones — el orden en que ocurre algo, condiciones que ramifican el camino, casos límite encadenados. Un único actor/hilo de ejecución avanzando por pasos.
-- **Diagrama de secuencia**: para representar comunicación entre componentes — qué mensajes/llamadas se intercambian, en qué orden, entre qué actores o partes (usuario↔sistema, cliente↔servidor, módulo↔módulo). Úsalo en cuanto haya dos o más partes intercambiando información, no solo un flujo interno de un único componente.
-- Si lo que hay que representar tiene ambas dimensiones (un flujo con pasos/decisiones que además implica comunicación entre componentes en algún punto), genera los dos diagramas por separado en vez de forzar uno solo a cubrir ambas cosas — cada uno se lee mejor centrado en su propia dimensión.
-- A diferencia de los funcionales, sí puede tener sentido un único diagrama técnico que cubra varios pasos relacionados de un mismo cambio, si quien invoca lo pide así explícitamente como una sola unidad — esta skill no lo impone, pero tampoco lo divide por su cuenta si se lo piden junto.
+### Technical diagrams
 
-## Reglas específicas de Mermaid
+- **Flow diagram** (workflow): to represent an internal process with steps and decisions — the order something happens in, conditions that branch the path, chained edge cases. A single actor/execution thread moving through steps.
+- **Sequence diagram**: to represent communication between components — what messages/calls are exchanged, in what order, between which actors or parts (user↔system, client↔server, module↔module). Use it as soon as there are two or more parts exchanging information, not just one component's internal flow.
+- If what needs representing has both dimensions (a flow with steps/decisions that also involves communication between components at some point), generate the two diagrams separately instead of forcing one to cover both — each reads better focused on its own dimension.
+- Unlike functional ones, a single technical diagram covering several related steps of the same change can make sense, if the caller explicitly asks for it as a single unit — this skill doesn't impose that, but doesn't split it on its own either if asked to keep it together.
 
-Estas son las reglas de sintaxis/notación Mermaid en sí, separadas de las reglas generales de arriba para que un proyecto pueda sustituir esta skill por otra notación sin perder las reglas generales (que viven en `pv-internal-workflow`/`pv-new`/`pv-fix`/`pv-how`, no aquí).
+## Mermaid-specific rules
 
-### Elegir el tipo de diagrama Mermaid
+These are the Mermaid syntax/notation rules themselves, kept separate from the general rules above so a project can swap this skill for another notation without losing the general rules (which live in `pv-internal-workflow`/`pv-new`/`pv-fix`/`pv-how`, not here).
 
-- **Funcional** → `flowchart` (`TD` de arriba a abajo salvo que `LR` quede más legible por el número de pasos). Los diagramas funcionales representan la experiencia de un usuario avanzando por pasos y decisiones, que es exactamente lo que expresa un flowchart. No uses `sequenceDiagram` para un diagrama funcional: implica actores/componentes técnicos intercambiando mensajes, que es justo lo que un diagrama funcional no debe mostrar.
-- **Flujo técnico** → `flowchart` (`TD` o `LR` según legibilidad).
-- **Secuencia técnica** → `sequenceDiagram`.
-- Si lo que hay que representar es explícitamente una máquina de estados (un componente/entidad con estados con nombre propio y transiciones entre ellos, más que una secuencia de pasos), `stateDiagram-v2` es una alternativa válida a `flowchart` tanto para lo funcional como para lo técnico — solo úsala cuando el concepto de "estado con nombre" sea real en el dominio, no como sinónimo de flowchart.
+### Choosing the Mermaid diagram type
 
-### Sintaxis `flowchart`
+- **Functional** → `flowchart` (`TD` top-to-bottom unless `LR` is more readable given the number of steps). Functional diagrams represent a user moving through steps and decisions, which is exactly what a flowchart expresses. Don't use `sequenceDiagram` for a functional diagram: it implies technical actors/components exchanging messages, which is exactly what a functional diagram must not show.
+- **Technical flow** → `flowchart` (`TD` or `LR` depending on readability).
+- **Technical sequence** → `sequenceDiagram`.
+- If what needs representing is explicitly a state machine (a component/entity with named states and transitions between them, rather than a sequence of steps), `stateDiagram-v2` is a valid alternative to `flowchart` for both functional and technical — only use it when the "named state" concept is real in the domain, not as a synonym for flowchart.
+
+### `flowchart` syntax
 
 ```
 flowchart TD
-    A[Paso o acción] --> B{¿Decisión?}
-    B -->|Sí| C[Resultado A]
-    B -->|No| D[Resultado B]
-    C --> E[Fin]
+    A[Step or action] --> B{Decision?}
+    B -->|Yes| C[Result A]
+    B -->|No| D[Result B]
+    C --> E[End]
     D --> E
 ```
 
-- Nodos: `[Texto]` rectángulo (paso/acción), `{Texto}` rombo (decisión), `(Texto)` óvalo (inicio/fin), `((Texto))` círculo (evento puntual) — usa el que mejor describa semánticamente el nodo, no solo el rectángulo por defecto.
-- Flechas: `-->` para la transición normal; `-->|texto|` para etiquetar la condición o el resultado de una decisión. Toda salida de un nodo `{Decisión}` debe llevar etiqueta que dependa de cuál sea (`Sí`/`No`, o el caso concreto) — una decisión sin las etiquetas de sus ramas no se entiende.
-- Agrupa pasos relacionados con `subgraph Nombre ... end` solo si el diagrama tiene fases claramente diferenciadas y el agrupado ayuda a leerlo — no lo uses por defecto en flujos cortos.
-- Etiquetas de nodo en el vocabulario del dominio/usuario (funcional) o del sistema (técnico) que dé quien invoca — nunca genéricas tipo "Paso 1", "Paso 2".
-- Si una etiqueta necesita comillas, paréntesis u otros caracteres que Mermaid pueda interpretar como sintaxis, envuélvela entre comillas dobles: `A["Texto con (paréntesis)"]`.
+- Nodes: `[Text]` rectangle (step/action), `{Text}` diamond (decision), `(Text)` oval (start/end), `((Text))` circle (one-off event) — use whichever best semantically describes the node, not just the default rectangle.
+- Arrows: `-->` for the normal transition; `-->|text|` to label a decision's condition or outcome. Every output from a `{Decision}` node must carry a label reflecting which one it is (`Yes`/`No`, or the specific case) — a decision without its branches' labels isn't understandable.
+- Group related steps with `subgraph Name ... end` only if the diagram has clearly distinct phases and grouping helps readability — don't use it by default in short flows.
+- Node labels in the domain/user vocabulary (functional) or the system's (technical) given by the caller — never generic ones like "Step 1", "Step 2".
+- If a label needs quotes, parentheses, or other characters Mermaid might interpret as syntax, wrap it in double quotes: `A["Text with (parentheses)"]`.
 
-### Sintaxis `sequenceDiagram`
+### `sequenceDiagram` syntax
 
 ```
 sequenceDiagram
-    actor Usuario
+    actor User
     participant Frontend
     participant Backend
 
-    Usuario->>Frontend: Acción concreta
-    Frontend->>Backend: Petición concreta
-    Backend-->>Frontend: Respuesta
-    Frontend-->>Usuario: Resultado visible
+    User->>Frontend: Specific action
+    Frontend->>Backend: Specific request
+    Backend-->>Frontend: Response
+    Frontend-->>User: Visible result
 
-    alt Condición
-        Frontend->>Backend: Camino alternativo
-    else Otra condición
-        Frontend->>Usuario: Aviso
+    alt Condition
+        Frontend->>Backend: Alternative path
+    else Other condition
+        Frontend->>User: Notice
     end
 ```
 
-- `actor Nombre` para personas/roles humanos, `participant Nombre` para componentes/sistemas — declara solo los que de verdad intervienen, en el orden en que conviene leerlos (normalmente de "más externo/usuario" a "más interno").
-- Flechas: `->>` mensaje/llamada síncrona, `-->>` respuesta o retorno, `-)` mensaje asíncrono (fire-and-forget, sin esperar respuesta). Usa siempre la que describa correctamente si quien envía espera respuesta o no.
-- `alt/else/end` para ramas condicionales dentro de la secuencia, `loop ... end` para repetición, `Note over A,B: texto` para una aclaración puntual que no es un mensaje en sí.
-- Cada flecha lleva una etiqueta breve y concreta (qué se pide o qué se devuelve) — nunca una flecha sin texto.
+- `actor Name` for human people/roles, `participant Name` for components/systems — declare only the ones actually involved, in the order convenient to read them (usually from "most external/user" to "most internal").
+- Arrows: `->>` synchronous message/call, `-->>` response or return, `-)` asynchronous message (fire-and-forget, no response expected). Always use the one that correctly describes whether the sender expects a response or not.
+- `alt/else/end` for conditional branches within the sequence, `loop ... end` for repetition, `Note over A,B: text` for a one-off clarification that isn't a message itself.
+- Every arrow carries a brief, specific label (what's requested or what's returned) — never an unlabeled arrow.
 
-### Sintaxis `stateDiagram-v2` (solo cuando aplique, ver arriba)
+### `stateDiagram-v2` syntax (only when applicable, see above)
 
 ```
 stateDiagram-v2
-    [*] --> Estado1
-    Estado1 --> Estado2 : evento/condición
-    Estado2 --> [*]
+    [*] --> State1
+    State1 --> State2 : event/condition
+    State2 --> [*]
 ```
 
-- `[*]` representa el punto de entrada/salida (no un estado real). Cada transición lleva `: texto` con el evento o condición que la dispara.
+- `[*]` represents the entry/exit point (not a real state). Every transition carries `: text` with the event or condition that triggers it.
 
-### Reglas de higiene comunes a los tres tipos
+### Hygiene rules common to all three types
 
-- El diagrama va siempre en un bloque de código con lenguaje `mermaid` (` ```mermaid ` ... ` ``` `), nunca como texto suelto.
-- No mezcles dos tipos de diagrama (p.ej. nodos de `flowchart` dentro de un `sequenceDiagram`) en el mismo bloque.
-- Etiquetas cortas y concretas — si una idea necesita una frase larga para quedar clara, es una señal de que ese matiz pertenece a una nota en prosa junto al diagrama, no dentro de una etiqueta.
-- No hace falta forzar el mismo diagrama a explicarlo absolutamente todo: lo que no quede claro con el propio diagrama, quien invoca puede añadirlo como nota breve en prosa junto a él — esta skill no escribe esas notas, solo el diagrama.
+- The diagram always goes in a code block with `mermaid` language (` ```mermaid ` ... ` ``` `), never as loose text.
+- Don't mix two diagram types (e.g. `flowchart` nodes inside a `sequenceDiagram`) in the same block.
+- Short, specific labels — if an idea needs a long sentence to be clear, that's a sign that nuance belongs in a prose note next to the diagram, not inside a label.
+- No need to force the same diagram to explain absolutely everything: whatever isn't clear from the diagram itself, the caller can add as a brief prose note next to it — this skill doesn't write those notes, only the diagram.
 
-## Pasos
+## Steps
 
-1. Para cada diagrama de la lista recibida, elige el tipo de diagrama Mermaid según "Elegir el tipo de diagrama Mermaid" y redáctalo siguiendo las reglas generales y de sintaxis de arriba.
-2. Devuelve a quien invoca, en el mismo turno, un bloque ```mermaid``` por cada diagrama pedido (en el mismo orden en que se pidieron). No presentes nada al usuario ni pidas confirmación, ni escribas el resultado en ningún fichero — eso lo hace quien invoca.
+1. For each diagram in the received list, choose the Mermaid diagram type per "Choosing the Mermaid diagram type" and draft it following the general and syntax rules above.
+2. Return to the caller, in the same turn, one ```mermaid``` block per requested diagram (in the same order they were requested). Don't present anything to the user or ask for confirmation, nor write the result to any file — that's the caller's job.

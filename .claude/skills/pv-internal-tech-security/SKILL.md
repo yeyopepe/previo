@@ -1,61 +1,63 @@
 ---
 name: pv-internal-tech-security
-description: Procedimiento compartido, agnóstico al proyecto, para contrastar un change/fix contra una checklist de categorías de seguridad (autenticación, autorización, validación de entradas/inyección, secretos, transporte, datos sensibles, dependencias, infraestructura, API, logging, hardening de cliente). Recibe un resumen de qué se está analizando y el contexto ya reunido, y devuelve solo las categorías aplicables — separadas entre ya cubiertas por el contexto y pendientes de revisar — sin decidir el diseño ni editar nada. Uso interno de pv-internal-tech-analysis (al terminar su propio análisis) y pv-how (al valorar el riesgo junto a pv-internal-tech-risks).
+description: Shared, project-agnostic procedure to check a change/fix against a security category checklist (authentication, authorization, input validation/injection, secrets, transport, sensitive data, dependencies, infrastructure, API, logging, client hardening). Receives a summary of what's being analyzed and the context already gathered, and returns only the applicable categories — split between already covered by the context and pending review — without deciding the design or editing anything. Internal use by pv-internal-tech-analysis (when finishing its own analysis) and pv-how (when assessing risk alongside pv-internal-tech-risks).
 user-invocable: false
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.2
+  version: 0.9.5b10
   uses: []
 ---
 
 # pv-internal-tech-security
 
-Procedimiento único y compartido para contrastar un change/fix contra una checklist de categorías de seguridad y señalar cuáles son relevantes y no están ya resueltas por el contexto disponible. Solo lo invocan otras skills del framework `pv-*` — no está pensado para invocación directa por el usuario.
+A single, shared procedure to check a change/fix against a security category checklist and flag which ones are relevant and not already resolved by the available context. Only invoked by other `pv-*` framework skills — not meant for direct invocation by the user.
 
-**Esta skill no escribe ni edita nada, ni diseña la solución de seguridad.** Se limita a decir qué categorías de la checklist aplican al cambio y, de esas, cuáles quedan como punto pendiente de revisar por no estar ya cubiertas por el contexto recibido. Qué hacer con esos pendientes (resolverlos ahora, anotarlos en `plan.md`, preguntar al usuario, usarlos como motivo para no calificar de trivial) lo decide siempre quien invoca.
+**Language.** This skill writes or edits nothing and doesn't talk to the user, so `language` doesn't apply to it — it always works and returns its category names and explanations in English, as internal framework vocabulary. It's the caller's responsibility to translate them if it dumps them into a document written in another language.
 
-## Entrada esperada de quien invoca
+**This skill writes or edits nothing, nor does it design the security solution.** It only states which checklist categories apply to the change and, of those, which remain a pending point for review because they're not already covered by the received context. What to do with those pending items (resolve them now, note them in `plan.md`, ask the user, use them as a reason not to qualify as trivial) is always decided by the caller.
 
-- Un resumen breve de **qué se está analizando/cambiando** (el change/fix concreto, no la conversación entera).
-- El **contexto ya reunido** hasta el momento (p.ej. lo que ya haya salido de los pasos 1-2 de `pv-internal-tech-analysis`, o la solución técnica de `plan.md`) — para no repetir exploración ya hecha y para poder marcar una categoría como resuelta si el contexto ya la cubre.
+## Expected input from the caller
 
-## 0. Cargar el contexto del proyecto
+- A brief summary of **what's being analyzed/changed** (the specific change/fix, not the whole conversation).
+- The **context already gathered** so far (e.g. whatever already came out of `pv-internal-tech-analysis`'s steps 1-2, or `plan.md`'s technical solution) — to avoid repeating exploration already done, and to be able to mark a category as resolved if the context already covers it.
 
-Lee `.claude/pv-context.json` en la raíz del repo (si no lo has hecho ya en esta sesión). No valides aquí que el framework está inicializado — eso ya lo ha comprobado la skill llamante antes de invocar esta.
+## 0. Load the project context
 
-## 1. La checklist de categorías
+Read `.claude/pv-context.json` at the repo root (if you haven't already this session). Don't validate here that the framework is initialized — the calling skill has already checked that before invoking this one.
 
-Para cada categoría, valora dos cosas: (a) si es **aplicable** al cambio concreto (no todo cambio toca todas las categorías — la mayoría de cambios solo tocan una o dos) y (b) si, siendo aplicable, el contexto recibido ya deja claro cómo se resuelve o si queda **pendiente de revisar**.
+## 1. The category checklist
 
-| Categoría | Qué comprobar |
+For each category, assess two things: (a) whether it's **applicable** to this specific change (not every change touches every category — most changes only touch one or two) and (b) if applicable, whether the received context already makes clear how it's resolved, or whether it's **pending review**.
+
+| Category | What to check |
 |---|---|
-| Autenticación | ¿Se toca login, sesión, tokens, cookies de sesión, recuperación de contraseña, MFA? |
-| Autorización | ¿Se toca control de acceso, roles, propiedad de recursos (riesgo de IDOR), endpoints o funciones administrativas? |
-| Validación de entradas / inyección | ¿Hay entrada de usuario que llegue a una query (SQL/NoSQL), un comando de sistema, un parser (XML/YAML), un motor de plantillas, una ruta de fichero, una deserialización, o una URL solicitada por el propio servidor (SSRF)? |
-| Secretos y configuración | ¿Se añaden o mueven credenciales, API keys, tokens? ¿Cambia cómo se cargan, guardan o rotan? |
-| Comunicación y transporte | ¿Se añade o cambia una llamada de red, interna o externa? ¿Queda cifrada (TLS) y con verificación de certificado? |
-| Datos sensibles | ¿El cambio maneja PII, credenciales, datos de pago o salud? ¿Se cifran en reposo, se enmascaran o excluyen de logs? |
-| Dependencias | ¿Se añade una librería, paquete o servicio de terceros nuevo? |
-| Infraestructura y despliegue | ¿Se tocan permisos (IAM, roles de servicio), superficie expuesta (puertos, endpoints públicos), configuración de despliegue o contenedores? |
-| API | ¿Se añade o modifica un endpoint? ¿Necesita autenticación, control de CORS, validación de esquema, o queda expuesto sin protección? |
-| Logging y monitorización | ¿Se añaden logs que puedan capturar datos sensibles (secretos, PII)? ¿El cambio afecta a un evento que debería quedar registrado por motivos de seguridad (login fallido, cambio de permisos, acceso admin)? |
-| Hardening de cliente | ¿Se renderiza HTML o contenido de usuario sin el escapado/sanitizado habitual del framework? ¿Se añade una operación que cambia estado y necesita protección CSRF? ¿Se cargan scripts de terceros? |
+| Authentication | Does it touch login, session, tokens, session cookies, password recovery, MFA? |
+| Authorization | Does it touch access control, roles, resource ownership (IDOR risk), admin endpoints or functions? |
+| Input validation / injection | Is there user input that reaches a query (SQL/NoSQL), a system command, a parser (XML/YAML), a template engine, a file path, a deserialization, or a URL requested by the server itself (SSRF)? |
+| Secrets and configuration | Are credentials, API keys, tokens added or moved? Does how they're loaded, stored, or rotated change? |
+| Communication and transport | Is a network call, internal or external, added or changed? Is it encrypted (TLS) with certificate verification? |
+| Sensitive data | Does the change handle PII, credentials, payment or health data? Is it encrypted at rest, masked, or excluded from logs? |
+| Dependencies | Is a new third-party library, package, or service added? |
+| Infrastructure and deployment | Are permissions touched (IAM, service roles), exposed surface (ports, public endpoints), deployment or container configuration? |
+| API | Is an endpoint added or modified? Does it need authentication, CORS control, schema validation, or is it left exposed without protection? |
+| Logging and monitoring | Are logs added that could capture sensitive data (secrets, PII)? Does the change affect an event that should be logged for security reasons (failed login, permission change, admin access)? |
+| Client hardening | Is HTML or user content rendered without the framework's usual escaping/sanitization? Is a state-changing operation added that needs CSRF protection? Are third-party scripts loaded? |
 
-## 2. Contrastar contra el contexto recibido
+## 2. Check against the received context
 
-Para cada categoría marcada como aplicable en el paso 1:
+For each category marked applicable in step 1:
 
-- Si el contexto ya reunido (documentación técnica, código explorado, `plan.md`) deja claro cómo se aborda esa categoría — p.ej. ya pasa por el ORM parametrizado del proyecto, ya usa el middleware de auth existente, ya sigue un patrón de sanitizado ya establecido — no la marques como pendiente: indícala como **cubierta**, en una frase, citando el patrón concreto que la resuelve.
-- Si el contexto no lo deja claro, o el cambio introduce algo nuevo en esa categoría sin patrón existente que seguir, márcala como **pendiente de revisar**, con una frase de qué falta confirmar o decidir.
-- No explores código de más solo para resolver esto: si hace falta más información de la que ya se tiene para decidir con confianza, es señal de que la categoría queda pendiente — no motivo para lanzar una exploración adicional del repo por cuenta propia.
+- If the context already gathered (technical documentation, explored code, `plan.md`) makes clear how that category is addressed — e.g. it already goes through the project's parameterized ORM, already uses the existing auth middleware, already follows an established sanitization pattern — don't mark it as pending: flag it as **covered**, in one sentence, citing the specific pattern that resolves it.
+- If the context doesn't make it clear, or the change introduces something new in that category with no existing pattern to follow, mark it as **pending review**, with a sentence on what needs confirming or deciding.
+- Don't over-explore code just to resolve this: if more information is needed than what's already available to decide confidently, that's a sign the category stays pending — not a reason to launch additional exploration of the repo on your own.
 
-## 3. Devolver el resultado a quien invoca
+## 3. Return the result to the caller
 
-No redactes ningún fichero ni muestres nada al usuario directamente. Devuelve a quien invoca, en el mismo turno:
+Don't draft any file nor show anything to the user directly. Return to the caller, in the same turn:
 
-- **Categorías aplicables cubiertas**: lista (puede estar vacía) de `{categoría}: {por qué ya está resuelta}`.
-- **Categorías pendientes de revisar**: lista (vacía si no hay ninguna) de `{categoría}: {qué falta confirmar o decidir}`.
-- Las categorías no aplicables al cambio ni se mencionan en el resultado.
+- **Applicable categories covered**: a list (can be empty) of `{category}: {why it's already resolved}`.
+- **Categories pending review**: a list (empty if none) of `{category}: {what needs confirming or deciding}`.
+- Categories not applicable to the change aren't even mentioned in the result.
 
-Quien invoca decide qué hacer con los pendientes (resolverlos con el usuario, anotarlos en `plan.md`, usarlos como motivo para no calificar de trivial en el atajo `fast` de `pv-fix`); esta skill no vuelve a intervenir sobre eso.
+The caller decides what to do with the pending items (resolve them with the user, note them in `plan.md`, use them as a reason not to qualify as trivial in `pv-fix`'s `fast` shortcut); this skill doesn't intervene on that again.

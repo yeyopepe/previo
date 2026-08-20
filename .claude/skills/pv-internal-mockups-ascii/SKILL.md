@@ -1,47 +1,49 @@
 ---
 name: pv-internal-mockups-ascii
-description: Procedimiento compartido, agnóstico al proyecto, para crear o editar maquetas visuales estáticas en texto plano con caracteres ASCII (`design_*.txt`) de un change/fix. Recibe la carpeta destino y la lista de elementos visuales a maquetar (nuevos o a editar) y devuelve las rutas de los ficheros creados/editados, sin decidir por sí misma qué elementos hacen falta ni validar nada con el usuario. Uso interno de las skills pv-new y pv-fix (directamente o desde extend-entry.md), invocada por el nombre configurado en `framework.skills.mockups` de `.claude/pv-context.json` cuando el proyecto prefiere maquetas ASCII en vez de HTML.
+description: Shared, project-agnostic procedure to create or edit static visual mockups in plain ASCII text (`design_*.txt`) for a change/fix. Receives the destination folder and the list of visual elements to mock up (new or to edit) and returns the paths of the created/edited files, without deciding on its own which elements are needed nor validating anything with the user. Internal use by the pv-new and pv-fix skills (directly or from extend-entry.md), invoked by the name configured in `.claude/pv-context.json`'s `framework.skills.mockups` when the project prefers ASCII mockups over HTML.
 user-invocable: false
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.2
+  version: 0.9.5b10
   uses: []
 ---
 
 # pv-internal-mockups-ascii
 
-Procedimiento único y compartido para generar la maqueta visual (`design_*.txt`) de un elemento de UI nuevo o modificado, como arte ASCII en texto plano. Solo lo invocan otras skills del framework `pv-*` — no está pensado para invocación directa por el usuario.
+A single, shared procedure to generate the visual mockup (`design_*.txt`) of a new or modified UI element, as plain-text ASCII art. Only invoked by other `pv-*` framework skills — not meant for direct invocation by the user.
 
-**Esta skill no decide qué elementos necesitan maqueta ni valida nada con el usuario.** Eso lo decide siempre quien invoca (típicamente `pv-new`/`pv-fix`, al detectar que el cambio tiene componente visual): esta skill solo se invoca cuando ya se sabe que hace falta generar o editar al menos una maqueta ASCII, nunca "por si acaso". Presentar el resultado al usuario para que lo confirme también es responsabilidad de quien invoca.
+**Language.** This skill doesn't talk to the user. The mockup's sample text/content follows `framework.changes.language` (default `interaction.language`, English if neither is configured) — the caller tells it, or it resolves it itself by reading `.claude/pv-context.json`.
 
-Esta skill es específicamente para maquetas en **texto ASCII**. Si un proyecto configura otra skill en `framework.skills.mockups` para usar otra tecnología (p.ej. HTML, Figma, una librería de componentes, imágenes), esa skill alternativa debe cumplir el mismo contrato de entrada/salida descrito aquí para poder sustituir a esta sin que `pv-new`/`pv-fix` necesiten cambiar nada.
+**This skill doesn't decide which elements need a mockup, nor validate anything with the user.** That's always decided by the caller (typically `pv-new`/`pv-fix`, upon detecting the change has a visual component): this skill is only invoked once it's already known that generating or editing at least one ASCII mockup is needed, never "just in case". Presenting the result to the user for confirmation is also the caller's responsibility.
 
-## Entrada esperada de quien invoca
+This skill is specifically for **ASCII text** mockups. If a project configures another skill in `framework.skills.mockups` to use a different technology (e.g. HTML, Figma, a component library, images), that alternative skill must fulfill the same input/output contract described here so it can replace this one without `pv-new`/`pv-fix` needing to change anything.
 
-- **Carpeta destino**: la ruta donde deben vivir los ficheros, normalmente `{changesDir}/inProgress/{xxxx}/`.
-- **Lista de elementos visuales**, uno por cada maqueta a crear o editar. Por cada elemento:
-  - **Descripción breve** del elemento (se usa para el nombre del fichero: `design_<descripción-del-elemento>.txt`, p.ej. `design_modal-seleccion-mazo.txt`, `design_barra-progreso.txt`).
-  - **Qué debe mostrar**: aspecto, maquetación, contenido de ejemplo relevante para ilustrar el resultado (no hace falta que quien invoca dé detalle de bajo nivel — colores exactos, medidas — si no lo tiene todavía).
-  - **Acción**: `crear` (fichero nuevo) o `editar` (ya existe un `design_*.txt` en la carpeta destino con ese nombre y hay que modificarlo) — en este segundo caso, qué cambia respecto a lo que ya hay.
+## Expected input from the caller
 
-## Reglas de cada maqueta
+- **Destination folder**: the path where the files should live, normally `{changesDir}/inProgress/{xxxx}/`.
+- **List of visual elements**, one per mockup to create or edit. For each element:
+  - **Brief description** of the element (used for the filename: `design_<element-description>.txt`, e.g. `design_deck-selection-modal.txt`, `design_progress-bar.txt`).
+  - **What it should show**: look, layout, sample content relevant to illustrate the result (the caller doesn't need to give low-level detail — exact colors, measurements — if it doesn't have it yet).
+  - **Action**: `create` (new file) or `edit` (a `design_*.txt` with that name already exists in the destination folder and needs modifying) — in this second case, what changes relative to what's already there.
 
-Cada fichero `design_*.txt` es solo una maqueta visual, no un prototipo funcional:
+## Rules for each mockup
 
-- Es texto plano puro: solo caracteres ASCII (líneas, esquinas y rellenos con `-`, `|`, `+`, `_`, `/`, `\`, `*`, `#`, `.`, espacios, etc.). Nada de HTML, Markdown, emojis ni caracteres Unicode de dibujo de cajas (`─│┌┐└┘`) — el objetivo es que se vea igual de bien en cualquier editor de texto monoespaciado.
-- Usa fuente monoespaciada como asunción implícita: alinea columnas y bordes con espacios, cuidando que cada línea de un mismo bloque tenga el ancho consistente para que las cajas cuadren visualmente.
-- Debe mostrar únicamente el aspecto (disposición de elementos, jerarquía, agrupación, tamaños relativos) que tendría ese elemento — no necesita datos reales, basta contenido de ejemplo estático que ilustre el resultado (textos de botones, etiquetas, valores de ejemplo).
-- Representa controles y estados con convenciones simples y explícitas cuando aporten claridad, por ejemplo:
-  - Botón: `[ Guardar ]`
-  - Campo de texto: `[ nombre del grupo____ ]`
-  - Checkbox marcado/vacío: `[x]` / `[ ]`
-  - Elemento seleccionado o resaltado: `> Opción activa <` o rodeado de `*`
-  - Icono o imagen: un marcador entre corchetes describiendo qué es, p.ej. `[icono-papelera]`
-- Si el elemento tiene varios estados relevantes (p.ej. normal / hover / error) o el flujo tiene varios pasos, represéntalos como bloques separados dentro del mismo fichero, cada uno con un título breve en una línea de comentario (p.ej. `-- Estado: error --`) antes del bloque.
-- Un fichero por cada elemento visual diferenciado de la propuesta — no agrupes varios elementos distintos en un mismo `design_*.txt` salvo que quien invoca los haya pedido como una única unidad.
+Every `design_*.txt` file is only a visual mockup, not a functional prototype:
 
-## Pasos
+- It's pure plain text: only ASCII characters (lines, corners and fills with `-`, `|`, `+`, `_`, `/`, `\`, `*`, `#`, `.`, spaces, etc.). No HTML, Markdown, emoji, or Unicode box-drawing characters (`─│┌┐└┘`) — the goal is that it looks equally good in any monospace text editor.
+- Assumes a monospace font implicitly: align columns and borders with spaces, taking care that every line in a block has a consistent width so the boxes line up visually.
+- It must show only the look (element layout, hierarchy, grouping, relative sizes) that element would have — no need for real data, static sample content illustrating the result is enough (button text, labels, example values).
+- Represents controls and states with simple, explicit conventions when they add clarity, for example:
+  - Button: `[ Save ]`
+  - Text field: `[ group name____ ]`
+  - Checked/unchecked checkbox: `[x]` / `[ ]`
+  - Selected or highlighted element: `> Active option <` or surrounded by `*`
+  - Icon or image: a bracketed marker describing what it is, e.g. `[trash-icon]`
+- If the element has several relevant states (e.g. normal / hover / error) or the flow has several steps, represent them as separate blocks within the same file, each with a brief title on a comment line (e.g. `-- State: error --`) before the block.
+- One file per distinct visual element in the proposal — don't group several different elements into the same `design_*.txt` unless the caller asked for them as a single unit.
 
-1. Para cada elemento de la lista recibida, crea (si la acción es `crear`) o edita (si es `editar`) el fichero `design_<descripción-del-elemento>.txt` correspondiente en la carpeta destino, siguiendo las reglas de arriba. Al editar, respeta el resto del fichero que no esté relacionado con el cambio pedido.
-2. Devuelve a quien invoca, en el mismo turno, la lista de rutas de los ficheros creados/editados (una por elemento). No presentes nada al usuario ni pidas confirmación — eso lo hace quien invoca.
+## Steps
+
+1. For each element in the received list, create (if the action is `create`) or edit (if `edit`) the corresponding `design_<element-description>.txt` file in the destination folder, following the rules above. When editing, preserve the rest of the file unrelated to the requested change.
+2. Return to the caller, in the same turn, the list of created/edited file paths (one per element). Don't present anything to the user or ask for confirmation — that's the caller's job.

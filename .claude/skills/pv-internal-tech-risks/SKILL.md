@@ -1,72 +1,74 @@
 ---
 name: pv-internal-tech-risks
-description: Procedimiento compartido, agnóstico al proyecto, para valorar el riesgo de romper algo al implementar la solución técnica ya escrita en plan.md de un change/fix. Evalúa 9 factores (uso compartido, alcance, profundidad, cobertura de tests, criticidad, reversibilidad, datos persistentes, superficie de seguridad, datos sensibles) puntuados 0-10, y devuelve la lista factor=valor más la mediana. Uso interno de la skill pv-how, invocada solo cuando plan.md ya está escrito.
+description: Shared, project-agnostic procedure to assess the risk of breaking something when implementing the technical solution already written in a change/fix's plan.md. Evaluates 9 factors (shared usage, scope, depth, test coverage, criticality, reversibility, persistent data, security surface, sensitive data) scored 0-10, and returns the factor=value list plus the median. Internal use by the pv-how skill, invoked only once plan.md is already written.
 user-invocable: false
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.2
+  version: 0.9.5b10
   uses: []
 ---
 
 # pv-internal-tech-risks
 
-Procedimiento único y compartido para valorar el riesgo de romper algo al implementar una solución técnica ya diseñada. Solo lo invoca `pv-how`, y solo después de que `plan.md` esté escrito — con la solución ya decidida es cuando hay información suficiente para valorar el riesgo, no antes. No está pensado para invocación directa por el usuario.
+A single, shared procedure to assess the risk of breaking something when implementing an already-designed technical solution. Only invoked by `pv-how`, and only after `plan.md` is written — with the solution already decided is when there's enough information to assess risk, not before. Not meant for direct invocation by the user.
 
-**Esta skill no escribe ni edita nada.** Es puramente de análisis: evalúa y devuelve el resultado a quien invoca. Qué hacer con ese resultado (qué se escribe en `plan.md`, cuánto detalle se muestra al usuario) lo decide siempre `pv-how`.
+**Language.** This skill writes or edits nothing and doesn't talk to the user, so `language` doesn't apply to it — it always works and returns the 9 factor names in English, as internal framework vocabulary (see step 5). It's `pv-how`'s responsibility to translate them to `changes.language` if it dumps them into `plan.md`'s section (f).
 
-## Entrada esperada de quien invoca
+**This skill writes or edits nothing.** It's purely analysis: it evaluates and returns the result to the caller. What to do with that result (what gets written to `plan.md`, how much detail is shown to the user) is always `pv-how`'s decision.
 
-- La ruta (o el contenido ya leído) de `plan.md` de la entrada, con la solución técnica ya escrita.
-- La ruta (o el contenido ya leído) de `description.md` de esa misma entrada, como contexto funcional.
+## Expected input from the caller
 
-## 0. Cargar el contexto del proyecto
+- The path (or already-read content) of the entry's `plan.md`, with the technical solution already written.
+- The path (or already-read content) of that same entry's `description.md`, as functional context.
 
-Lee `.claude/pv-context.json` en la raíz del repo (si no lo has hecho ya en esta sesión). No valides aquí que el framework está inicializado — eso ya lo ha comprobado `pv-how` antes de invocar esta skill.
+## 0. Load the project context
 
-## 1. Los 9 factores de riesgo
+Read `.claude/pv-context.json` at the repo root (if you haven't already this session). Don't validate here that the framework is initialized — `pv-how` has already checked that before invoking this skill.
 
-Evalúa cada uno de estos 9 factores con un valor entero de 0 a 10, usando el ancla en 0, el ancla en 10, y la tabla de significado general de la sección siguiente para interpolar los valores intermedios.
+## 1. The 9 risk factors
 
-| # | Factor | Pregunta guía | Ancla 0 | Ancla 10 |
+Evaluate each of these 9 factors with an integer value from 0 to 10, using the anchor at 0, the anchor at 10, and the general meaning table in the next section to interpolate intermediate values.
+
+| # | Factor | Guiding question | Anchor 0 | Anchor 10 |
 |---|--------|---------------|---------|----------|
-| 1 | Uso compartido | ¿Quién más usa el código que se toca? | Código nuevo o exclusivo de este cambio, nadie más lo usa | Función/módulo core consumido por muchas features distintas |
-| 2 | Alcance | ¿Cuántos puntos distintos se tocan? | 1 solo fichero, 1 función | Muchos ficheros dispersos en capas distintas (UI, lógica, datos...) |
-| 3 | Profundidad del cambio | ¿Se cambia comportamiento interno o un contrato? | Detalle interno no observable desde fuera | Cambio de firma/interfaz/esquema del que otros dependen directamente |
-| 4 | Cobertura de tests | ¿Hay red de seguridad automática? | Código bien cubierto por tests que fallarían si algo se rompe | Sin ningún test que ejercite este código |
-| 5 | Criticidad del flujo | ¿Qué tan grave es si esto falla? | Funcionalidad secundaria o cosmética | Flujo crítico de negocio (auth, pagos, datos core) |
-| 6 | Reversibilidad | ¿Qué cuesta deshacerlo si sale mal? | Revertir el commit basta, sin rastro | Requiere deshacer una migración de datos/estado en producción |
-| 7 | Datos persistentes | ¿Se toca cómo se guardan los datos? | No se toca esquema ni formato de datos guardados | Migración de esquema/datos en producción |
-| 8 | Superficie de seguridad | ¿Se toca entrada de usuario o control de acceso? | No hay entrada de usuario ni control de acceso implicado | Cambio en autenticación, autorización o validación de entrada |
-| 9 | Datos sensibles | ¿Se maneja algo que no debería filtrarse? | No hay credenciales, PII, tokens ni secretos implicados | El cambio maneja o puede exponer credenciales, PII, tokens o secretos |
+| 1 | Shared usage | Who else uses the code being touched? | New code exclusive to this change, nobody else uses it | Core function/module consumed by many different features |
+| 2 | Scope | How many distinct spots are touched? | 1 single file, 1 function | Many files scattered across different layers (UI, logic, data...) |
+| 3 | Depth of change | Is internal behavior changed, or a contract? | Internal detail not observable from outside | Signature/interface/schema change that others depend on directly |
+| 4 | Test coverage | Is there an automatic safety net? | Code well covered by tests that would fail if something breaks | No test at all exercises this code |
+| 5 | Flow criticality | How serious is it if this fails? | Secondary or cosmetic functionality | Critical business flow (auth, payments, core data) |
+| 6 | Reversibility | How costly is it to undo if it goes wrong? | Reverting the commit is enough, no trace left | Requires undoing a data/state migration in production |
+| 7 | Persistent data | Is how data is stored being touched? | No schema or stored data format is touched | Schema/data migration in production |
+| 8 | Security surface | Is user input or access control being touched? | No user input or access control involved | Change in authentication, authorization, or input validation |
+| 9 | Sensitive data | Is something handled that shouldn't leak? | No credentials, PII, tokens, or secrets involved | The change handles or could expose credentials, PII, tokens, or secrets |
 
-## 2. Tabla de significado del valor de riesgo (referencia para interpolar y para presentar el resultado)
+## 2. Risk value meaning table (reference for interpolating and presenting the result)
 
-| Valor | Significado |
+| Value | Meaning |
 |---|---|
-| 0 | Sin riesgo — cambio totalmente aislado, imposible que afecte a nada más |
-| 1–2 | Riesgo mínimo — cambio local, con red de seguridad (tests) o fácilmente reversible |
-| 3–4 | Riesgo bajo — toca algo de superficie compartida o varios puntos, pero sin tocar contratos ni datos |
-| 5–6 | Riesgo moderado — comparte código con otras partes, cobertura de test parcial, o toca un contrato/firma usado por otros |
-| 7–8 | Riesgo alto — cambio profundo en código muy compartido y/o sin tests, en un flujo relevante, datos persistentes o seguridad |
-| 9 | Riesgo muy alto — cambio estructural en flujo crítico de negocio, difícil de revertir, sin tests |
-| 10 | Riesgo extremo — cambio profundo y amplio en código crítico y muy compartido, sin tests, sin reversibilidad fácil, tocando datos y/o seguridad a la vez |
+| 0 | No risk — fully isolated change, impossible for it to affect anything else |
+| 1–2 | Minimal risk — local change, with a safety net (tests) or easily reversible |
+| 3–4 | Low risk — touches some shared surface or several spots, but doesn't touch contracts or data |
+| 5–6 | Moderate risk — shares code with other parts, partial test coverage, or touches a contract/signature used by others |
+| 7–8 | High risk — deep change in heavily shared and/or untested code, in a relevant flow, persistent data, or security |
+| 9 | Very high risk — structural change in a critical business flow, hard to revert, untested |
+| 10 | Extreme risk — deep, broad change in critical, heavily shared code, untested, not easily reversible, touching data and/or security at once |
 
-## 3. Reunir la información necesaria
+## 3. Gather the necessary information
 
-1. Lee `plan.md` (en concreto la sección (b) Solución técnica, y (c)/(d) si existen) y `description.md` de la entrada.
-2. Con eso, valora cuántos de los 9 factores ya se pueden puntuar con confianza. Para los que no (p.ej. si hay tests que cubran un fichero concreto, o si una función la usan otras partes del proyecto), explora puntualmente el código real usando `framework.sourcecodeDir` (si está configurado, o el repo en general si no) — solo lo necesario para confirmar ese factor concreto, sin explorar el repo entero sin rumbo.
+1. Read the entry's `plan.md` (specifically section (b) Technical solution, and (c)/(d) if present) and `description.md`.
+2. With that, assess how many of the 9 factors can already be scored with confidence. For the ones you can't (e.g. whether tests cover a specific file, or whether a function is used by other parts of the project), specifically explore the real code using `framework.sourcecodeDir` (if configured, or the repo in general if not) — only as much as needed to confirm that specific factor, without exploring the whole repo aimlessly.
 
-## 4. Puntuar y calcular la mediana
+## 4. Score and compute the median
 
-1. Asigna un valor entero 0-10 a cada uno de los 9 factores.
-2. Calcula la mediana de los 9 valores (el valor central al ordenarlos) — con 9 valores siempre es un entero, sin redondeos necesarios.
+1. Assign an integer value 0-10 to each of the 9 factors.
+2. Compute the median of the 9 values (the central value when sorted) — with 9 values it's always an integer, no rounding needed.
 
-## 5. Devolver el resultado a quien invoca
+## 5. Return the result to the caller
 
-No redactes ningún fichero ni muestres nada al usuario directamente. Devuelve a `pv-how`, en el mismo turno:
+Don't draft any file nor show anything to the user directly. Return to `pv-how`, in the same turn:
 
-- **Lista de factores**: cada uno de los 9 como `{factor} = {valor}`, en el mismo orden de la tabla del paso 1.
-- **Mediana final**: el valor entero calculado en el paso 4.
+- **Factor list**: each of the 9 as `{factor} = {value}`, in the same order as step 1's table.
+- **Final median**: the integer value computed in step 4.
 
-Quien invoca decide qué hacer con este resultado (qué escribe en `plan.md`, qué muestra al usuario); esta skill no vuelve a intervenir sobre eso.
+The caller decides what to do with this result (what it writes to `plan.md`, what it shows the user); this skill doesn't intervene on that again.

@@ -1,23 +1,27 @@
 #!/usr/bin/env python3
-"""Lista las entradas pendientes de changelog en {workFolder}/changes/closed/.
+"""Lists the entries pending changelog inclusion in {workFolder}/changes/closed/temp/.
 
-Recorre las subcarpetas directas de {workFolder}/changes/closed/ y devuelve,
-por cada una, su xxxx (nombre de la carpeta) y la ruta a su description.md
-(relativa a la raiz del repo). No lee ni interpreta el contenido de esos
-description.md -- eso lo hace la skill pv-internal-changelog, que necesita
-juicio real para clasificar cada entrada (Nuevo/Cambios/Eliminado).
+Walks {workFolder}/changes/closed/temp/'s direct subfolders and returns, for
+each one, its xxxx (folder name) and the path to its description.md
+(relative to the repo root). Doesn't read or interpret those
+description.md's content -- that's the pv-internal-changelog skill's job,
+which needs real judgment to classify each entry (New/Changed/Removed).
 
-workFolder se lee de .claude/pv-context.json (seccion framework) salvo que
-se pase explicitamente por parametro.
+By the time this runs, stage-closed-entries.py has already moved closed/'s
+entries into closed/temp/, so any change/fix closed afterwards (while this
+version is being prepared) is in closed/ and doesn't show up here.
 
-Imprime UNICAMENTE un JSON en stdout:
+workFolder is read from .claude/pv-context.json (framework section) unless
+passed explicitly as a parameter.
 
-  {"entries": [{"xxxx": "00001", "descriptionPath": "changes/closed/00001/description.md"}, ...]}
+Prints ONLY a JSON on stdout:
 
-Si closed/ no existe o esta vacia, "entries" es una lista vacia (no es un
-error).
+  {"entries": [{"xxxx": "00001", "descriptionPath": "changes/closed/temp/00001/description.md"}, ...]}
 
-Uso:
+If closed/temp/ doesn't exist or is empty, "entries" is an empty list (not
+an error).
+
+Usage:
   python list-closed-entries.py
 """
 
@@ -28,7 +32,7 @@ from pathlib import Path
 
 
 def repo_root() -> Path:
-    # Este script vive en {repo}/.claude/skills/pv-internal-changelog/scripts/
+    # This script lives at {repo}/.claude/skills/pv-internal-changelog/scripts/
     return Path(__file__).resolve().parents[4]
 
 
@@ -36,23 +40,26 @@ def load_work_folder(root: Path) -> str:
     context_path = root / ".claude" / "pv-context.json"
     if not context_path.is_file():
         raise SystemExit(
-            f"No se encuentra {context_path}. Ejecuta la skill pv-init antes de "
-            "listar entradas de closed."
+            f"Cannot find {context_path}. Run the pv-init skill before "
+            "listing entries from closed."
         )
 
     context = json.loads(context_path.read_text(encoding="utf-8"))
     framework = context.get("framework")
     if not framework:
         raise SystemExit(
-            f"{context_path} no tiene la seccion 'framework'. Ejecuta la skill "
-            "pv-init para completarla."
+            f"{context_path} has no 'framework' section. Run the pv-init "
+            "skill to complete it."
         )
     return framework.get("workFolder", "/")
 
 
 def resolve_changes_dir(root: Path, work_folder_rel: str) -> Path:
-    work_folder_rel = work_folder_rel or "/"
-    work_root = root if work_folder_rel in ("/", "") else root / work_folder_rel
+    # workFolder is always relative to the repo root, whether or not it
+    # carries a leading "/" (that's only a convention to make it visually
+    # explicit) -- Path("/a") / "/b" would otherwise discard "a" entirely,
+    # since pathlib treats a leading-slash operand as its own absolute path.
+    work_root = root / (work_folder_rel or "").lstrip("/")
     return work_root / "changes"
 
 
@@ -60,8 +67,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--work-folder",
-        help="Ruta a workFolder relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/pv-context.json (default '/').",
+        help="Path to workFolder relative to the repo root. If not given, "
+        "read from .claude/pv-context.json (default '/').",
     )
     args = parser.parse_args()
 
@@ -70,7 +77,7 @@ def main() -> None:
 
     root = repo_root()
     work_folder_rel = args.work_folder or load_work_folder(root)
-    closed_dir = resolve_changes_dir(root, work_folder_rel) / "closed"
+    closed_dir = resolve_changes_dir(root, work_folder_rel) / "closed" / "temp"
 
     entries = []
     if closed_dir.is_dir():

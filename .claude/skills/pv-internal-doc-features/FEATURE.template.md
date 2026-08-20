@@ -1,12 +1,12 @@
-# [NNN] — [Nombre de la funcionalidad]
+# [[[NNN]]] — [Feature name]
 
-**Área**: [Área funcional]
+**[[[Area]]]**: [Functional area]
 
-[Descripción funcional en una o más frases/párrafos: qué permite hacer y cómo se comporta, no cómo está implementado por dentro. Puede incluir enlaces a otras funcionalidades con `[texto](otro-slug.md)`.]
+[Functional description in one or more sentences/paragraphs: what it lets you do and how it behaves, not how it's implemented internally. Can include links to other features with `[text](other-slug.md)`.]
 
-[Opcional — uno o más diagramas Mermaid **funcionales** (nunca técnicos) que representen un flujo/caso de uso relevante de esta funcionalidad, cada uno en su propio bloque ```mermaid```. Omite esta parte si la funcionalidad no tiene ningún flujo representable o el change/fix que la creó/modificó no generó diagrama funcional.]
+[Optional — one or more **functional** (never technical) Mermaid diagrams representing a relevant flow/use case for this feature, each in its own ```mermaid``` block. Omit this part if the feature has no representable flow or the change/fix that created/modified it didn't generate a functional diagram.]
 
-- **Disponible en**: [dónde se ve/usa — modo, pantalla, componente...]
-- **Código**: [xxxx, yyyy, ...]
-- **Desde**: [fecha del primer cambio, AAAA-MM-DD]
-- **Última modificación**: [fecha del último cambio, AAAA-MM-DD]
+- **[[[Available in]]]**: [where it's seen/used — mode, screen, component...]
+- **[[[Code]]]**: [xxxx, yyyy, ...]
+- **[[[Since]]]**: [date of the first change, YYYY-MM-DD]
+- **[[[Last modified]]]**: [date of the last change, YYYY-MM-DD]

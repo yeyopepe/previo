@@ -1,13 +1,13 @@
-# Idea: {código}
+# Idea: {code}
 
-## Idea
-<Nombre corto que resuma la idea, en una línea.>
+## [[[Idea]]]
+<Short one-line name summarizing the idea.>
 
-## Código
-{código}
+## [[[Code]]]
+{code}
 
-## Fecha creación
-<Fecha actual en formato YYYY-MM-DD, en el momento de crear este description.md.>
+## [[[Creation date]]]
+<Current date in YYYY-MM-DD format, at the moment this description.md is created.>
 
-## Notas
-<Contenido de la idea, tal como la ha planteado el usuario. Puede ser una frase suelta, una lista de posibilidades, dudas abiertas sin resolver, o cualquier otra forma en la que el usuario quiera dejarla anotada — no fuerces la estructura de description.md de pv-new/pv-fix.>
+## [[[Notes]]]
+<Content of the idea, as the user raised it. Can be a loose sentence, a list of possibilities, open unresolved questions, or any other form the user wants to jot it down in — don't force pv-new/pv-fix's description.md structure onto it.>

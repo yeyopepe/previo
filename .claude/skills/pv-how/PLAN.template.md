@@ -1,59 +1,59 @@
-- **Fecha creación**: [YYYY-MM-DD]
-- **Riesgo**: [mediana 0-10 devuelta por pv-internal-tech-risks] — [descripción de "Significado" correspondiente a esa mediana según la tabla de la sección (f)]
+- **[[[Creation date]]]**: [YYYY-MM-DD]
+- **[[[Risk]]]**: [median 0-10 returned by pv-internal-tech-risks] — [description of the "Meaning" matching that median per the table in section (f)]
 
-## (a) Anotaciones funcionales
+## (a) Functional notes
 
-**Fuera de alcance:** [qué queda explícitamente fuera de esta solución — si es un fix, qué mejoras adicionales se detectaron pero no se incluyen. Si no hay nada que excluir, dilo explícitamente ("ningún otro comportamiento se toca") en vez de omitir el campo.]
+**Out of scope:** [what's explicitly left out of this solution — if it's a fix, what additional improvements were spotted but not included. If there's nothing to exclude, say so explicitly ("no other behavior is touched") instead of omitting the field.]
 
-**Dudas resueltas con el usuario:** [pregunta y respuesta, en breve. Si no hubo ninguna, dilo explícitamente ("ninguna pregunta abierta...") en vez de omitir el campo.]
+**Doubts resolved with the user:** [question and answer, briefly. If there were none, say so explicitly ("no open questions...") instead of omitting the field.]
 
-## (b) Solución técnica
+## (b) Technical solution
 
-- [ ] **`[fichero]` — [resumen breve de la tarea].** [Qué hay que tocar exactamente (función, variable, regla CSS...), dónde, y por qué — con el detalle suficiente para que se pueda implementar sin volver a decidir nada de diseño. Si hace falta un snippet o un valor exacto (una regla CSS, un nombre de clase, una condición), inclúyelo literal en vez de describirlo en prosa.]
-- [ ] **`[fichero]` — [resumen breve de la siguiente tarea].** [...]
+- [ ] **`[file]` — [brief summary of the task].** [Exactly what needs to be touched (function, variable, CSS rule...), where, and why — with enough detail to implement without having to make any more design decisions. If a snippet or exact value is needed (a CSS rule, a class name, a condition), include it literally instead of describing it in prose.]
+- [ ] **`[file]` — [brief summary of the next task].** [...]
 - [ ] [...]
 
-Ordena las tareas en el orden en que se deberían implementar. No incluyas aquí pasos de comprobación/verificación manual — esos van en (e). Formato checklist (`- [ ]`) obligatorio: quien implemente debe marcar cada casilla `[x]` solo cuando esa tarea concreta esté hecha, nunca todas de golpe al final.
+Order the tasks in the order they should be implemented. Don't include manual verification/checking steps here — those go in (e). Checklist format (`- [ ]`) is mandatory: whoever implements should check each box `[x]` only when that specific task is done, never all at once at the end.
 
-## (c) Cambios de arquitectura
+## (c) Architecture changes
 
-*Solo si `docs.tech.architectureDocDir` está configurado y esta solución modifica la arquitectura básica del proyecto.* [Qué fichero(s) concretos de esa carpeta hay que actualizar y qué cambiar en cada uno. Omite la sección entera si no aplica.]
+*Only if `docs.tech.architectureDocDir` is configured and this solution modifies the project's core architecture.* [Which specific file(s) in that folder need updating and what to change in each. Omit the entire section if it doesn't apply.]
 
-## (d) Cambios en estilo
+## (d) Style changes
 
-*Solo si `docs.tech.styleBibleDocDir` está configurado y esta solución modifica o amplía el estilo visual del proyecto.* [Qué fichero(s) concretos de esa carpeta hay que actualizar y qué cambiar en cada uno. Omite la sección entera si no aplica.]
+*Only if `docs.tech.styleBibleDocDir` is configured and this solution modifies or extends the project's visual style.* [Which specific file(s) in that folder need updating and what to change in each. Omit the entire section if it doesn't apply.]
 
-## (e) Verificación
+## (e) Verification
 
-- [ ] [Un resultado observable del sistema ya cambiado — no un paso más de implementación. Redáctalo de forma autocontenida (qué se hace y qué se debería ver), sin remitir a un número de tarea de (b): una misma comprobación puede depender de varias tareas a la vez, o una tarea puede no tener una comprobación propia y aportar solo a una compartida. La lista se recorre entera *después* de terminar toda la sección (b), como un checklist de cierre.]
+- [ ] [An observable result from the already-changed system — not one more implementation step. Write it self-contained (what to do and what you should see), without referring back to a task number from (b): the same check may depend on several tasks at once, or a task may have no check of its own and only contribute to a shared one. The list is gone through in full *after* finishing all of section (b), as a closing checklist.]
 - [ ] [...]
 
-Incluye siempre esta sección (salvo que la solución no tenga ningún comportamiento observable que comprobar, lo cual es raro) — es lo que permite dar la implementación por terminada con confianza, incluso a quien la ejecute sin conocer más contexto que este documento. Formato checklist (`- [ ]`) obligatorio, igual que en (b).
+Always include this section (unless the solution has no observable behavior to check, which is rare) — it's what lets the implementation be considered done with confidence, even by whoever runs it with no more context than this document. Checklist format (`- [ ]`) is mandatory, same as in (b).
 
-## (f) Análisis de riesgo
+## (f) Risk analysis
 
-*Solo si el usuario ha pedido el detalle del riesgo — por defecto esta sección se omite y solo queda el campo **Riesgo** de la cabecera.* Lista de los 9 factores evaluados por `pv-internal-tech-risks` con su valor 0-10, y la mediana final.
+*Only if the user asked for the risk detail — by default this section is omitted and only the header's **Risk** field remains.* List of the 9 factors evaluated by `pv-internal-tech-risks` with their 0-10 value, and the final median.
 
-| Factor | Valor |
+| Factor | Value |
 |---|---|
-| Uso compartido | [0-10] |
-| Alcance | [0-10] |
-| Profundidad del cambio | [0-10] |
-| Cobertura de tests | [0-10] |
-| Criticidad del flujo | [0-10] |
-| Reversibilidad | [0-10] |
-| Datos persistentes | [0-10] |
-| Superficie de seguridad | [0-10] |
-| Datos sensibles | [0-10] |
+| Shared usage | [0-10] |
+| Scope | [0-10] |
+| Depth of change | [0-10] |
+| Test coverage | [0-10] |
+| Flow criticality | [0-10] |
+| Reversibility | [0-10] |
+| Persistent data | [0-10] |
+| Security surface | [0-10] |
+| Sensitive data | [0-10] |
 
-**Mediana**: [0-10]
+**Median**: [0-10]
 
-| Valor | Significado |
+| Value | Meaning |
 |---|---|
-| 0 | Sin riesgo — cambio totalmente aislado, imposible que afecte a nada más |
-| 1–2 | Riesgo mínimo — cambio local, con red de seguridad (tests) o fácilmente reversible |
-| 3–4 | Riesgo bajo — toca algo de superficie compartida o varios puntos, pero sin tocar contratos ni datos |
-| 5–6 | Riesgo moderado — comparte código con otras partes, cobertura de test parcial, o toca un contrato/firma usado por otros |
-| 7–8 | Riesgo alto — cambio profundo en código muy compartido y/o sin tests, en un flujo relevante, datos persistentes o seguridad |
-| 9 | Riesgo muy alto — cambio estructural en flujo crítico de negocio, difícil de revertir, sin tests |
-| 10 | Riesgo extremo — cambio profundo y amplio en código crítico y muy compartido, sin tests, sin reversibilidad fácil, tocando datos y/o seguridad a la vez |
+| 0 | No risk — fully isolated change, impossible for it to affect anything else |
+| 1–2 | Minimal risk — local change, with a safety net (tests) or easily reversible |
+| 3–4 | Low risk — touches some shared surface or several spots, but doesn't touch contracts or data |
+| 5–6 | Moderate risk — shares code with other parts, partial test coverage, or touches a contract/signature used by others |
+| 7–8 | High risk — deep change in heavily shared and/or untested code, in a relevant flow, persistent data, or security |
+| 9 | Very high risk — structural change in a critical business flow, hard to revert, untested |
+| 10 | Extreme risk — deep, broad change in critical, heavily shared code, untested, not easily reversible, touching data and/or security at once |

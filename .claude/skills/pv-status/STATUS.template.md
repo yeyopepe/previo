@@ -1,68 +1,70 @@
-# Estado del proyecto
+# Project status
 
-*Generado: {fechaGeneracion}*
+*Generated: {generatedDate}*
 
-🆕 Change · 👾 Fix · ⚡ Fast · 💡 Todo   🟢 Listo para cerrar · 🟡 Sin planificar · 🟠 Planificado
+**Versions:** {versionsTotal}
 
-## Resumen
+🆕 Change · 👾 Fix · ⚡ Fast · 💡 Todo   🟢 Ready to close · 🟡 Unplanned · 🟠 Planned
 
-{resumenBarras}
+## Summary
+
+{summaryBars}
 
 ---
 
-| Estado | 🆕 Change | 👾 Fix | ⚡ Fast | 💡 Todo | Total |
+| State | 🆕 Change | 👾 Fix | ⚡ Fast | 💡 Todo | Total |
 | --- | --- | --- | --- | --- | --- |
 | 💡 Todo | — | — | — | {todoTotal} | **{todoTotal}** |
-| 🔧 En progreso | {inProgressChange} | {inProgressFix} | — | — | **{inProgressTotal}** |
-| ✅ Implementado | {implementedChange} | {implementedFix} | {implementedFast} | — | **{implementedTotal}** |
-| 📦 Cerrado | {closedChange} | {closedFix} | {closedFast} | — | **{closedTotal}** |
+| 🔧 In progress | {inProgressChange} | {inProgressFix} | — | — | **{inProgressTotal}** |
+| ✅ Implemented | {implementedChange} | {implementedFix} | {implementedFast} | — | **{implementedTotal}** |
+| 📦 Closed | {closedChange} | {closedFix} | {closedFast} | — | **{closedTotal}** |
 | **Total** | **{changeTotal}** | **{fixTotal}** | **{fastTotal}** | **{todoTotal}** | **{totalTotal}** |
 
-*(La columna Fast solo puede tener valores en "Implementado" y "Cerrado": los cambios `fast` son el atajo trivial de `pv-fix` — se aplican y documentan en la misma invocación, sin generar `plan.md`, quedando ya en `implemented`.)*
+*(The Fast column can only have values in "Implemented" and "Closed": `fast` changes are pv-fix's trivial shortcut — they're applied and documented in the same invocation, without generating `plan.md`, landing directly in `implemented`.)*
 
-## 🔧 En progreso
+## 🔧 In progress
 
-### 🟢 Listos para revisar y cerrar (en la carpeta changes/implemented, incluye tanto change/fix como fast) — {toCloseTotal}
+### 🟢 Ready to review and close (in the changes/implemented folder, includes both change/fix and fast) — {toCloseTotal}
 
-| Código | Descripción |
-| --- | --- |
-{filasListas}
+| Code | Description | Risk |
+| --- | --- | --- |
+{readyRows}
 
-### 🟡 Pendientes de análisis técnico (solo `description.md`, pendientes de planificar con `pv-how`) — {pendingTotal}
+### 🟠 Planned, pending implementation (`description.md` + `plan.md`, pending implementation) — {toImplementTotal}
 
-| Código | Descripción |
-| --- | --- |
-{filasPendientes}
+| Code | Description | Risk |
+| --- | --- | --- |
+{toImplementRows}
 
-### 🟠 Planificados, pendientes de implementar (`description.md` + `plan.md`, pendientes de implementar) — {toImplementTotal}
+### 🟡 Pending technical analysis (only `description.md`, pending planning with `pv-how`) — {pendingTotal}
 
-| Código | Descripción |
-| --- | --- |
-{filasImplementar}
+| Code | Description | Risk |
+| --- | --- | --- |
+{pendingRows}
 
-<!-- SECTION:sinDescripcion -->
--   **Entradas sin `description.md` (anómalas):** {filasSinDescripcion}
-<!-- /SECTION:sinDescripcion -->
+<!-- SECTION:noDescription -->
+-   **Entries without `description.md` (anomalous):** {noDescriptionRows}
+<!-- /SECTION:noDescription -->
 
 <!-- SECTION:fast -->
-## Cambios fast implementados
+## Implemented fast changes
 
-{filasFast}
+{fastRows}
 <!-- /SECTION:fast -->
 
-## 💡 Ideas en todo/ (fuera del flujo change/fix)
+## 💡 Ideas in todo/ (outside the change/fix flow)
 
-{filasIdeas}
+{ideaRows}
 
-<!-- SECTION:avisos -->
-## Avisos
+<!-- SECTION:warnings -->
+## Warnings
 
-{filasAvisos}
-<!-- /SECTION:avisos -->
+{warningRows}
+<!-- /SECTION:warnings -->
 
-<!-- ROW_ENTRY: | {icono} {xxxx} | {nombre} | -->
-<!-- EMPTY_ENTRY: | — | *(ninguno)* | -->
-<!-- ROW_FAST: -   ⚡ {código} — {nombre} ({fecha}) -->
-<!-- ROW_IDEA: -   {codigo}: {idea} -->
-<!-- ROW_AVISO: -   {aviso} -->
-<!-- EMPTY_IDEAS: *(No hay ninguna idea apuntada en `todo/`.)* -->
+<!-- ROW_ENTRY: | {icon} {xxxx} | {name} | {risk} | -->
+<!-- EMPTY_ENTRY: | — | *(none)* | — | -->
+<!-- ROW_FAST: -   ⚡ {code} — {name} ({date}) -->
+<!-- ROW_IDEA: -   {code}: {idea} -->
+<!-- ROW_WARNING: -   {warning} -->
+<!-- EMPTY_IDEAS: *(No ideas noted in `todo/`.)* -->

@@ -1,85 +1,89 @@
 ---
 name: pv-todo
-description: Apunta y desarrolla ideas sueltas para el futuro sin meterlas en el flujo de trabajo del proyecto — las guarda en {changesDir}/todo/{código}/description.md, una carpeta aparte que ninguna otra skill pv-* usa ni tiene en cuenta. Sirve tanto para anotar una idea nueva como para seguir desarrollando/ampliando una ya apuntada. Trigger: /pv-todo [código] <idea>, o cuando el usuario pide "apuntar"/"dejar anotada" una idea para más adelante, sin pedir que se documente como change/fix.
-argument-hint: "[código] <idea a anotar o desarrollar>"
+description: Notes and develops loose ideas for later without putting them into the project's workflow — saves them at {changesDir}/todo/{code}/description.md, a separate folder no other pv-* skill uses or takes into account. Works both for jotting down a new idea and for continuing to develop/expand one already noted. Trigger: /pv-todo [code] <idea>, or when the user asks to "note down"/"jot down" an idea for later, without asking for it to be documented as a change/fix.
+argument-hint: "[code] <idea to note or develop>"
 model: claude-haiku-4-5
 effort: medium
 metadata:
-  version: 0.9.2
+  version: 0.9.5b10
   uses: []
 ---
 
 # pv-todo
 
-Cuaderno de ideas del framework `pv-*`, pero **fuera** de su flujo de trabajo: no documenta un cambio/fix a implementar, solo deja constancia de una idea para desarrollarla más adelante, a un ritmo distinto del de `pv-new`/`pv-fix`. No hay planificación (`pv-how`/`pv-do`), ni estados (`inProgress`/`implemented`/`closed`), ni versión: una idea anotada aquí se queda aquí hasta que, en su caso, alguien decida convertirla en un change/fix de verdad con `pv-new`/`pv-fix` (fuera ya de esta skill).
+The `pv-*` framework's idea notebook, but **outside** its workflow: it doesn't document a change/fix to implement, it just keeps a record of an idea to develop later, at a different pace from `pv-new`/`pv-fix`. There's no planning (`pv-how`/`pv-do`), no states (`inProgress`/`implemented`/`closed`), and no version: an idea noted here stays here until, if ever, someone decides to turn it into a real change/fix with `pv-new`/`pv-fix` (outside this skill already).
 
-Vive en `{changesDir}/todo/`, una subcarpeta hermana de `inProgress`/`implemented`/`closed` pero **ajena por completo** al resto del framework: ninguna otra skill `pv-*` la lee, la escribe, ni cuenta sus carpetas al numerar o buscar cambios/fixes. Los códigos que usa esta skill no tienen ninguna relación con el `xxxx` numérico de change/fix — son solo identificadores únicos dentro de `{changesDir}/todo/`.
+**Language.** Use `framework.interaction.language` (default English) for everything you say to the user in this conversation. `description.md` follows `framework.changes.language` (default `interaction.language`, English if neither is configured) — except the labels wrapped in `[[[...]]]` in `description.template.md` (the four markdown headings), which stay fixed in English always (see step 3, and the "Marker convention in templates" section of `pv-design.en.md`): write them without the brackets. If `language` is not configured anywhere, everything is English.
 
-## 0. Comprobar que el framework está inicializado
+Lives at `{changesDir}/todo/`, a sibling subfolder to `inProgress`/`implemented`/`closed` but **entirely separate** from the rest of the framework: no other `pv-*` skill reads it, writes it, or counts its folders when numbering or looking up changes/fixes. The codes this skill uses have no relation to change/fix's numeric `xxxx` — they're just unique identifiers within `{changesDir}/todo/`.
 
-Si `.claude/pv-context.json` no existe en la raíz del repo, o le falta la sección `framework`, no continúes: dile al usuario que primero debe ejecutar la skill `pv-init` para inicializar/completar el framework en este proyecto, y detente ahí.
+## 0. Check that the framework is initialized
+
+If `.claude/pv-context.json` doesn't exist at the repo root, or is missing the `framework` section, don't continue: tell the user they must first run the `pv-init` skill to initialize/complete the framework in this project, and stop there.
 
 ```
-Este proyecto todavía no tiene el framework `pv-*` inicializado (o le falta configuración). Ejecuta primero `/pv-init` antes de volver a invocarme.
+This project doesn't have the `pv-*` framework initialized yet (or is missing configuration). Run `/pv-init` first before invoking me again.
 ```
 
-A partir de aquí, `changesDir` es notación abreviada para `{workFolder}/changes` (subcarpeta de nombre fijo dentro de `framework.workFolder`, que por defecto es `"/"`, la raíz del repo).
+Additionally, before continuing, check that the framework's installed version is verified: read `metadata.version` from `.claude/skills/pv-init/SKILL.md`'s frontmatter (a handful of lines, not the whole file) and compare it against `framework.frameworkStatus.lastVerifiedVersion` in the `pv-context.json` you already loaded. If `frameworkStatus` is missing entirely, or `lastVerifiedVersion` doesn't match `pv-init/SKILL.md`'s real version, don't continue: tell the user the framework was updated (or has never been verified) and that they must run `pv-update` first — a stale `pv-context.json` can mean outdated templates, marker conventions, or other assumptions this skill relies on. Same stop if `framework.frameworkStatus.blocked` is already `true` (show `blockedReason` if present). This is a cheap, live comparison of two version strings already in hand — it doesn't require `pv-update` to have run before for the check itself to work, only for it to pass.
 
-## 1. Decidir si es una idea nueva o una ampliación
+From here on, `changesDir` is shorthand for `{workFolder}/changes` (a fixed-name subfolder inside `framework.workFolder`, which defaults to `"/"`, the repo root).
 
-Si el usuario indica un código al invocar esta skill (p.ej. `/pv-todo a3f9k añade también...`), comprueba si existe **exactamente** `{changesDir}/todo/{código}/`.
+## 1. Decide whether it's a new idea or an expansion
 
-- **Si existe**: es una ampliación de una idea ya apuntada. Ve a la sección [Ampliar una idea ya apuntada](#ampliar-una-idea-ya-apuntada).
-- **Si no existe**, o no se ha indicado ningún código: es una idea nueva. Continúa en el paso 2.
+If the user gives a code when invoking this skill (e.g. `/pv-todo a3f9k also add...`), check whether `{changesDir}/todo/{code}/` exists **exactly**.
 
-Si el usuario no da contenido alguno (p.ej. solo pide "qué ideas tengo apuntadas" o "lista las todo"), salta directamente al paso de [Listar ideas apuntadas](#listar-ideas-apuntadas) sin crear ni modificar nada.
+- **If it exists**: it's an expansion of an already-noted idea. Go to the [Expanding an already-noted idea](#expanding-an-already-noted-idea) section.
+- **If it doesn't exist**, or no code was given: it's a new idea. Continue to step 2.
 
-## 2. Generar un código único
+If the user doesn't give any content (e.g. they just ask "what ideas do I have noted" or "list the todos"), jump straight to the [Listing noted ideas](#listing-noted-ideas) step without creating or modifying anything.
 
-La generación y comprobación de colisión las hace de forma determinista y gratis en tokens el script [`scripts/new-todo-code.py`](scripts/new-todo-code.py) (Python estándar, sin dependencias externas) — no lo hagas a mano. Ejecuta desde la raíz del repo:
+## 2. Generate a unique code
+
+Generation and collision checking are handled deterministically and for free in tokens by the [`scripts/new-todo-code.py`](scripts/new-todo-code.py) script (standard Python, no external dependencies) — don't do it by hand. Run from the repo root:
 
 ```
 python .claude/skills/pv-todo/scripts/new-todo-code.py
 ```
 
-El script lee `workFolder` de `.claude/pv-context.json` (o usa `--work-folder` si se lo pasas), lista las subcarpetas que ya existan bajo `{changesDir}/todo/` (sin necesidad de que exista todavía — en ese caso no hay ninguna carpeta que colisione), genera un código alfanumérico corto (`[a-z0-9]`, 5 caracteres por defecto, `--length` para otro tamaño) que no coincida con ninguna ya existente ahí, e imprime únicamente ese código por stdout. No consulta ni tiene en cuenta ninguna otra carpeta del repo (ni `inProgress`/`implemented`/`closed`, ni nada fuera de `{changesDir}/todo/`): la única condición de unicidad es no repetirse dentro de esta subcarpeta. Usa ese valor tal cual como código — no lo recalcules a mano.
+The script reads `workFolder` from `.claude/pv-context.json` (or uses `--work-folder` if you pass it), lists the subfolders already existing under `{changesDir}/todo/` (it doesn't need to exist yet — in that case there's nothing to collide with), generates a short alphanumeric code (`[a-z0-9]`, 5 characters by default, `--length` for a different size) that doesn't match any already there, and prints only that code on stdout. It doesn't check or take into account any other folder in the repo (not `inProgress`/`implemented`/`closed`, nor anything outside `{changesDir}/todo/`): the only uniqueness condition is not repeating within this subfolder. Use that value as-is for the code — don't recompute it by hand.
 
-## 3. Anotar la idea
+## 3. Note the idea
 
-Sin preguntar dudas de alcance ni proponer respuestas a huecos funcionales (eso es lo que distingue esta skill de `pv-new`/`pv-fix`: aquí se anota la idea tal cual está, aunque esté incompleta o sea solo un esbozo), crea:
+Without asking scope questions or proposing answers to functional gaps (that's what distinguishes this skill from `pv-new`/`pv-fix`: here the idea is noted as-is, even if incomplete or just a sketch), create:
 
 ```
-{changesDir}/todo/{código}/description.md
+{changesDir}/todo/{code}/description.md
 ```
 
-**`description.md`** sigue **exactamente** la plantilla [`description.template.md`](description.template.md) de esta misma carpeta: cuatro cabeceras markdown `## Idea`, `## Código`, `## Fecha creación` y `## Notas`, en ese orden, sin negrita ni `:` al final de la cabecera (ni `## Idea:` ni `**Idea:**`) — `list_todo.py`/`collect_status.py` de `pv-status` parsean estas cabeceras con una expresión regular literal (`^##\s*Idea\s*\n+`) y cualquier variación (cabecera en negrita, dos puntos, título distinto como "Ide") hace que la idea no se pueda leer y aparezca como "(sin idea)" en `/pv-status todo`.
+**`description.md`** follows **exactly** the [`description.template.md`](description.template.md) template in this same folder: four markdown headings `## Idea`, `## Code`, `## Creation date` and `## Notes` (marked `[[[...]]]` in the template — write them without the brackets), in that order, without bold or a trailing `:` on the heading (neither `## Idea:` nor `**Idea:**`) — `pv-status`'s `list_todo.py`/`collect_status.py` parse these headings with a literal regular expression (`^##\s*Idea\s*\n+`) and any variation (bold heading, colon, a different title like "Ide", or a translated heading) makes the idea unreadable, showing up as "(no idea)" in `/pv-status todo`.
 
-- **Idea** — nombre corto que resuma la idea.
-- **Código** — el código generado en el paso 2.
-- **Fecha creación** — la fecha actual (formato `YYYY-MM-DD`) en el momento de crear este `description.md`.
-- **Notas** — el contenido de la idea, tal como la ha planteado el usuario. Puede ser una frase suelta, una lista de posibilidades, dudas abiertas sin resolver, o cualquier otra forma en la que el usuario quiera dejarla anotada — no fuerces la estructura de `description.md` de `pv-new`/`pv-fix` (no hay "Prompt original" ni "Descripción completa" separados).
+- **Idea** — short name summarizing the idea.
+- **Code** — the code generated in step 2.
+- **Creation date** — today's date (`YYYY-MM-DD` format) at the moment this `description.md` is created.
+- **Notes** — the idea's content, as the user raised it. Can be a loose sentence, a list of possibilities, open unresolved questions, or any other form the user wants to note it in — don't force `pv-new`/`pv-fix`'s `description.md` structure onto it (there's no separate "Original prompt" or "Full description").
 
-Si la idea tiene componente visual claro y el usuario quiere dejar constancia de ello, puedes crear también algún `design_*.html` igual que hace `pv-new` (maqueta autocontenida, sin funcionalidad real) — pero no es obligatorio ni el foco de esta skill; solo hazlo si el usuario lo pide o aporta ese material.
+If the idea has a clear visual component and the user wants to record it, you can also create some `design_*.html`, same as `pv-new` does (self-contained mockup, no real functionality) — but it's not mandatory nor this skill's focus; only do it if the user asks or provides that material.
 
-## 4. Confirmar al usuario
+## 4. Confirm to the user
 
-Indica el código asignado y la ruta del fichero creado, y recuerda que esta idea se queda anotada en `{changesDir}/todo/` sin entrar en el flujo de trabajo — si en algún momento se quiere convertir en un cambio/fix real, hay que documentarla de nuevo con `pv-new`/`pv-fix` (esta skill no hace esa conversión automáticamente).
+Report the assigned code and the created file's path, and remind them that this idea stays noted at `{changesDir}/todo/` outside the workflow — if it's ever turned into a real change/fix, it needs to be documented again with `pv-new`/`pv-fix` (this skill doesn't do that conversion automatically).
 
-## Ampliar una idea ya apuntada
+## Expanding an already-noted idea
 
-Cuando el paso 1 detecta que el código indicado ya existe en `{changesDir}/todo/{código}/`:
+When step 1 detects that the given code already exists at `{changesDir}/todo/{code}/`:
 
-1. Abre `{changesDir}/todo/{código}/description.md` para ver lo ya anotado.
-2. Añade lo nuevo a la sección **Notas**, dejando lo anterior tal cual (no lo borres ni lo reescribas) y añadiendo lo nuevo a continuación — igual que un cuaderno donde se sigue escribiendo, no un documento que se reformula cada vez.
-3. Confirma al usuario que la idea `{código}` queda actualizada.
+1. Open `{changesDir}/todo/{code}/description.md` to see what's already noted.
+2. Add the new content to the **Notes** section, leaving what's there as-is (don't delete or rewrite it) and appending the new content after it — like a notebook you keep writing in, not a document rewritten each time.
+3. Confirm to the user that idea `{code}` has been updated.
 
-## Listar ideas apuntadas
+## Listing noted ideas
 
-Si el usuario pide ver qué ideas hay anotadas: lista las subcarpetas de `{changesDir}/todo/` y, para cada una, su código y el campo **Idea** de su `description.md`. Si la carpeta no existe o está vacía, dilo así — no hay ninguna idea apuntada todavía.
+If the user asks to see what ideas are noted: list `{changesDir}/todo/`'s subfolders and, for each one, its code and its `description.md`'s **Idea** field. If the folder doesn't exist or is empty, say so — there are no ideas noted yet.
 
-## Qué NO hace esta skill
+## What this skill does NOT do
 
-- No planifica ni implementa nada (no hay equivalente a `pv-how`/`pv-do` aquí).
-- No mueve ideas entre estados ni las "cierra" — para eso no hay flujo; si una idea deja de interesar, es el usuario quien decide borrarla o dejarla tal cual.
-- No numera con el `xxxx` del framework ni invoca `pv-internal-workflow` — su numeración es independiente y local a `{changesDir}/todo/`.
-- No cuenta como fuente de intención para `pv-how`, `pv-do` ni ninguna otra skill del framework: `{changesDir}/todo/` es territorio exclusivo de `pv-todo`.
+- It doesn't plan or implement anything (there's no `pv-how`/`pv-do` equivalent here).
+- It doesn't move ideas between states or "close" them — there's no flow for that; if an idea stops being interesting, it's up to the user to delete it or leave it as-is.
+- It doesn't number with the framework's `xxxx` nor invoke `pv-internal-workflow` — its numbering is independent and local to `{changesDir}/todo/`.
+- It doesn't count as a source of intent for `pv-how`, `pv-do`, or any other framework skill: `{changesDir}/todo/` is `pv-todo`'s exclusive territory.

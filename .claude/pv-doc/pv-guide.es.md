@@ -9,7 +9,7 @@ Todas las skills viven bajo `.claude/skills/pv-*` y comparten un único fichero 
 - [Preparación](#preparación)
   - [1. Herramientas necesarias](#1-herramientas-necesarias)
   - [2. Inicializar el framework: `/pv-init`](#2-inicializar-el-framework-pv-init)
-    - [Elegir el modelo/esfuerzo de cada skill: `skillModels`](#elegir-el-modeloesfuerzo-de-cada-skill-skillmodels)
+- [Estructura de carpetas](#estructura-de-carpetas)
 - [Guía de uso rápida: el flujo natural](#guía-de-uso-rápida-el-flujo-natural)
   - [Paso 0 (opcional) — Apuntar ideas sueltas: `/pv-todo`](#paso-0-opcional--apuntar-ideas-sueltas-pv-todo)
   - [Paso 1 — Definir el cambio: dos maneras](#paso-1--definir-el-cambio-dos-maneras)
@@ -19,6 +19,7 @@ Todas las skills viven bajo `.claude/skills/pv-*` y comparten un único fichero 
 - [Preparar una entrega: `/pv-version`](#preparar-una-entrega-pv-version)
 - [Ejemplo de ciclo completo](#ejemplo-de-ciclo-completo)
 - [Más formas de personalizar Previo](#más-formas-de-personalizar-previo)
+- [El script `pv.py`: consultar y cerrar cambios sin Claude Code](#el-script-pvpy-consultar-y-cerrar-cambios-sin-claude-code)
 - [Otros trucos](#otros-trucos)
 
 
@@ -40,7 +41,7 @@ Generar una versión del entregable **sí** forma parte del framework `pv-*`: `/
 
 Antes de poder usar cualquier otra skill `pv-*`, hay que ejecutar `/pv-init` una vez por proyecto. Genera `.claude/pv-context.json`, que es el único sitio donde vive la configuración: dónde se guardan los cambios, si el proyecto versiona entregables, dónde está el código fuente, qué documentos mantener sincronizados, etc.
 
-`pv-init` explora el repo en busca de pistas (carpeta de cambios existente, `package.json`, docs de arquitectura...) y solo pregunta lo que no puede deducir. Si se vuelve a invocar sobre un proyecto ya inicializado, permite reconfigurar o completar campos que falten sin repetir todo el cuestionario.
+`pv-init` explora el repo en busca de pistas (`package.json`, docs de arquitectura...) y solo pregunta lo que no puede deducir. `workFolder` no es una de esas preguntas: siempre es `/previo-sdd`, fijado en silencio sin pedir confirmación; si algún día quieres otra carpeta, la cambias tú mismo en `.claude/pv-context.json`, bajo tu responsabilidad. Si se vuelve a invocar sobre un proyecto ya inicializado, permite reconfigurar o completar campos que falten sin repetir todo el cuestionario.
 
 Ejemplo de `.claude/pv-context.json` ya configurado:
 
@@ -60,45 +61,81 @@ Ejemplo de `.claude/pv-context.json` ya configurado:
       "mockups": "pv-internal-mockups-html",
       "diagrams": "pv-internal-tech-mermaid"
     },
-    "sourcecodeDir": "src",
-    "workFolder": "/",
+    "sourcecodeDir": "/src",
+    "workFolder": "/previo-sdd",
     "numberWidth": 5,
+    "interaction": { "language": "en" },
+    "changes": { "language": "es" },
+    "versions": { "language": "es" },
     "docs": {
       "functional": {
-        "featuresDocPathDir": "design/docs/features"
+        "featuresDocPathDir": "docs/features",
+        "language": "es"
       },
       "tech": {
-        "architectureDocDir": "design/docs/architecture",
-        "styleBibleDocDir": "design/docs/style"
+        "architectureDocDir": "docs/architecture",
+        "styleBibleDocDir": "docs/style",
+        "language": "en"
       }
+    },
+    "_comments": {
+      "workFolder": "Es la carpeta de trabajo principal del framework, relativa siempre a la raíz del repo.",
+      "sourcecodeDir": "Es la carpeta del código fuente del proyecto, relativa siempre a la raíz del repo.",
+      "interaction.language": "El equipo habla con Claude en inglés.",
+      "changes.language": "Cada change/fix en curso se documenta en español, idioma del equipo.",
+      "versions.language": "El changelog publicado se redacta en español.",
+      "docs.functional.language": "Documentación de funcionalidades en español.",
+      "docs.tech.language": "Arquitectura y biblia de estilo en inglés, para compartir con colaboradores externos."
     }
   }
 }
 ```
 
 
-#### Elegir el modelo/esfuerzo de cada skill: `skillModels`
+`.claude/pv-context.json` también admite dos bloques opcionales para afinar el framework: `skillModels` (qué modelo/esfuerzo usa cada skill) y los campos `language` de `framework` (en qué idioma habla o escribe cada cosa). `pv-init` te pregunta por el idioma en la primera inicialización; el detalle de ambos bloques está en [Más formas de personalizar Previo](#más-formas-de-personalizar-previo).
 
-`.claude/pv-context.json` también puede incluir una sección opcional `skillModels` que decide con qué modelo (Sonnet, Haiku...) y esfuerzo corre cada skill `pv-*` del proyecto. Sirve tanto para bajar el coste de las skills más mecánicas (por ejemplo, `pv-status` o `pv-todo` a Haiku) como para subir la capacidad de una skill puntual que lo necesite — por ejemplo, si quieres que `pv-how` (la que diseña la solución técnica) razone con un modelo más capaz que el resto:
+## Estructura completa de carpetas
 
-```json
-"skillModels": {
-  "default": { "model": "claude-sonnet-5", "effort": "medium" },
-  "overrides": {
-    "pv-how": { "model": "claude-opus-5", "effort": "high" }
-  }
-}
+Vista rápida de para qué sirve cada carpeta que usa el framework, con la configuración por defecto. El detalle de los ficheros concretos que hay dentro de cada una está en `pv-design.es.md`, pensado para quien quiera entender el funcionamiento interno.
+
 ```
-
-- `default`: modelo/esfuerzo que aplica a cualquier skill `pv-*` sin entrada propia en `overrides`.
-- `overrides`: una entrada por nombre de skill (el `name:` de su `SKILL.md`) para las que necesiten algo distinto del `default`.
-
-Después de editar `default` u `overrides`, hay que sincronizar el framework para que el cambio tenga efecto — el fichero de configuración por sí solo no basta. Para ello tienes dos opciones:
-
-- (Recomendada) Ejecuta `pv.py` y selecciona la opción _Actualizar modelos de las skills_.
-- Ejecuta el script `.claude/skills/pv-init/scripts/sync-skill-models.py`.
-
-Es un proceso automático que no gasta tokens; puede repetirse en cualquier momento tras editar `skillModels` a mano, o pedirle a `pv-init` que lo haga por ti la próxima vez que lo invoques.
+{raíz del repo}/
+├── src/                        # tu código fuente (sourcecodeDir); pv-how lo consulta si falta documentación de arquitectura
+├── .claude/
+│   └── skills/
+│       ├── pv-init/             # ejecútala una vez por proyecto para arrancar el framework
+│       ├── pv-new/              # documenta funcionalidad nueva o un cambio de comportamiento intencionado
+│       ├── pv-fix/              # corrige un bug, o aplica al vuelo un cambio trivial
+│       ├── pv-how/              # planifica la solución técnica de una entrada ya documentada
+│       ├── pv-do/               # implementa el código de una entrada con plan.md ya escrito
+│       ├── pv-status/           # consulta el estado del proyecto sin tocar nada
+│       ├── pv-todo/             # apunta ideas sueltas sin comprometerte todavía a documentarlas
+│       ├── pv-version/          # empaqueta una entrega cuando ya tienes trabajo listo
+│       └── pv-internal-*/       # soporte interno — nunca las invocas tú directamente
+│
+└── previo-sdd/                  # {workFolder} — aquí vive todo el trabajo en curso del framework
+    ├── changes/                 # todo tu trabajo de documentación e implementación pasa por aquí
+    │   ├── inProgress/          # cambios ya documentados, pendientes de planificar o implementar
+    │   │   └── {xxxx}/          # una carpeta por change/fix, numerada automáticamente
+    │   ├── implemented/         # cambios ya implementados, pendientes de incluir en una entrega
+    │   │   └── {xxxx}/          # se mueve aquí solo al terminar pv-do
+    │   ├── todo/                # ideas sueltas de /pv-todo, fuera del flujo normal
+    │   │   └── {code}/          # una carpeta por idea, con su propio código corto
+    │   └── closed/              # cambios ya incluidos en una entrega, a la espera de limpiarse
+    │       └── {xxxx}/          # se borra automáticamente al redactar el changelog, con tu confirmación
+    │
+    ├── versions/                # aquí aparece cada entrega que prepares con /pv-version
+    │   └── {XXXX}/              # una carpeta por entrega, con el código que tú elijas
+    │       ├── files/           # el entregable ya generado, listo para distribuir
+    │       └── docs/            # copia de la documentación vigente en el momento de esa entrega
+    │
+    ├── stuff/                   # aquí queda guardado el procedimiento de build de tu proyecto
+    │
+    └── docs/                    # la documentación de referencia que pv-do mantiene sincronizada
+        ├── architecture/        # arquitectura y diseño técnico del proyecto
+        ├── style/               # guía de estilo visual, de interacción y de redacción
+        └── features/            # listado de funcionalidades ya implementadas
+```
 
 ## Guía de uso rápida: el flujo natural
 
@@ -193,9 +230,16 @@ Si invocas `/pv-how` sin argumento, lista lo que hay pendiente en `inProgress` y
 
 ## Preparar una entrega: `/pv-version`
 
-Cuando ya hay trabajo listo (`changes/implemented/`) y quieres cortar una entrega, `/pv-version <XXXX>` empaqueta todo en `{workFolder}/versions/{XXXX}/`: genera el entregable, comprime y copia la documentación técnica y funcional vigente, y redacta el changelog funcional a partir de lo que se haya ido cerrando en `changes/closed/`. `{XXXX}` es texto libre que eliges tú en cada invocación (p.ej. `00001`, `v1`, `beta3`) — no tiene relación con la numeración `xxxx` de change/fix, ni con `src/_output/versions/` (la carpeta que ya genera `build.py` por su cuenta con su propio contador `NNNN`): son tres espacios completamente independientes.
+Cuando ya hay trabajo listo (`changes/implemented/`) y quieres preparar una entrega, `/pv-version <XXXX>` empaqueta todo en `{workFolder}/versions/{XXXX}/`: genera el entregable, comprime y copia la documentación técnica y funcional vigente, y redacta el changelog funcional a partir de lo que se haya ido cerrando en `changes/closed/`. 
 
-Si invocas `/pv-version` solo para informar de un cambio en el procedimiento de build (p.ej. "ahora el build también genera un PDF de reglas"), sin pedir preparar una entrega, actualiza `{workFolder}/framework/how-to-compile-version.md` con eso y te pregunta si quieres lanzar el proceso de versionado ahora — no lo lanza por su cuenta.
+`{XXXX}` es texto libre que eliges tú en cada invocación (p.ej. `00001`, `v1`, `beta3`) — no tiene relación con la numeración `xxxx` de change/fix, ni con `src/_output/versions/` (la carpeta que ya genera `build.py` por su cuenta con su propio contador `NNNN`): son tres espacios completamente independientes.
+
+> ❗**IMPORTANTE:**
+> /pv-version utiliza el fichero `{workFolder}/stuff/how-to-compile-version.md` para saber como compilar una versión de tu aplicación. Si cuando llegue el momento este fichero no existe o está vacío, te preguntará sobre el proceso para documentarse y saber qué hacer. <u>Antes de llegar a este momento</u> deberías tener listo ya tu pipeline de compilación (generalmente con scripts) para poder contarle a Previo qué pasos debe seguir.
+
+> ❗**IMPORTANTE:**
+> Si invocas `/pv-version` solo para informar de un cambio en el procedimiento de build (p.ej. "ahora el build también genera un PDF de reglas"), sin pedir preparar una entrega, actualiza `{workFolder}/stuff/how-to-compile-version.md` con eso y te pregunta si quieres lanzar el proceso de versionado ahora — no lo lanza por su cuenta.
+
 
 ```mermaid
 flowchart LR
@@ -226,13 +270,17 @@ En prosa:
 
 1. **Guardarraíl de arranque**: si `changes/implemented/` tiene alguna entrada, `/pv-version` no avanza hasta resolverlas todas — por cada una pregunta si pasa a `closed` (irreversible sin confirmación) antes de seguir.
 2. **Crear la carpeta de la versión**: `{workFolder}/versions/{XXXX}/{files,docs}/`. Si `{XXXX}` ya existe, pregunta si regenerar sobre lo existente o elegir otro código.
-3. **Generar el entregable**: sigue el procedimiento de `{workFolder}/framework/how-to-compile-version.md` (se pregunta y se escribe la primera vez que hace falta, con un paso por artefacto si el build genera varios; en este repo ejecuta `python ./src/scripts/build.py`) y copia el resultado a `files/` mediante script.
+3. **Generar el entregable**: sigue el procedimiento de `{workFolder}/stuff/how-to-compile-version.md` (se pregunta y se escribe la primera vez que hace falta, con un paso por artefacto si el build genera varios; en este repo ejecuta `python ./src/scripts/build.py`) y copia el resultado a `files/` mediante script.
 4. **Comprimir y copiar documentación**: las rutas configuradas en `docs.tech.architectureDocDir`/`docs.tech.styleBibleDocDir`/`docs.functional.featuresDocPathDir` (las que estén configuradas) se comprimen en un `.zip` cada una y se guardan en `docs/`, como constancia de qué documentación estaba vigente en el momento de esta entrega.
 5. **Changelog funcional**: `pv-internal-changelog` (skill interna) lee cada `description.md` de `changes/closed/`. Las entradas de tipo `fix` van directas a **Fixes**; el resto se compara contra el changelog de la versión anterior detectada en `{workFolder}/versions/` (confirmándotela antes de usarla) y se clasifica en **Nuevo** / **Cambios** / **Eliminado**. `changelog.md` lleva una cabecera con el número de entradas de cada sección, en lenguaje puramente funcional. Tras tu confirmación explícita, borra de `closed/` solo las carpetas ya incorporadas (nunca "todo `closed/`" a ciegas); si no confirmas el borrado, el changelog queda escrito igualmente y `closed/` no se toca.
 
 Todo el copiado/borrado de ficheros de este proceso (artefacto del build, documentación, entradas de `closed/`) lo hacen scripts propios de las skills, nunca ediciones manuales.
 
 Puedes preguntar "¿cómo funciona `/pv-version`?" en mitad de la invocación y te muestra este mismo diagrama.
+
+> ❗**NOTA SOBRE PROYECTOS MÁS GRANDES**:
+> Obviamente, en proyectos más grandes, el proceso de liberar una nueva versión no termina aquí, sino que probablemente tenga que pasar todavía por muchos más estados (despliegue en varios entornos, actualización valores de configuración según esos entornos, validaciones de pruebas automáticas, etc).
+> El `/pv-version` se asegura de preprarlo todo para disponer de una versión de nuestra app con todo lo necesario. A partir de este momento, si el proyecto lo requiere, haremos que nuestras pipelines tomen el resultado de este proceso de la carpeta versions/{XXXX} (los ficheros generados, el changelog, la documentación reunida, etc..) y continúen el nuestro proceso de entrega.  Por eso es importante diseñar cómo y qué incluye una entrega y que Previo lo guarde en `{workFolder}/stuff/how-to-compile-version.md`.
 
 ## Ejemplo de ciclo completo
 
@@ -242,7 +290,7 @@ Puedes preguntar "¿cómo funciona `/pv-version`?" en mitad de la invocación y 
 
 1. `pv-fix` documenta el bug en `changes/inProgress/00008/description.md` y encadena `pv-how` automáticamente.
 2. `pv-how` analiza la causa raíz, escribe `plan.md` (acotado solo a ese bug) y pregunta si implementar.
-3. Confirmas → `pv-how` encadena `pv-do`, que edita el código, actualiza `FEATURES.md`/`design/docs/architecture/` si aplica, y mueve la carpeta a `changes/implemented/00008/`.
+3. Confirmas → `pv-how` encadena `pv-do`, que edita el código, actualiza `FEATURES.md`/`docs/architecture/` si aplica, y mueve la carpeta a `changes/implemented/00008/`.
 4. Cuando quieras cortar una nueva entrega: `/pv-version 00001` → mueve `00008` (y cualquier otra entrada de `implemented/`) a `closed`, genera el entregable (`python ./src/scripts/build.py` por debajo, que incrementa la versión en `version.js`), comprime y copia la documentación técnica y funcional vigente, y redacta `changelog.md` con lo acumulado en `closed/` (este `00008`, de tipo `fix`, cae en la sección Fixes).
 
 Y para algo trivial:
@@ -255,6 +303,8 @@ Y para algo trivial:
 2. Documenta lo hecho en `changes/inProgress/00009/description.md` (numeración normal vía `pv-internal-workflow`) y en el mismo turno mueve la carpeta a `changes/implemented/00009/`, sin haber generado `plan.md` ni haber encadenado `pv-how`/`pv-do`.
 
 ## Más formas de personalizar Previo
+
+### 1. Creación de maquetas y diagramas
 
 Algunas piezas del framework se pueden sustituir por otras propias sin tocar el resto, configurando `framework.skills` en `.claude/pv-context.json`. Por defecto no hace falta tocar nada; solo se configura si quieres cambiar alguna de estas dos piezas:
 
@@ -274,6 +324,100 @@ Ejemplo, para usar maquetas en ASCII en vez de HTML:
 
 También puedes apuntar cualquiera de las dos a una skill propia de tu proyecto, en vez de a una de las incluidas en Previo, siempre que reciba y devuelva la misma información que la skill a la que sustituye: la carpeta destino del cambio/fix y la lista de elementos a maquetar o diagramar como entrada, y las rutas de lo generado como salida.
 
+### 2. Configuración de idiomas
+
+Las instrucciones propias de cada skill `pv-*` (cada `SKILL.md`, sus plantillas, sus scripts) están siempre en inglés, sea cual sea la configuración — es el idioma en el que estas skills están mejor probadas, y lo que hace fiable seguir instrucciones complejas. Lo que controla `language` es solo el idioma de lo que una skill produce *hacia fuera*: lo que te dice en el chat, y el contenido de los documentos que escribe. Si nunca configuras `language` en ningún sitio, todo funciona en inglés por defecto.
+
+Previo separa el idioma en el que hablas con el framework del idioma en el que se escribe cada tipo de documento, configurando el bloque `framework` de `.claude/pv-context.json`. Se define un idioma por punto:
+
+- **`interaction.language`**: idioma en el que las skills `pv-*` hablan contigo en el chat (preguntas, confirmaciones, resúmenes). También es el valor por defecto (*fallback*) del resto de puntos que no configures aparte.
+- **`changes.language`**: idioma de los documentos de cada change/fix en curso (`description.md`, `plan.md`, `history.md` y los textos de los mockups `design_*.html`/`.txt`) dentro de `changes/`.
+- **`versions.language`**: idioma de `changelog.md`, generado por `pv-internal-changelog` a partir de `changes/closed`.
+- **`docs.functional.language`**: idioma de la documentación de funcionalidades (`featuresDocPathDir`) que `pv-do` mantiene actualizada tras cada change/fix implementado.
+- **`docs.tech.language`**: idioma compartido por la documentación de arquitectura (`architectureDocDir`) y la biblia de estilo (`styleBibleDocDir`), que `pv-do` mantiene actualizadas tras cada change/fix implementado.
+
+Todos los puntos salvo `interaction.language` son opcionales: si no los configuras, heredan el idioma de `interaction.language` (y si tampoco está configurado, se usa inglés). Esto te permite, por ejemplo, hablar con Previo en español mientras la documentación técnica queda en inglés para compartirla con colaboradores externos:
+
+```json
+"framework": {
+  "interaction": { "language": "es" },
+  "changes": { "language": "es" },
+  "versions": { "language": "es" },
+  "docs": {
+    "functional": { "language": "es" },
+    "tech": { "language": "en" }
+  }
+}
+```
+
+`pv-init` siempre pregunta por el idioma en una inicialización desde cero, proponiendo inglés por defecto para `interaction` y ofreciendo reutilizar el mismo valor para el resto salvo que quieras algo distinto. Si inicializaste este proyecto antes de que existiera el soporte de idioma, la próxima vez que ejecutes `pv-init` te preguntará solo esto, sin repetir el resto del cuestionario. Puedes editar los valores a mano en `.claude/pv-context.json` en cualquier momento después.
+
+Dos cosas se quedan siempre en inglés, se configure lo que se configure: la tabla del informe de `pv-status` (la generan scripts deterministas, no el modelo, para que sea gratis en tokens y consistente — solo la frase que la introduce sigue `interaction.language`), y las etiquetas de campo markdown que los scripts parsean literalmente en `description.md` y `plan.md` (`**Type**`, `**Name**`, `**Creation date**`, `**Risk**`, `## Idea`, `## Notes`...). Estas están marcadas con `[[[...]]]` en el `*.template.md` de cada skill — ver la sección "Convención de marcadores en plantillas" de `pv-design.es.md` para la regla completa — así que solo el texto que sigue a cada etiqueta sigue el idioma configurado.
+
+### 3. Modelo/esfuerzo de cada skill: `skillModels`
+
+`.claude/pv-context.json` también puede incluir una sección opcional `skillModels` que decide con qué modelo (Sonnet, Haiku...) y esfuerzo corre cada skill `pv-*` del proyecto. Sirve tanto para bajar el coste de las skills más mecánicas (por ejemplo, `pv-status` o `pv-todo` a Haiku) como para subir la capacidad de una skill puntual que lo necesite — por ejemplo, si quieres que `pv-how` (la que diseña la solución técnica) razone con un modelo más capaz que el resto:
+
+```json
+"skillModels": {
+  "default": { "model": "claude-sonnet-5", "effort": "medium" },
+  "overrides": {
+    "pv-how": { "model": "claude-opus-5", "effort": "high" }
+  }
+}
+```
+
+- `default`: modelo/esfuerzo que aplica a cualquier skill `pv-*` sin entrada propia en `overrides`.
+- `overrides`: una entrada por nombre de skill (el `name:` de su `SKILL.md`) para las que necesiten algo distinto del `default`.
+
+Después de editar `default` u `overrides`, hay que sincronizar el framework para que el cambio tenga efecto — el fichero de configuración por sí solo no basta. Para ello tienes dos opciones:
+
+- (Recomendada) Ejecuta `pv.py` y selecciona la opción _Sincronizar modelos de las skills según pv-context.json_ (ver [El script `pv.py`](#el-script-pvpy-consultar-y-cerrar-cambios-sin-claude-code) más abajo).
+- Ejecuta el script `.claude/skills/pv-init/scripts/sync-skill-models.py`.
+
+Es un proceso automático que no gasta tokens; puede repetirse en cualquier momento tras editar `skillModels` a mano, o pedirle a `pv-init` que lo haga por ti la próxima vez que lo invoques.
+
+## El script `pv.py`: consultar y cerrar cambios sin Claude Code
+
+
+```
+     ........
+  :=. . ..:::::----:
+ -*:.:..:---=---:-====-.
+:*#-.       .:=*+==--==+=:
+++#*:            :-+*+==**+.
+++*##=              :+**==**: 	Previo: the AI-driven, visual,
+*+=*##*:              :**=+#*.	rapid-development framework.
+ *++***#*-.             +*=**:
+  +*+******+-.           ***= 	One script, growing
+   -**+++*####*+-:.      --:. 	to manage more.
+     -++++**#*##***++===---:
+       .=*###+#****+**+--:
+           :=+*###%#*=:.
+```
+
+Para consultar el estado del proyecto o cerrar cambios sin pasar por Claude Code, ejecuta desde la raíz del proyecto:
+
+```
+python3 pv.py
+```
+
+Se genera y actualiza automáticamente — tanto al instalar/actualizar Previo con `install.sh`/`install.ps1` como en cada ejecución de `/pv-init` — así que no hace falta crearlo ni mantenerlo a mano — es un fichero que no debes editar directamente: cualquier cambio manual se perdería en la siguiente instalación o reinicialización.
+
+El menú contiene opciones para gestionar los cambios en curso:
+
+1. **Estado general del proyecto** — el mismo resumen que `/pv-status`.
+2. **Listado filtrado por estado** (`todo`, `inProgress`, `implemented`...) — te pide elegir uno de la lista antes de mostrarlo.
+3. **Ideas en `todo/`** — igual que `/pv-status todo`.
+4. **Cerrar una entrada implementada** (mover a `changes/closed/`) — te deja elegir una entrada concreta o cerrarlas todas de golpe, pidiéndote confirmación (`y`/`N`) antes de mover nada.
+5. **Configuración** — abre un submenú:
+   - **Sincronizar modelos de las skills según `pv-context.json`** — aplica los cambios que hayas hecho a mano en `skillModels` (ver [Modelo/esfuerzo de cada skill](#3-modeloesfuerzo-de-cada-skill-skillmodels) más arriba), sin que tengas que ejecutar el script a mano ni volver a invocar `pv-init`.
+6. **Comprobar versiones** — abre un submenú:
+   - **Listar versiones y leer su changelog** — lista las carpetas de `{workFolder}/versions/{XXXX}/` y, tras elegir una, muestra su `changelog.md`.
+   - **Comprobar que `changes/closed/temp/` está vacío** — esta carpeta debería estar siempre vacía o no existir; si tiene algo dentro, significa que una ejecución de `pv-version` falló a medias o sigue en marcha, y esta opción te avisa y lista lo que ha quedado atascado ahí.
+7. **Salir**.
+
+Cada submenú tiene su propia opción "Volver" para regresar al menú principal. Ninguna opción gasta tokens: todo son scripts deterministas, el mismo tipo de operación que ejecutarías tú mismo desde la terminal. Útil para un vistazo rápido del proyecto o para cerrar cambios sin abrir Claude Code.
 
 ## Otros trucos
 
@@ -286,6 +430,5 @@ También puedes apuntar cualquiera de las dos a una skill propia de tu proyecto,
 
   Esto ejecuta `pv-how` y, sin detenerse a preguntar, encadena `pv-do` en la misma respuesta si el plan resulta razonable. Útil para cambios pequeños o ya claros en tu cabeza, donde revisar el plan antes de implementar no aporta nada.
 - **Arreglos rápidos**: los arreglos con `pv-fix` funcionan parecido a los cambios (documentándolo, analizándolo, etc), pero si el arreglo es pequeño y/o trivial y no supone riesgo alguno, el framework lo implementará directamente.
-- **El script `pv.py`**: con el script pv.py podrás consultar el estado del proyecto, cerrar cambios rápidamente, sincronizar el framework, etc. Todo sin gastar tokens.
 
 

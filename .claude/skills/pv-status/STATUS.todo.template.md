@@ -1,8 +1,8 @@
-# 💡 Ideas en todo/
+# 💡 Ideas in todo/
 
-*Generado: {fechaGeneracion}*
+*Generated: {generatedDate}*
 
-{filas}
+{rows}
 
 <!-- ROW_IDEA: -   **{code}**: {idea} -->
-<!-- EMPTY_TEMPLATE: *(No hay ninguna idea apuntada en `todo/`.)* -->
+<!-- EMPTY_TEMPLATE: *(No ideas noted in `todo/`.)* -->

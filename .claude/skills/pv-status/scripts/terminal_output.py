@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Helpers de formato para el modo --terminal de los scripts de pv-status.
+"""Formatting helpers for pv-status scripts' --terminal mode.
 
-Salida en texto plano sin markdown, ajustada a un ancho fijo de 70
-columnas para pegarse tal cual en una terminal clasica. Lo usa
-directamente pv.py (el menu de terminal del framework pv-*) al invocar
-render_status.py / filter_status.py / list_todo.py con --terminal; la
-propia skill pv-status (uso desde el chat) nunca debe pasar ese flag,
-su salida de referencia sigue siendo el markdown por defecto.
+Plain-text output without markdown, fixed to a 70-column width so it can be
+pasted as-is into a classic terminal. Used directly by pv.py (the pv-*
+framework's terminal menu) when invoking render_status.py / filter_status.py
+/ list_todo.py with --terminal; the pv-status skill itself (used from chat)
+must never pass that flag -- its reference output is still the default
+markdown.
 """
 
 import os
@@ -16,14 +16,10 @@ import unicodedata
 
 WIDTH = 70
 
-# Mismo dorado que el nucleo del anillo de pv.py (RING_CHAR_COLORS['#']),
-# reutilizado aqui para los titulos de seccion.
+# Same gold as pv.py's ring core (RING_CHAR_COLORS['#']), reused here for
+# section titles.
 TITLE_COLOR = "\033[38;5;220m"
 COLOR_RESET = "\033[0m"
-
-
-def hr(char: str = "=") -> str:
-    return char * WIDTH
 
 
 def supports_color() -> bool:
@@ -38,6 +34,10 @@ def colorize(text: str, color: str = TITLE_COLOR) -> str:
     return f"{color}{text}{COLOR_RESET}"
 
 
+def hr(char: str = "=") -> str:
+    return colorize(char * WIDTH)
+
+
 def title(text: str, subtitle: str = "") -> str:
     lines = [hr(), colorize(text.center(WIDTH))]
     if subtitle:
@@ -47,7 +47,7 @@ def title(text: str, subtitle: str = "") -> str:
 
 
 def heading(text: str) -> str:
-    underline = "-" * min(display_width(text), WIDTH)
+    underline = colorize("-" * min(display_width(text), WIDTH))
     return f"{colorize(text)}\n{underline}"
 
 
@@ -61,8 +61,8 @@ def wrap(text: str, indent: str = "") -> str:
 
 
 def display_width(text: str) -> int:
-    """Ancho visual aproximado (los emojis ocupan 2 columnas en fuente
-    monoespaciada, pero len() los cuenta como 1 caracter)."""
+    """Approximate visual width (emoji take 2 columns in a monospace font,
+    but len() counts them as 1 character)."""
     width = 0
     for ch in text:
         cp = ord(ch)

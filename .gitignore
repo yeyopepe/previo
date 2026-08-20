@@ -1,2 +1,6 @@
 /.claude/settings.json
 /.claude/settings.local.json
+.claude/**/__pycache__/*
+/tools/__pycache__
+.claude/skills/pv-status/scripts/__pycache__/terminal_output.cpython-314.pyc
+/.claude/skills/pv-update/scripts/__pycache__

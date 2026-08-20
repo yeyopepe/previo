@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — Profundidad/Extrusión (cambio 00210)</title>
+<style>
+  :root {
+    --bg-table: #c2c2c2;
+    --bg-toolbar: #333333;
+    --bg-card: #f5f5f5;
+    --accent-blue: #2c7dd8;
+    --text-primary: #1a1a1a;
+    --text-light: #ffffff;
+    --text-muted: #666666;
+    --border-neutral: #dcdcdc;
+    --radius-sm: 4px;
+    --radius-lg: 8px;
+    --shadow-1: 0 2px 6px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.08);
+    --shadow-2: 0 4px 20px rgba(0,0,0,0.15);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #e5e5e5;
+    color: var(--text-primary);
+    padding: 1.5rem 2rem 4rem;
+  }
+  h1 {
+    font-size: 1.5rem;
+    margin: 0 0 0.25rem;
+  }
+  p.subtitle {
+    color: var(--text-muted);
+    margin: 0 0 2rem;
+    font-size: 0.875rem;
+    max-width: 60rem;
+  }
+  section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-neutral);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-1);
+  }
+  section h2 {
+    font-size: 1.125rem;
+    margin: 0 0 0.25rem;
+  }
+  section p.note {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin: 0 0 1.25rem;
+    max-width: 50rem;
+  }
+  .table-surface {
+    background: var(--bg-table);
+    border-radius: var(--radius-sm);
+    padding: 2.5rem 2rem;
+    display: flex;
+    gap: 3rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+  .item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .item__label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.85);
+    padding: 0.15rem 0.6rem;
+    border-radius: var(--radius-sm);
+  }
+  .item__label--old {
+    background: #ffe3e3;
+    color: #8a1f1f;
+  }
+  .item__label--new {
+    background: #dff5df;
+    color: #205020;
+  }
+
+  /* --- Tablero simple: bisel de dos tonos + extrusion apilada --- */
+  .board {
+    width: 110px;
+    height: 80px;
+    border-radius: var(--radius-sm);
+    background: #6a9955;
+    border-top: 3px solid #8fc46f;
+    border-left: 3px solid #8fc46f;
+    border-bottom: 3px solid #3f6c34;
+    border-right: 3px solid #3f6c34;
+  }
+
+  /* --- Carta --- */
+  .carta {
+    width: 70px;
+    height: 96px;
+    border-radius: var(--radius-lg);
+    background: #f5f5f5;
+    border: 1px solid var(--border-neutral);
+  }
+
+  /* --- Token circular --- */
+  .token {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #d8532c;
+  }
+
+  /* --- Carta hexagonal ---
+     El filtro drop-shadow va en el contenedor exterior (sin clip-path) porque
+     clip-path recorta la caja DESPUÉS de aplicar los filtros: si drop-shadow
+     y clip-path viven en el mismo elemento, la sombra queda recortada y no se
+     ve. La silueta hexagonal la aporta el div interior; el exterior solo
+     calcula la sombra a partir de su contenido (mismo mecanismo que usa hoy
+     '.carta--hex' en la app real, filtro y recorte en elementos distintos). */
+  .carta-hex-outer {
+    width: 78px;
+    height: 96px;
+  }
+  .carta-hex {
+    width: 100%;
+    height: 100%;
+    background: #3a6ea5;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  }
+
+  /* --- Dado: silueta simple (cuadrado con esquinas redondeadas simulando cara) --- */
+  .dado {
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    background: #f2f2f2;
+    border: 1px solid #cfcfcf;
+    position: relative;
+  }
+  .dado__pip {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #333;
+  }
+
+  .legend {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 1rem;
+  }
+  .legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+</style>
+</head>
+<body>
+
+<h1>Mockup — Profundidad/Extrusión (cambio 00210)</h1>
+<p class="subtitle">
+  Comparativa visual de la técnica de extrusión sólida propuesta (capas de sombra dura apiladas, sin blur, en tono
+  más oscuro del propio color) frente al aspecto actual. Todos los ejemplos viven sobre el color de la mesa
+  (<code>--bg-table</code>) para que se perciban igual que en la app real.
+</p>
+
+<section>
+  <h2>1. Tablero simple — extrusión + bisel existente</h2>
+  <p class="note">
+    El bisel de dos tonos (borde claro arriba/izquierda, oscuro abajo/derecha) ya existe hoy y se mantiene sin
+    cambios. La extrusión se añade como capa independiente detrás — a partir de 0px (aspecto actual, sin cambio)
+    hasta 30px.
+  </p>
+  <div class="table-surface">
+    <div class="item"><div class="board" data-extrude="0" data-color="#6a9955"></div><span class="item__label">0px (actual)</span></div>
+    <div class="item"><div class="board" data-extrude="8" data-color="#6a9955"></div><span class="item__label">8px</span></div>
+    <div class="item"><div class="board" data-extrude="16" data-color="#6a9955"></div><span class="item__label">16px</span></div>
+    <div class="item"><div class="board" data-extrude="30" data-color="#6a9955"></div><span class="item__label">30px</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>2. Carta — extrusión + sombra de contacto existente</h2>
+  <p class="note">
+    La carta ya lleva sombra de contacto nivel 1 (<code>--shadow-1</code>). Se conserva junto a la extrusión nueva,
+    sin sustituirla — ambas sombras conviven en el mismo elemento.
+  </p>
+  <div class="table-surface">
+    <div class="item"><div class="carta" data-extrude="0" data-color="#f5f5f5" data-contact-shadow="1"></div><span class="item__label">0px (actual)</span></div>
+    <div class="item"><div class="carta" data-extrude="8" data-color="#f5f5f5" data-contact-shadow="1"></div><span class="item__label">8px</span></div>
+    <div class="item"><div class="carta" data-extrude="16" data-color="#f5f5f5" data-contact-shadow="1"></div><span class="item__label">16px</span></div>
+    <div class="item"><div class="carta" data-extrude="30" data-color="#f5f5f5" data-contact-shadow="1"></div><span class="item__label">30px</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>3. Dado — técnica actual vs. técnica nueva</h2>
+  <p class="note">
+    Comparación directa a la misma profundidad aproximada: la técnica actual (copia de la silueta desplazada y
+    sombreada) se percibe como una sombra proyectada. La técnica nueva (capas sólidas apiladas) se lee como un
+    cuerpo con grosor real.
+  </p>
+  <div class="table-surface">
+    <div class="item">
+      <div class="dado" style="box-shadow: 4px 5px 0 -2px rgba(0,0,0,0), 6px 7px 6px 0 rgba(0,0,0,0.35);">
+        <span class="dado__pip" style="top:22px;left:22px;"></span>
+      </div>
+      <span class="item__label item__label--old">actual — parece solo sombra</span>
+    </div>
+    <div class="item">
+      <div class="dado" data-extrude="14" data-color="#f2f2f2">
+        <span class="dado__pip" style="top:22px;left:22px;"></span>
+      </div>
+      <span class="item__label item__label--new">nuevo — cuerpo sólido</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>4. Token/ficha circular — sin bisel, color plano</h2>
+  <p class="note">La extrusión funciona igual sobre una silueta circular sin ningún tratamiento previo.</p>
+  <div class="table-surface">
+    <div class="item"><div class="token" data-extrude="0" data-color="#d8532c"></div><span class="item__label">0px (actual)</span></div>
+    <div class="item"><div class="token" data-extrude="8" data-color="#d8532c"></div><span class="item__label">8px</span></div>
+    <div class="item"><div class="token" data-extrude="16" data-color="#d8532c"></div><span class="item__label">16px</span></div>
+    <div class="item"><div class="token" data-extrude="30" data-color="#d8532c"></div><span class="item__label">30px</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>5. Carta hexagonal — silueta no rectangular</h2>
+  <p class="note">
+    Siluetas no rectangulares (hexágono, triángulo, dado) usan hoy <code>filter: drop-shadow</code> en vez de
+    <code>box-shadow</code>. La misma técnica de capas sólidas se traslada a <code>drop-shadow</code> apilado.
+  </p>
+  <div class="table-surface">
+    <div class="item"><div class="carta-hex-outer" data-extrude="0" data-color="#3a6ea5" data-clip="1"><div class="carta-hex"></div></div><span class="item__label">0px (actual)</span></div>
+    <div class="item"><div class="carta-hex-outer" data-extrude="16" data-color="#3a6ea5" data-clip="1"><div class="carta-hex"></div></div><span class="item__label">16px</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>7. Color de extrusión configurable</h2>
+  <p class="note">
+    Además del tamaño, el color de la parte extruida es configurable por separado. Por defecto se calcula
+    automáticamente (tono más oscuro del color del componente, como en las secciones anteriores); aquí se compara
+    con un color elegido a mano por el usuario, sin relación con el color del componente.
+  </p>
+  <div class="table-surface">
+    <div class="item"><div class="board" data-extrude="20" data-color="#6a9955"></div><span class="item__label">20px — color automático</span></div>
+    <div class="item"><div class="board" data-extrude="20" data-color="#6a9955" data-extrude-color="#7a1fa2"></div><span class="item__label">20px — color elegido (morado)</span></div>
+    <div class="item"><div class="token" data-extrude="20" data-color="#d8532c"></div><span class="item__label">20px — color automático</span></div>
+    <div class="item"><div class="token" data-extrude="20" data-color="#d8532c" data-extrude-color="#123a66"></div><span class="item__label">20px — color elegido (azul oscuro)</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>6. Referencia para decidir el límite máximo</h2>
+  <p class="note">
+    Mismo tablero simple a 16px (candidato de uso habitual), 40px (candidato a tope máximo) y 60px (por encima del
+    tope, para ver dónde deja de leerse bien) — para confirmar visualmente el límite antes de fijarlo en el plan
+    técnico.
+  </p>
+  <div class="table-surface">
+    <div class="item"><div class="board" data-extrude="16" data-color="#6a9955" style="width:130px;height:90px;"></div><span class="item__label">16px</span></div>
+    <div class="item"><div class="board" data-extrude="40" data-color="#6a9955" style="width:130px;height:90px;"></div><span class="item__label">40px (candidato a tope)</span></div>
+    <div class="item"><div class="board" data-extrude="60" data-color="#6a9955" style="width:130px;height:90px;"></div><span class="item__label">60px (por encima del tope)</span></div>
+  </div>
+  <div class="legend">
+    <span><span class="swatch" style="background:#3f6c34;"></span> capas de extrusión: mismo color base, oscurecido, apiladas cada 1px hasta el valor configurado</span>
+  </div>
+</section>
+
+<script>
+  // Puramente decorativo: calcula el aspecto inicial (box-shadow / drop-shadow apilados). Sin interactividad.
+  function shadeColor(hex, percent) {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const amt = Math.round(2.55 * percent);
+    let r = (num >> 16) + amt;
+    let g = (num >> 8 & 0x00FF) + amt;
+    let b = (num & 0x0000FF) + amt;
+    r = Math.max(Math.min(255, r), 0);
+    g = Math.max(Math.min(255, g), 0);
+    b = Math.max(Math.min(255, b), 0);
+    return '#' + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
+  }
+
+  function buildBoxShadowStack(depth, color) {
+    const layers = [];
+    for (let i = 1; i <= depth; i++) {
+      layers.push(`${i}px ${i}px 0 0 ${color}`);
+    }
+    return layers.join(', ');
+  }
+
+  function buildDropShadowStack(depth, color) {
+    const layers = [];
+    for (let i = 1; i <= depth; i++) {
+      layers.push(`drop-shadow(${i}px ${i}px 0 ${color})`);
+    }
+    return layers.join(' ');
+  }
+
+  document.querySelectorAll('[data-extrude]').forEach(function (el) {
+    const depth = parseInt(el.getAttribute('data-extrude'), 10);
+    const baseColor = el.getAttribute('data-color');
+    if (depth === 0 || !baseColor) return;
+    const customColor = el.getAttribute('data-extrude-color');
+    const extrudeColor = customColor || shadeColor(baseColor, -30);
+    if (el.hasAttribute('data-clip')) {
+      el.style.filter = buildDropShadowStack(depth, extrudeColor);
+    } else {
+      const stack = buildBoxShadowStack(depth, extrudeColor);
+      if (el.hasAttribute('data-contact-shadow')) {
+        el.style.boxShadow = stack + ', var(--shadow-1)';
+      } else {
+        el.style.boxShadow = stack;
+      }
+    }
+  });
+</script>
+
+</body>
+</html>

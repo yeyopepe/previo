@@ -1,12 +1,12 @@
-- **Nombre**: 
-- **Código**: 
-- **Tipo**: 
-- **Fecha creación**: 
+- **[[[Name]]]**: 
+- **[[[Code]]]**: 
+- **[[[Type]]]**: 
+- **[[[Creation date]]]**: 
 
-## Descripción completa
+## Full description
 
-<Toda la información funcional del cambio/fix. Debe ser completa y entendible por cualquier persona no técnica: qué pasa, por qué, cómo se comporta. Esta es la parte importante — la que tiene que describirlo todo bien. Puede incluir cualquier subapartado que se considere necesario (casos límite, preguntas de alcance resueltas, etc.), siempre en términos funcionales, sin nombres de fichero, funciones, clases CSS ni detalles de implementación.>
+<All the functional information about the change/fix. Must be complete and understandable by anyone non-technical: what happens, why, how it behaves. This is the important part — the one that has to describe everything well. Can include any subsection considered necessary (edge cases, resolved scope questions, etc.), always in functional terms, without file names, functions, CSS classes, or implementation details.>
 
-## Apuntes técnicos
+## Technical notes
 
-<Información técnica vista durante el análisis que se quiera dejar anotada para tener en cuenta más adelante (ficheros, funciones, patrones existentes a reutilizar, restricciones técnicas detectadas...). Opcional: si no ha surgido nada técnico relevante en el análisis, se omite la sección entera en vez de dejarla vacía.>
+<Technical information seen during analysis worth noting for later (files, functions, existing patterns to reuse, detected technical constraints...). Optional: if nothing technically relevant came up during analysis, omit the section entirely instead of leaving it empty.>

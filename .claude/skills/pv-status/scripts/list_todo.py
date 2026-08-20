@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""Lista completa de ideas de {changesDir}/todo/, para /pv-status todo.
+"""Full listing of ideas from {changesDir}/todo/, for /pv-status todo.
 
-A diferencia de collect_status.py (que da un JSON con todos los estados),
-este script devuelve solo las ideas de 'todo', ya renderizadas en markdown
-segun la plantilla STATUS.todo.template.md (no un JSON) -- asi el modelo
-que invoca este script no necesita redactar el listado el mismo ni truncar
-nada, solo pegar la salida tal cual.
+Unlike collect_status.py (which gives a JSON with every state), this
+script returns only the 'todo' ideas, already rendered as markdown per the
+STATUS.todo.template.md template (not JSON) -- so the model invoking this
+script doesn't need to draft the listing itself or truncate anything, just
+paste the output as-is.
 
-Reutiliza parse_todo_description de collect_status.py para extraer el texto
-completo (sin truncar) de la seccion '## Idea' de cada description.md. Si
-una idea no tiene esa seccion (o no tiene description.md), la fila lo dice
-explicitamente en vez de omitir la entrada.
+Reuses collect_status.py's parse_todo_description to extract the full
+(untruncated) text of each description.md's '## Idea' section. If an idea
+has no such section (or no description.md), the row says so explicitly
+instead of omitting the entry.
 
-No escribe nada en disco: imprime el markdown final por stdout.
+Writes nothing to disk: prints the final markdown to stdout.
 
-Uso:
+Usage:
   python list_todo.py
   python list_todo.py --work-folder /
 """
@@ -54,8 +54,8 @@ def render_report(entries: list[dict]) -> str:
     empty_match = EMPTY_TEMPLATE_RE.search(template_text)
     if not row_match or not empty_match:
         raise SystemExit(
-            f"La plantilla {TEMPLATE_PATH} no tiene los marcadores "
-            "ROW_IDEA/EMPTY_TEMPLATE esperados."
+            f"Template {TEMPLATE_PATH} is missing the expected "
+            "ROW_IDEA/EMPTY_TEMPLATE markers."
         )
     row_template = row_match.group(1)
     empty_template = empty_match.group(1)
@@ -65,37 +65,37 @@ def render_report(entries: list[dict]) -> str:
     body = body.rstrip("\n") + "\n"
 
     if entries:
-        filas = "\n".join(
+        rows = "\n".join(
             row_template.format(
                 code=entry["code"],
-                idea=entry["idea"] if entry["idea"] else "*(sin sección '## Idea' en description.md)*",
+                idea=entry["idea"] if entry["idea"] else "*(no '## Idea' section in description.md)*",
             )
             for entry in entries
         )
     else:
-        filas = empty_template
+        rows = empty_template
 
     from datetime import datetime
 
-    return body.format(fechaGeneracion=datetime.now().strftime("%Y-%m-%d"), filas=filas)
+    return body.format(generatedDate=datetime.now().strftime("%Y-%m-%d"), rows=rows)
 
 
 def render_terminal(entries: list[dict]) -> str:
     from datetime import datetime
 
     lines = [
-        term.title("IDEAS EN TODO/", f"Generado: {datetime.now().strftime('%Y-%m-%d')}"),
+        term.title("IDEAS IN TODO/", f"Generated: {datetime.now().strftime('%Y-%m-%d')}"),
     ]
 
     if not entries:
         lines.append("")
-        lines.append(term.wrap("(No hay ninguna idea apuntada en todo/.)"))
+        lines.append(term.wrap("(No ideas noted in todo/.)"))
         lines.append("")
         lines.append(term.hr())
         return "\n".join(lines) + "\n"
 
     for entry in entries:
-        idea = entry["idea"] or "(sin sección '## Idea' en description.md)"
+        idea = entry["idea"] or "(no '## Idea' section in description.md)"
         lines.append("")
         lines.append(entry["code"])
         lines.append(term.wrap(idea, indent="  "))
@@ -111,15 +111,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--work-folder",
-        help="Ruta a workFolder relativa a la raiz del repo. Si no se indica, "
-        "se lee de .claude/pv-context.json (default '/').",
+        help="Path to workFolder relative to the repo root. If not given, "
+        "read from .claude/pv-context.json (default '/').",
     )
     parser.add_argument(
         "--terminal",
         action="store_true",
-        help="Salida en texto plano sin markdown, ajustada a 70 columnas, para "
-        "pegar en una terminal clasica. Uso exclusivo de pv.py: la skill "
-        "pv-status (invocada desde el chat) no debe pasar este flag.",
+        help="Plain-text output without markdown, fixed to 70 columns, for "
+        "pasting into a classic terminal. Exclusive use of pv.py: the "
+        "pv-status skill (invoked from chat) must not pass this flag.",
     )
     args = parser.parse_args()
 

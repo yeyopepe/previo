@@ -1,9 +1,9 @@
-"""Calcula la parte de texto (slug) del nombre de fichero de una funcionalidad nueva --
-el nombre de fichero final es '{numero}-{slug}.md'; el numero (ver next-feature-number.py)
-es quien garantiza que no hay colision, este slug no necesita comprobar nada por si mismo.
+"""Computes the text part (slug) of a new feature's filename -- the final
+filename is '{number}-{slug}.md'; the number (see next-feature-number.py)
+guarantees no collision, this slug doesn't need to check anything itself.
 
-Uso:
-    python slugify.py "Nombre de la funcionalidad"
+Usage:
+    python slugify.py "Feature name"
 """
 import argparse
 

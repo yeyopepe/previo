@@ -1,9 +1,9 @@
-"""Calcula el siguiente numero identificador de funcionalidad (prefijo del titulo, no del
-nombre de fichero -- el nombre de fichero sigue siendo el slug del titulo). Un numero ya
-asignado a una funcionalidad existente nunca se recalcula ni se reutiliza al borrarla.
+"""Computes the next feature identifying number (title prefix, not the filename --
+the filename is still the title's slug). A number already assigned to an existing
+feature is never recomputed or reused when it's deleted.
 
-Uso:
-    python next-feature-number.py --folder design/docs/features
+Usage:
+    python next-feature-number.py --folder docs/features
 """
 import argparse
 import re
