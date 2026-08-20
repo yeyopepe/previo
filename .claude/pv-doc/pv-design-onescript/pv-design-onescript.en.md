@@ -396,12 +396,12 @@ created: 2026-08-01, planned: 2026-08-03      ← Line 2: created = description.
 
 - **`created`** (line 2): `description.md`'s `**Creation date**` field (bold inline); falls back to `description.md`'s mtime if absent.
 - **`planned`** (line 2): `plan.md`'s `**Creation date**` field (same bold-inline format, see `PLAN.template.md`) — the date `pv-how` wrote the plan on, not the change's creation date. If `plan.md` doesn't exist yet, or exists but lacks that field, shows literally **`pending`** (not a dash or "unknown" — explicitly signals planning hasn't happened yet). `build_entry()` computes this by reusing `extract_date()` on `plan.md`'s text, no new pattern needed — the field has the exact same format in both files.
-- **`Risk`** (line 1): `plan.md`'s `**Risk**` field, `{value}/10` format — `—` if there's no `plan.md` or the field isn't in that exact format.
+- **`Risk`** (line 1): `plan.md`'s `**Risk**` field, `{value}/10` format — `?` if there's no `plan.md` or the field isn't in that exact format.
 - Line 4 uses **its own 200-character limit**, separate from and independent of the 250-character limit used by `/pv-status`'s markdown table (chat) — changing one doesn't affect the other; they're two separate rendering paths inside `filter_status.py` (`render_terminal()` vs `render_report()`), and only terminal mode shows the detail card at all (the markdown table has no Name/Planned columns).
 
 #### Idea card (`todo/`)
 
-Different, shorter format than the change/fix card — **3 lines, not 4**: no `Risk` (`todo/` never has `plan.md`, so it would always have been `—` — noise, not information) and no separate description line (the `## Idea` text already serves as the name, there's nothing else to show below it).
+Different, shorter format than the change/fix card — **3 lines, not 4**: no `Risk` (`todo/` never has `plan.md`, so it would always have been `?` — noise, not information) and no separate description line (the `## Idea` text already serves as the name, there's nothing else to show below it).
 
 ```
 (todo)  a3f9k  [💡 Todo]                      ← Line 1: (state), id, type — no Risk

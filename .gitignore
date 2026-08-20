@@ -4,3 +4,4 @@
 /tools/__pycache__
 .claude/skills/pv-status/scripts/__pycache__/terminal_output.cpython-314.pyc
 /.claude/skills/pv-update/scripts/__pycache__
+.claude/skills/pv-status/scripts/__pycache__/*

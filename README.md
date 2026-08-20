@@ -26,7 +26,7 @@ It brings the control and traceability of *spec-driven development* without the 
 |---|---|
 |<u>**Fast and no fuss**</u>|Prioritizes speed and sequential work over parallel work, avoiding the complexity of coordinating multiple changes at once, resolving PR conflicts, or managing simultaneous branches.|
 |<u>**Complete spec, free-form**</u>|Every entry requires just enough structure to be useful (intent, plan, state), without complex *spec* formats to learn or maintain by hand.|
-|<u>**Design is always validated**</u>|Visualizes and validates visual changes and workflows with static mockups (HTML/CSS or a custom format) before anything gets implemented — avoiding the "implement → doesn't land right → redo" cycle.|
+|<u>**Design is always validated**</u>|Visualizes and validates visual changes and workflows with static mockups (HTML/CSS or a custom format) before implementing anything — avoiding the "implement → doesn't land right → redo" cycle.|
 |<u>**Detailed analysis, clear risks**</u>|Every change is analyzed and written up in a detailed plan to set it up for success and anticipate the risk it carries.|
 |<u>**Documentation always up to date**</u>|Previo keeps the project's technical and functional documentation up to date at all times, along with the changelog between versions. You can start the project with an initial technical design or let Previo build it up on its own.|
 |<u>**Adaptable and versatile**</u>| Great for projects of any size, and adapts to each project's stack.|
@@ -82,14 +82,12 @@ $env:PREVIO_VERSION = "0.9.5b6"; irm https://raw.githubusercontent.com/yeyopepe/
 
 This installs (or updates) `.claude/skills` and the documentation (`pv-guide.md` and its `.en.md` version) with the framework's content, without touching your configuration (`pv-context.json`, `settings.json`) or any custom skill that doesn't start with `pv-`. Running it again at any time updates the framework to the latest version: it adds new skills, updates existing ones, and removes any that are no longer part of Previo.
 
-Then, from that project's root, run once:
-
-```
-/pv-init
-```
+Then, from that project's root, run `/pv-init` for a first install, or `/pv-update` if you're updating from an earlier version.
 
 > ❗**IMPORTANT:**
 > From here, the framework guides you through the setup process: it checks the required tools (Git, Python 3, and any conditional ones depending on the project's stack) and generates `.claude/pv-context.json` — the configuration file the rest of the skills depend on — asking which language(s) you want to use for each area, where changes will be stored, where your source code is or will be, whether you want to provide project information up front so it can start documenting it, and more.
+>
+> If you run `/pv-update`, the framework reviews and updates everything needed so you can keep working.
 
 ### Full folder structure
 

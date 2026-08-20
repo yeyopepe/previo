@@ -82,14 +82,12 @@ $env:PREVIO_VERSION = "0.9.5b6"; irm https://raw.githubusercontent.com/yeyopepe/
 
 Esto instala (o actualiza) `.claude/skills` y la documentación (`pv-guide.md` y su versión `.en.md`) con el contenido del framework, sin tocar tu configuración (`pv-context.json`, `settings.json`) ni ninguna skill propia que no empiece por `pv-`. Volver a ejecutarlo en cualquier momento actualiza el framework a la última versión: añade skills nuevas, actualiza las existentes y elimina las que ya no formen parte de Previo.
 
-Después, desde la raíz de ese proyecto, ejecuta una vez:
-
-```
-/pv-init
-```
+Después, desde la raíz de ese proyecto, ejecuta según tu caso ```/pv-init``` si es primera instalación o ```/pv-update``` si estás actualizando desde una versión anterior.
 
 > ❗**IMPORTANTE:**
 > A partir de aquí el framework te guiará en el proceso de configuración comprobando las herramientas necesarias (Git, Python 3 y las condicionales según el stack del proyecto) y genera el fichero de configuración del que dependen el resto de skills `.claude/pv-context.json`, preguntándote qué idioma/s quieres usar para cada cosa, dónde se guardarán los cambios, dónde está o estará tú código fuente, si quieres aportar ya información de tu proyecto para que empiece a documentarlo, etc.
+>
+> Cuando ejecutes `/pv-update` el framework se encargará de revisar y actualizar todo lo necesario para que puedas seguir trabajando.
 
 ### Estructura completa de carpetas
 
