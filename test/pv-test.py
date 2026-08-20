@@ -11,12 +11,19 @@ changes without going through Claude Code or having to remember script
 names, paths, or parameters: run this file and choose a menu option.
 
 Most options are read-only and delegate to the pv-status skill's scripts.
-Two options modify something:
+Three options modify something:
 - "Close an implemented entry": moves the folder from
   changes/implemented/{xxxx} to changes/closed/{xxxx} (delegating to
   pv-internal-workflow's move-change.py, which doesn't touch any file's
   content, only the folder), and always asks for explicit confirmation
   before moving anything.
+- "Ideas in todo/" (now a submenu): lists ideas and, once one is chosen,
+  offers deleting its whole folder (delegating to pv-internal-workflow's
+  delete-todo.py), always asking for explicit confirmation first. Every
+  path that shows an idea's detail card ("Ideas in todo/", "Search by
+  id", and "General project status"'s own id prompt) offers this same
+  "delete this idea" follow-up, since it's the identical card everywhere
+  (see show_id_detail_card()).
 - "Sync skill models per pv-context.json" (inside the "Configuration"
   submenu): delegates to pv-init's sync-skill-models.py, which propagates
   pv-context.json's skillModels to each 'pv-*' SKILL.md's frontmatter
@@ -76,10 +83,23 @@ TEST_WORK_FOLDER: str | None = None
 
 # The subset of scripts invoked via run_script() that accept --work-folder
 # as an explicit override (filter_status.py, render_status.py,
-# list_todo.py, move-change.py). sync-skill-models.py doesn't touch
-# changes/ or workFolder at all, so it has no such flag and is never
-# forwarded one.
-SCRIPTS_ACCEPTING_WORK_FOLDER = {"filter_status.py", "render_status.py", "list_todo.py", "move-change.py"}
+# list_todo.py, move-change.py, delete-todo.py). sync-skill-models.py
+# doesn't touch changes/ or workFolder at all, so it has no such flag and
+# is never forwarded one.
+SCRIPTS_ACCEPTING_WORK_FOLDER = {
+    "filter_status.py",
+    "render_status.py",
+    "list_todo.py",
+    "move-change.py",
+    "delete-todo.py",
+}
+
+# The pv-status scripts whose --terminal output's column width is caller-
+# supplied via --width (terminal_output.py has no fixed WIDTH of its own --
+# see its module docstring). run_script() always forwards pv.py's own WIDTH
+# here, so delegated screens (general status, searches, the detail card,
+# the ideas listing) match this file's own menu/selection screens exactly.
+SCRIPTS_ACCEPTING_WIDTH = {"filter_status.py", "render_status.py", "list_todo.py"}
 
 
 # =============================================================================
@@ -132,6 +152,9 @@ RING_CHAR_COLORS = {
 NAME_RE = re.compile(r"\*\*Name\*\*\s*[:—-]\s*(.+)")
 VERSION_RE = re.compile(r"^\s*version:\s*(\S+)", re.MULTILINE)
 VERSION_RE = re.compile(r"^\s*version:\s*(\S+)", re.MULTILINE)
+IDEA_RE = re.compile(
+    r"^##\s*Idea\s*\n+(.+?)(?=\n##\s|\Z)", re.IGNORECASE | re.MULTILINE | re.DOTALL
+)
 
 
 def supports_color() -> bool:
@@ -251,10 +274,18 @@ def show_selection(
     render the same label. `extra_option` is a (key, label) pair for a
     non-numeric choice, e.g. ("a", "Close all") -- see close_entry() for a
     real usage.
+
+    `title=""` omits the title line and the leading blank line -- used for
+    an inline selection directly under a listing it acts on (see "Inline
+    Selection" in the design doc's glossary), so the '-' rule sits right
+    below that listing's own closing rule instead of floating apart from
+    it.
     """
-    print()
+    if title:
+        print()
     hr("-")
-    print(title)
+    if title:
+        print(title)
     for i, option in enumerate(options, start=1):
         print(wrap(f"{i}. {option}", indent="  "))
     if extra_option:
@@ -310,6 +341,8 @@ def run_script(script: Path, *args: str) -> None:
     full_args = list(args)
     if TEST_WORK_FOLDER is not None and script.name in SCRIPTS_ACCEPTING_WORK_FOLDER:
         full_args += ["--work-folder", TEST_WORK_FOLDER]
+    if script.name in SCRIPTS_ACCEPTING_WIDTH:
+        full_args += ["--width", str(WIDTH)]
     subprocess.run([sys.executable, str(script), *full_args], cwd=ROOT)
 
 
@@ -386,9 +419,16 @@ def load_test_config(path: Path) -> dict[str, str]:
 def show_general_status() -> None:
     run_script(STATUS_SCRIPTS / "render_status.py", "--terminal")
 
-
-def show_todo_ideas() -> None:
-    run_script(STATUS_SCRIPTS / "list_todo.py", "--terminal")
+    # render_status.py only prints its three pages -- the id prompt below
+    # is pv.py's own, so it can reuse show_id_detail_card() and offer
+    # "delete this idea" here too, exactly like "Search by id" does (see
+    # "The Detail Card" in the design doc: all paths that reach it must
+    # produce the identical screen).
+    while True:
+        query = read_input("Enter an id for its detail card, or press Enter to go back: ").strip()
+        if not query:
+            return
+        show_id_detail_card(query)
 
 
 def list_implemented_entries() -> list[tuple[str, str]]:
@@ -557,7 +597,7 @@ def search_by_id() -> None:
     if not query:
         return
 
-    run_script(STATUS_SCRIPTS / "filter_status.py", "--search-id", query, "--terminal")
+    show_id_detail_card(query)
 
 
 def search_by_content() -> None:
@@ -600,6 +640,106 @@ show_changes_info_menu.is_submenu = True
 
 
 # =============================================================================
+# Actions -- Ideas (root menu)
+# =============================================================================
+
+
+def show_todo_ideas() -> None:
+    run_script(STATUS_SCRIPTS / "list_todo.py", "--terminal")
+
+
+def list_todo_entries() -> list[tuple[str, str]]:
+    todo_dir = changes_dir() / "todo"
+    if not todo_dir.is_dir():
+        return []
+
+    entries = []
+    for entry_dir in sorted(p for p in todo_dir.iterdir() if p.is_dir()):
+        idea = "(no '## Idea' section in description.md)"
+        description_path = entry_dir / "description.md"
+        if description_path.is_file():
+            match = IDEA_RE.search(description_path.read_text(encoding="utf-8"))
+            if match:
+                idea = match.group(1).strip().splitlines()[0].strip()
+        entries.append((entry_dir.name, idea))
+    return entries
+
+
+def find_todo_code(query: str) -> str | None:
+    """Case-insensitive lookup of `query` as a changes/todo/ folder name --
+    same matching rule as filter_status.py's ids_match() for non-numeric
+    (todo/) ids. Returns the folder's actual on-disk name (not `query`
+    verbatim), or None if there's no such idea."""
+    todo_dir = changes_dir() / "todo"
+    if not todo_dir.is_dir():
+        return None
+    for entry_dir in todo_dir.iterdir():
+        if entry_dir.is_dir() and entry_dir.name.lower() == query.lower():
+            return entry_dir.name
+    return None
+
+
+def delete_idea_by_code(code: str) -> None:
+    if confirm(f"Confirm deleting '{code}' from changes/todo/? This can't be undone."):
+        run_script(WORKFLOW_SCRIPTS / "delete-todo.py", "--xxxx", code)
+    else:
+        print("Cancelled.")
+
+
+def show_id_detail_card(query: str) -> None:
+    """Shows one id's detail card (filter_status.py --search-id --terminal,
+    Delegated Info) and, only if that id resolves to a changes/todo/ idea,
+    an Inline Selection offering to delete it right below -- same card,
+    same follow-up, from every path that reaches it: "Search by id" here
+    and the id prompt at the end of "General project status"
+    (show_general_status()) both call this, so the screen is identical
+    regardless of how you got to it (see "The Detail Card" in the design
+    doc)."""
+    run_script(STATUS_SCRIPTS / "filter_status.py", "--search-id", query, "--terminal")
+
+    # The detail card above is delegated info (filter_status.py's own
+    # render) -- pv.py can't see what it printed, only that it ran. To
+    # offer "delete this idea" right under it, pv.py separately checks
+    # whether `query` resolves to a changes/todo/ folder (cheap, no
+    # description.md read) using the same case-insensitive match
+    # filter_status.py's ids_match() uses for non-numeric ids.
+    code = find_todo_code(query)
+    if code is None:
+        return
+
+    index = show_selection("", ["Delete this idea"], "Choose an option (or empty to go back): ")
+    if index == 0:
+        delete_idea_by_code(code)
+
+
+def delete_idea() -> None:
+    entries = list_todo_entries()
+    if not entries:
+        show_info([wrap("There's no idea in changes/todo/ to delete.")], framed=False)
+        return
+
+    labels = [f"{code} — {idea}" for code, idea in entries]
+    index = show_selection(
+        "Ideas in todo/:", labels, "Choose an idea to delete (number, or empty to cancel): "
+    )
+    if index is None:
+        return
+
+    code, _ = entries[index]
+    show_info([wrap(labels[index])], framed=False)
+    delete_idea_by_code(code)
+
+
+def show_ideas_menu() -> None:
+    show_todo_ideas()
+    choice = show_selection(
+        "", ["Delete an idea by code"], "Choose an option (or empty to go back): "
+    )
+    if choice == 0:
+        delete_idea()
+
+
+# =============================================================================
 # Root menu definition
 # =============================================================================
 #
@@ -611,7 +751,7 @@ show_changes_info_menu.is_submenu = True
 MENU: list[tuple[str, "callable"]] = [
     ("General project status", show_general_status),
     ("Changes info", show_changes_info_menu),
-    ("Ideas in todo/", show_todo_ideas),
+    ("Ideas in todo/", show_ideas_menu),
     ("Close an implemented entry (move to changes/closed/)", close_entry),
     ("Configuration", show_settings_menu),
     ("Check versions", show_versions_menu),

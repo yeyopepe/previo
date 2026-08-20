@@ -80,28 +80,28 @@ def render_report(entries: list[dict]) -> str:
     return body.format(generatedDate=datetime.now().strftime("%Y-%m-%d"), rows=rows)
 
 
-def render_terminal(entries: list[dict]) -> str:
+def render_terminal(entries: list[dict], width: int = term.DEFAULT_WIDTH) -> str:
     from datetime import datetime
 
     lines = [
-        term.title("IDEAS IN TODO/", f"Generated: {datetime.now().strftime('%Y-%m-%d')}"),
+        term.title("IDEAS IN TODO/", f"Generated: {datetime.now().strftime('%Y-%m-%d')}", width=width),
     ]
 
     if not entries:
         lines.append("")
-        lines.append(term.wrap("(No ideas noted in todo/.)"))
+        lines.append(term.wrap("(No ideas noted in todo/.)", width=width))
         lines.append("")
-        lines.append(term.hr())
+        lines.append(term.hr(width=width))
         return "\n".join(lines) + "\n"
 
     for entry in entries:
         idea = entry["idea"] or "(no '## Idea' section in description.md)"
         lines.append("")
         lines.append(entry["code"])
-        lines.append(term.wrap(idea, indent="  "))
+        lines.append(term.wrap(idea, indent="  ", width=width))
 
     lines.append("")
-    lines.append(term.hr())
+    lines.append(term.hr(width=width))
     return "\n".join(lines) + "\n"
 
 
@@ -117,9 +117,17 @@ def main() -> None:
     parser.add_argument(
         "--terminal",
         action="store_true",
-        help="Plain-text output without markdown, fixed to 70 columns, for "
-        "pasting into a classic terminal. Exclusive use of pv.py: the "
-        "pv-status skill (invoked from chat) must not pass this flag.",
+        help="Plain-text output without markdown, for pasting into a "
+        "classic terminal. Exclusive use of pv.py: the pv-status skill "
+        "(invoked from chat) must not pass this flag.",
+    )
+    parser.add_argument(
+        "--width",
+        type=int,
+        default=term.DEFAULT_WIDTH,
+        help="Column width for --terminal output. The caller decides this "
+        "-- pv.py passes its own WIDTH so delegated screens match its "
+        f"menu's width. Ignored without --terminal. Default {term.DEFAULT_WIDTH}.",
     )
     args = parser.parse_args()
 
@@ -129,7 +137,7 @@ def main() -> None:
     root = repo_root()
     changes_dir = load_changes_dir(root, args.work_folder)
     entries = collect_todo(changes_dir)
-    print(render_terminal(entries) if args.terminal else render_report(entries))
+    print(render_terminal(entries, width=args.width) if args.terminal else render_report(entries))
 
 
 if __name__ == "__main__":

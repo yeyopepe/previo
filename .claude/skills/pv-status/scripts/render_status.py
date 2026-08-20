@@ -27,12 +27,13 @@ The "Implemented fast changes" section is omitted by default even if there
 are fast entries: it's only included if --show-fast is passed (use only
 when the user explicitly asks for it).
 
-In --terminal mode only, after the third (final) page, an id prompt loops
-until empty input: entering an id shows that entry's detail card by
-delegating to filter_status.py --search-id --terminal (the same card
-pv.py's "Search by id" uses, including its own "no match" message), then
-asks again; empty input returns control to the caller (pv.py), same as
-before this prompt existed.
+In --terminal mode, this script only prints the three pages -- it doesn't
+loop for a detail-card id afterward. That loop is pv.py's own
+responsibility (show_general_status()), so the same id prompt can offer
+"delete this idea" right under the card when the id is a todo/ entry,
+exactly like pv.py's own "Search by id" already does (see
+show_id_detail_card() in pv.py) -- one script running as a nested
+subprocess couldn't otherwise show that follow-up.
 
 Writes nothing to disk: prints the final markdown to stdout.
 
@@ -44,7 +45,6 @@ Usage:
 
 import argparse
 import re
-import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -52,8 +52,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from collect_status import collect, load_changes_dir, repo_root  # noqa: E402
 import terminal_output as term  # noqa: E402
-
-FILTER_STATUS_PATH = Path(__file__).resolve().parent / "filter_status.py"
 
 TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "STATUS.template.md"
 
@@ -301,67 +299,74 @@ def render_terminal_table(states: dict, totals: dict, grand_total: int) -> list[
     return lines
 
 
-def render_terminal_entries(title_text: str, entries: list[dict]) -> list[str]:
+def render_terminal_entries(
+    title_text: str, entries: list[dict], width: int = term.DEFAULT_WIDTH
+) -> list[str]:
     block = ["", term.colorize(f"{title_text} ({len(entries)})")]
     if not entries:
-        block.append(term.wrap("(none)", indent="  "))
+        block.append(term.wrap("(none)", indent="  ", width=width))
     else:
         for entry in entries:
             name = entry["name"] or "(no name)"
             risk = format_risk(entry)
             icon = TYPE_ICONS.get(entry["type"], "❓")
-            block.append(term.wrap(f"{entry['code']} [{icon} {entry['type']}] — {name} (Risk: {risk})", indent="  "))
+            block.append(term.wrap(f"{entry['code']} [{icon} {entry['type']}] — {name} (Risk: {risk})", indent="  ", width=width))
     return block
 
 
-def render_terminal_page_summary(result: dict, changes_dir: Path) -> str:
+def render_terminal_page_summary(
+    result: dict, changes_dir: Path, width: int = term.DEFAULT_WIDTH
+) -> str:
     """Page 1: title, version count, state bars, and the totals table --
     the "at a glance" view, with no per-entry detail."""
     states = result["states"]
     totals = result["totalsByType"]
 
     lines = [
-        term.title("PROJECT STATUS", f"Generated: {datetime.now().strftime('%Y-%m-%d')}"),
+        term.title("PROJECT STATUS", f"Generated: {datetime.now().strftime('%Y-%m-%d')}", width=width),
         "",
         f"Versions: {count_versions(changes_dir)}",
         "",
         render_bars({state: states.get(state, {}).get("total", 0) for state in STATE_ORDER}),
         "",
-        term.hr("-"),
+        term.hr("-", width=width),
         *render_terminal_table(states, totals, result["grandTotal"]),
-        term.hr("-"),
+        term.hr("-", width=width),
         "",
-        term.hr(),
+        term.hr(width=width),
     ]
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
-def render_terminal_page_in_progress(result: dict) -> str:
+def render_terminal_page_in_progress(result: dict, width: int = term.DEFAULT_WIDTH) -> str:
     """Page 2: the "IN PROGRESS" breakdown (ready/pending/planned)."""
     states = result["states"]
     to_implement, pending, no_description = split_in_progress(states)
     implemented_entries = states.get("implemented", {}).get("entries", [])
 
-    lines = [term.heading("🔧 IN PROGRESS")]
-    lines += render_terminal_entries("🟢 Ready to review and close", implemented_entries)
-    lines += render_terminal_entries("🟠 Planned, pending implementation", to_implement)
-    lines += render_terminal_entries("🟡 Pending technical analysis", pending)
+    lines = [term.heading("🔧 IN PROGRESS", width=width)]
+    lines += render_terminal_entries("🟢 Ready to review and close", implemented_entries, width=width)
+    lines += render_terminal_entries("🟠 Planned, pending implementation", to_implement, width=width)
+    lines += render_terminal_entries("🟡 Pending technical analysis", pending, width=width)
 
     if no_description:
         lines.append("")
         lines.append(
             term.wrap(
                 "Entries without description.md (anomalous): "
-                + ", ".join(e["code"] for e in no_description)
+                + ", ".join(e["code"] for e in no_description),
+                width=width,
             )
         )
 
     lines.append("")
-    lines.append(term.hr())
+    lines.append(term.hr(width=width))
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
-def render_terminal_page_rest(result: dict, changes_dir: Path, show_fast: bool = False) -> str:
+def render_terminal_page_rest(
+    result: dict, changes_dir: Path, show_fast: bool = False, width: int = term.DEFAULT_WIDTH
+) -> str:
     """Page 3: everything after IN PROGRESS -- fast changes (if
     --show-fast), todo/ ideas, and warnings."""
     states = result["states"]
@@ -372,48 +377,32 @@ def render_terminal_page_rest(result: dict, changes_dir: Path, show_fast: bool =
     lines = []
 
     if show_fast and fast_entries:
-        lines.append(term.heading("⚡ IMPLEMENTED FAST CHANGES"))
+        lines.append(term.heading("⚡ IMPLEMENTED FAST CHANGES", width=width))
         for entry in fast_entries:
             state_dir = "implemented" if entry in implemented_entries else "closed"
             date = extract_date(changes_dir / state_dir / entry["code"])
             name = entry["name"] or "(no name)"
-            lines.append(term.wrap(f"- {entry['code']} — {name} ({date})", indent="  "))
+            lines.append(term.wrap(f"- {entry['code']} — {name} ({date})", indent="  ", width=width))
         lines.append("")
 
-    lines.append(term.heading("💡 IDEAS IN TODO/"))
+    lines.append(term.heading("💡 IDEAS IN TODO/", width=width))
     if todo_entries:
         for entry in todo_entries:
             idea = entry["name"] or "(no idea)"
-            lines.append(term.wrap(f"- {entry['code']}: {idea}", indent="  "))
+            lines.append(term.wrap(f"- {entry['code']}: {idea}", indent="  ", width=width))
     else:
-        lines.append(term.wrap("(No ideas noted in todo/.)"))
+        lines.append(term.wrap("(No ideas noted in todo/.)", width=width))
 
     if result["warnings"]:
         lines.append("")
-        lines.append(term.heading("⚠️ WARNINGS"))
+        lines.append(term.heading("⚠️ WARNINGS", width=width))
         for warning in result["warnings"]:
-            lines.append(term.wrap(f"- {warning}", indent="  "))
+            lines.append(term.wrap(f"- {warning}", indent="  ", width=width))
 
     lines.append("")
-    lines.append(term.hr())
+    lines.append(term.hr(width=width))
 
     return "\n".join(lines).rstrip("\n") + "\n"
-
-
-def show_change_detail_loop(work_folder: str | None) -> None:
-    """Final-page prompt: reads an id, shows that change/idea's detail card
-    via filter_status.py --search-id --terminal (same card as pv.py's
-    "Search by id"), then asks again -- repeats until empty input, which
-    is the existing "go back" behavior, unchanged."""
-    while True:
-        query = input("Enter an id for its detail card, or press Enter to go back: ").strip()
-        if not query:
-            return
-
-        args = [sys.executable, str(FILTER_STATUS_PATH), "--search-id", query, "--terminal"]
-        if work_folder:
-            args += ["--work-folder", work_folder]
-        subprocess.run(args)
 
 
 def main() -> None:
@@ -432,9 +421,17 @@ def main() -> None:
     parser.add_argument(
         "--terminal",
         action="store_true",
-        help="Plain-text output without markdown, fixed to 70 columns, for "
-        "pasting into a classic terminal. Exclusive use of pv.py: the "
-        "pv-status skill (invoked from chat) must not pass this flag.",
+        help="Plain-text output without markdown, for pasting into a "
+        "classic terminal. Exclusive use of pv.py: the pv-status skill "
+        "(invoked from chat) must not pass this flag.",
+    )
+    parser.add_argument(
+        "--width",
+        type=int,
+        default=term.DEFAULT_WIDTH,
+        help="Column width for --terminal output. The caller decides this "
+        "-- pv.py passes its own WIDTH so delegated screens match its "
+        f"menu's width. Ignored without --terminal. Default {term.DEFAULT_WIDTH}.",
     )
     args = parser.parse_args()
 
@@ -448,12 +445,11 @@ def main() -> None:
         # Three pages, paced with an Enter prompt between them, so the
         # summary (glanceable) isn't buried under the full in-progress/
         # ideas/warnings detail on a small terminal.
-        print(render_terminal_page_summary(result, changes_dir))
+        print(render_terminal_page_summary(result, changes_dir, width=args.width))
         input("Press Enter to see IN PROGRESS detail...")
-        print(render_terminal_page_in_progress(result))
+        print(render_terminal_page_in_progress(result, width=args.width))
         input("Press Enter to continue...")
-        print(render_terminal_page_rest(result, changes_dir, show_fast=args.show_fast))
-        show_change_detail_loop(args.work_folder)
+        print(render_terminal_page_rest(result, changes_dir, show_fast=args.show_fast, width=args.width))
     else:
         print(render(result, changes_dir, show_fast=args.show_fast))
 

@@ -2,6 +2,7 @@
 
 ## Índice
 
+- [Glosario](#glosario)
 - [Propósito](#propósito)
 - [Jerarquía de Pantallas](#jerarquía-de-pantallas)
 - [Flujo de Navegación](#flujo-de-navegación)
@@ -17,6 +18,23 @@
 - [Dependencias Externas](#dependencias-externas)
 - [Características de Accesibilidad](#características-de-accesibilidad)
 - [Archivo de Configuración de Referencia](#archivo-de-configuración-de-referencia)
+
+## Glosario
+
+Términos y sus sinónimos, usados de forma consistente en este documento y en los comentarios del propio `pv.py`. Cuando el código o la conversación de desarrollo usa un sinónimo, es intercambiable con el término aquí listado — evita introducir un tercer nombre para el mismo concepto.
+
+| Término | Sinónimos | Qué es |
+|---|---|---|
+| **Menú** (Main Menu / Submenú) | pantalla de menú | Pantalla GOLD generada por `run_menu()`/`print_header()` — una cabecera con título centrado, una lista numerada de opciones y un último ítem fijo (`Back`/`Exit`). Ver "Los Cuatro Helpers de Pantalla". |
+| **Selección** | pantalla de selección | Pantalla DARK_GRAY generada por `show_selection()` — un título (opcional, ver "Selección incrustada") y una lista numerada framed por `hr("-")`, que devuelve el índice elegido. |
+| **Selección incrustada** | *Inline Selection*, opciones incrustadas, menú incrustado (evitar — no es un `run_menu()`) | Un `show_selection()` con `title=""`, colocado **inmediatamente después** de un listado (propio o delegado) para ofrecer acciones sobre sus elementos, sin cabecera, sin línea en blanco de separación propia ni pausa propia — su `hr("-")` queda pegado justo debajo de la última línea del listado, continuando visualmente la misma pantalla lógica en vez de abrir una nueva. Ver `show_ideas_menu()` (tras un listado propio de `pv.py`) y `search_by_id()` (tras una ficha detalle delegada) en "Guía para Extender pv.py". No confundir con un submenú: no llama a `run_menu()`, no lleva `is_submenu = True`, y su "volver" es simplemente dejar el input vacío (`None`), no una opción numerada más. |
+| **Confirmación** | pantalla y/N | `confirm()` — pregunta `y/N` sin cabecera propia, siempre anidada dentro de otra pantalla. |
+| **Info** | pantalla de info | `show_info()` — texto ya formateado, `framed=True` (con reglas DARK_GRAY) o `framed=False` (suelto). |
+| **Info delegada** | pantalla delegada, render externo | Cualquier pantalla que no usa los helpers de `pv.py`, sino que un script externo (`render_status.py`, `filter_status.py`, `list_todo.py`) imprime vía `run_script()`, coloreada con su propia paleta GOLD independiente (`terminal_output.py`). Ver "Diagrama de Componentes". |
+| **Ficha Detalle** | ficha de detalle, tarjeta de detalle | El bloque de 3 o 5 líneas (según sea idea o cambio/fix) que `filter_status.py`'s `render_terminal()` imprime por cada entrada — parte de la Info delegada, nunca generado por `pv.py`. Ver "La Ficha Detalle". |
+| **Los cuatro helpers** | screen helpers, helpers de pantalla | `print_header()`, `show_selection()`, `show_info()`, `confirm()` — las únicas cuatro formas válidas de construir una pantalla interactiva en `pv.py`. La Selección incrustada no es un quinto helper, es un patrón de uso del segundo. |
+
+---
 
 ## Propósito
 
@@ -40,17 +58,26 @@ NIVEL 0 (Splash)
 
 NIVEL 1 (Main Navigation)
 └── "Previo v{version}: MAIN MENU" ({version} = metadata.version de pv-init/SKILL.md)
-    ├── [1] Acción: Show Status (→ externo)
+    ├── [1] Acción: Show Status (→ externo, 3 páginas; el prompt de id final es de pv.py, no del script)
+    │   └── Input: id de búsqueda, en bucle hasta vacío (→ show_id_detail_card(), misma ficha y Selección incrustada que "Search by id")
     ├── [2] Submenu: Changes info
     │   └── "Previo: Changes info"
     │       ├── [1] Acción: Search by id
     │       │   └── Input: id de búsqueda (→ externo, todos los estados, sin leer description.md salvo del match)
+    │       │       └── Selección incrustada: sin título (solo si el id resuelve a una idea de todo/, "empty" = volver)
+    │       │           └── Acción: Delete this idea
+    │       │               └── Confirmation: "Confirm deleting..."
     │       ├── [2] Acción: Search by content
     │       │   └── Input: texto de búsqueda (→ externo, todos los estados, lee description.md de cada entrada)
     │       ├── [3] Acción: Search by state
     │       │   └── Selection: "Available states:" (→ externo, un estado)
     │       └── [4] Back
     ├── [3] Acción: Show Ideas (→ externo)
+    │   └── Selección incrustada: sin título (una sola opción, "empty" = volver)
+    │       └── Acción: Delete an idea by code
+    │           └── Selection: "Ideas in todo/:"
+    │               └── Info: ficha de la idea elegida
+    │                   └── Confirmation: "Confirm deleting..."
     ├── [4] Acción: Close Entry
     │   └── Selection: "Implemented entries..."
     │       └── Confirmation: "Confirm moving..."
@@ -79,9 +106,10 @@ graph TD
     B["🎨 Splash Screen<br/>ASCII Ring Art"]
     C["🏠 Main Menu<br/>Previo v{version}: MAIN MENU"]
 
-    D["📊 General Status<br/>render_status.py"]
+    D["📊 General Status<br/>render_status.py (3 páginas)"]
+    U["🔍 Id prompt (bucle)<br/>Input de pv.py, no del script"]
     N["🔎 Changes info Submenu<br/>Previo: Changes info"]
-    F["💡 Ideas<br/>list_todo.py"]
+    F["💡 Ideas<br/>list_todo.py + Selección incrustada"]
     G["✅ Close Entry<br/>Selección + Confirmación"]
     H["⚙️ Config Submenu<br/>Previo: settings"]
     I["📦 Versions Submenu<br/>Previo: versions"]
@@ -89,6 +117,8 @@ graph TD
     O["🔍 Search by id<br/>Input + filter_status.py --search-id"]
     Q["🔍 Search by content<br/>Input + filter_status.py --search-content"]
     P["🔍 Search by state<br/>Selección + filter_status.py"]
+    S["🗑️ Delete idea<br/>Selección + Confirmación + delete-todo.py"]
+    T["🗑️ Delete this idea<br/>Selección incrustada + Confirmación + delete-todo.py<br/>(solo si el id es una idea)"]
     J["🔄 Sync Models<br/>sync-skill-models.py"]
     K["📜 Read Changelog<br/>Selección + Mostrar"]
     L["🧹 Check Temp<br/>Mostrar estado"]
@@ -99,11 +129,16 @@ graph TD
     B --> C
 
     C -->|1| D
-    D -->|Return| C
+    D --> U
+    U -->|"id encontrado"| T
+    T -->|Return| U
+    U -->|"empty (go back)"| C
 
     C -->|2| N
     N -->|Back| C
     N -->|Search by id| O
+    O -->|"idea encontrada"| T
+    T -->|Return| N
     O -->|Return| N
     N -->|Search by content| Q
     Q -->|Return| N
@@ -111,7 +146,9 @@ graph TD
     P -->|Return| N
 
     C -->|3| F
-    F -->|Return| C
+    F -->|"empty (go back)"| C
+    F -->|Delete an idea| S
+    S -->|Return| C
 
     C -->|4| G
     G -->|Confirmar| M_["move-change.py"]
@@ -152,7 +189,7 @@ graph TD
     PV["pv.py<br/><i>(componente principal — fichero único autocontenido)</i><br/>Menu engine + 4 screen helpers<br/>(print_header, show_selection, show_info, confirm)"]
 
     subgraph SKILL_STATUS ["Skill pv-status (.claude/skills/pv-status/scripts/)"]
-        TO["terminal_output.py<br/><i>módulo importado, no ejecutable</i><br/>Su propio hr()/title()/heading()/colorize()<br/>GOLD = mismo valor que pv.py, código separado"]
+        TO["terminal_output.py<br/><i>módulo importado, no ejecutable</i><br/>Su propio hr()/title()/heading()/colorize()<br/>GOLD = mismo valor que pv.py, código separado<br/>Sin WIDTH propio: cada función lo recibe por parámetro"]
         RS["render_status.py"]
         FS["filter_status.py"]
         LT["list_todo.py"]
@@ -160,11 +197,11 @@ graph TD
         RS -->|import terminal_output as term| TO
         FS -->|import terminal_output as term| TO
         LT -->|import terminal_output as term| TO
-        RS -->|"subprocess --search-id --terminal (ficha detalle, solo --terminal)"| FS
     end
 
     subgraph SKILL_WORKFLOW ["Skill pv-internal-workflow (.claude/skills/pv-internal-workflow/scripts/)"]
         MC["move-change.py"]
+        DT["delete-todo.py"]
     end
 
     subgraph SKILL_INIT ["Skill pv-init (.claude/skills/pv-init/scripts/)"]
@@ -176,10 +213,11 @@ graph TD
     CHANGES[("changes/<br/>(todo, inProgress,<br/>implemented, closed)")]
     VERSIONS[("versions/{XXXX}/<br/>changelog.md")]
 
-    PV -->|"subprocess --terminal"| RS
-    PV -->|"subprocess --terminal"| FS
-    PV -->|"subprocess --terminal"| LT
+    PV -->|"subprocess --terminal --width 80"| RS
+    PV -->|"subprocess --terminal --width 80"| FS
+    PV -->|"subprocess --terminal --width 80"| LT
     PV -->|"subprocess"| MC
+    PV -->|"subprocess"| DT
     PV -->|"subprocess"| SSM
 
     PV -->|"lee (modo normal)"| CTX
@@ -194,6 +232,7 @@ graph TD
     style FS fill:#EEE8AA
     style LT fill:#EEE8AA
     style MC fill:#DEB887
+    style DT fill:#DEB887
     style SSM fill:#DEB887
     style TESTCFG fill:#DEB887
 ```
@@ -201,9 +240,10 @@ graph TD
 **Lectura clave del diagrama:**
 - `pv.py` **nunca importa** nada — toda comunicación con los otros componentes es vía `subprocess.run()` (función `run_script()`), es decir, procesos hijo independientes que imprimen a stdout. `pv.py` no puede interceptar ni reformatear esa salida.
 - `terminal_output.py` (resaltado en dorado, igual que `pv.py`) es el **único otro componente que dibuja pantallas con color** — y lo hace con su propio código, no reutilizando ninguna función de `pv.py`. Si una pantalla de "PROJECT STATUS" o "IDEAS IN TODO/" se ve mal, el fix está en `terminal_output.py`, nunca en `pv.py` (ver el comentario en el propio código de `pv.py`, justo antes de `show_general_status()`).
-- `move-change.py` y `sync-skill-models.py` son mutaciones simples de un solo paso, sin render propio — su salida es texto plano sin ANSI.
-- Ninguno de estos componentes se importa entre sí salvo `terminal_output.py` por los tres scripts de `pv-status` — son todos procesos independientes conectados solo por convención de argumentos (`--terminal`, `--xxxx`, etc.) y por las rutas del framework (`changes/`, `versions/`).
-- `render_status.py` **sí invoca** `filter_status.py` como subproceso (`--search-id --terminal`, para la "ficha detalle" al final de la página 3) — es la única arista de este tipo entre dos scripts hermanos de `pv-status` (todas las demás son de `pv.py` hacia un script, nunca entre scripts). Sigue sin ser un `import`: cada uno sigue siendo un proceso independiente que imprime a stdout, `render_status.py` no puede interceptar ni reformatear lo que `filter_status.py` imprime.
+- `move-change.py`, `delete-todo.py` y `sync-skill-models.py` son mutaciones simples de un solo paso, sin render propio — su salida es texto plano sin ANSI (`delete-todo.py` no imprime nada en éxito).
+- Ninguno de estos componentes se importa entre sí salvo `terminal_output.py` por los tres scripts de `pv-status` — son todos procesos independientes conectados solo por convención de argumentos (`--terminal`, `--xxxx`, etc.) y por las rutas del framework (`changes/`, `versions/`). En particular, `render_status.py` **ya no invoca** `filter_status.py` — solo imprime sus tres páginas y termina.
+- **El prompt de id tras la página 3 de "Project status" es de `pv.py`, no de `render_status.py`.** Antes, `render_status.py` pedía el id y lo reenviaba como subproceso a `filter_status.py --search-id`, sin que `pv.py` interviniera. Ahora `render_status.py` solo imprime las tres páginas; el bucle de id vive en `show_general_status()` (`pv.py`), que llama a la misma `show_id_detail_card()` que usa `search_by_id()` — así ambas rutas producen exactamente la misma pantalla, incluida la Selección incrustada "Delete this idea" cuando aplica. El cambio de dueño existió precisamente porque un script `pv-status` corriendo como subproceso hijo no tiene acceso a los helpers de `pv.py` ni puede invocar `delete-todo.py` con el contexto de menú correcto.
+- **`terminal_output.py` no tiene un `WIDTH` propio fijo** — cada función (`hr()`, `title()`, `heading()`, `wrap()`) recibe `width` como parámetro explícito (`DEFAULT_WIDTH = 70` si el caller no opina). Quien decide el ancho es quien invoca, no el módulo: `pv.py` pasa `--width 80` (su propio `WIDTH`) a los tres scripts de `pv-status` vía `run_script()`, así las pantallas delegadas (status general, búsquedas, ficha detalle, listado de ideas) miden exactamente lo mismo que sus propias pantallas de menú/selección. La skill `pv-status` (invocada desde chat, sin `--terminal`) nunca pasa `--width` — no le aplica, solo genera markdown.
 - `pv-config-test.json` (línea discontinua, solo activa con el flag `--testconfig` — ver "Configuración de Línea de Comandos") sustituye por completo a `pv-context.json` como fuente de `workFolder`, y además aporta `repoRoot` para que `pv.py` siga localizando los scripts reales de `.claude/skills/...` aunque se ejecute como `test/pv-test.py`, fuera de la raíz del repo. `pv.py` nunca lee ambos ficheros en la misma ejecución — es uno u otro, nunca una mezcla.
 
 ---
@@ -221,6 +261,7 @@ El fichero está dividido en bloques delimitados por comentarios `# ====...====`
 | `Actions -- Configuration submenu` | Funciones de acción de "Previo: settings" | Al añadir una opción nueva a Configuration |
 | `Actions -- Versions submenu` | Funciones de acción de "Previo: versions" | Al añadir una opción nueva a Versions |
 | `Actions -- Changes info submenu` | Funciones de acción de "Previo: Changes info" (`search_by_id()`, `search_by_content()`, `search_by_state()`, `list_states()`) | Al añadir una opción nueva a Changes info |
+| `Actions -- Ideas (root menu)` | Funciones de la opción raíz "Ideas in todo/" (`show_todo_ideas()`, `list_todo_entries()`, `find_todo_code()`, `delete_idea_by_code()`, `delete_idea()`, `show_ideas_menu()`) — también `show_id_detail_card()`, la ficha detalle de un id (con Selección incrustada si es idea), reutilizada por `search_by_id()` (Changes info) y `show_general_status()` (root menu) | Al añadir una opción nueva relacionada con ideas |
 | `Root menu definition` | La lista `MENU` | Al registrar cualquier opción nueva del menú raíz (último paso siempre) |
 | `Menu engine` | `run_menu()`, `main()` | Casi nunca — cambia el bucle de navegación para **todos** los menús a la vez |
 
@@ -244,6 +285,8 @@ Lista numerada enmarcada por `hr("-")` en DARK_GRAY. Recibe una lista de strings
 **Importante:** devuelve el índice, no el texto de la opción — así nunca hay ambigüedad si dos opciones muestran el mismo texto. El caller siempre debe comprobar `is None`, nunca `not resultado` (un índice `0` es un resultado válido y falsy en Python).
 
 `extra_option` es una tupla `(key, label)` para una opción no numérica mezclada en la lista, como `("a", "Close all")` en `close_entry()`.
+
+**`title=""` — Selección incrustada.** Omite la línea de título y también la línea en blanco que normalmente precede a `hr("-")`, dejando solo `hr("-")` + lista + `hr("-")` pegado justo debajo de lo anterior. Úsalo cuando la Selección va **inmediatamente después** de un listado que ya la contextualiza (propio o de Info delegada) — así la regla gris queda pegada a ese listado en vez de flotar separada con su propio título. Ver "Selección incrustada" en el Glosario y `show_ideas_menu()`/`search_by_id()` en "Guía para Extender pv.py" para ejemplos reales.
 
 ### `show_info(lines, framed=True) -> None`
 Muestra líneas de texto ya formateadas. `framed=True` las enmarca con `hr("-")` en DARK_GRAY arriba y abajo (úsalo para contenido "de una pieza" como un changelog completo); `framed=False` las imprime sueltas (úsalo para un mensaje corto de una o dos frases, como un aviso de "no hay nada que mostrar").
@@ -361,7 +404,7 @@ Versions: 3                                                            ← sin c
 ...
 ```
 
-**"Ficha detalle" tras la página 3 — `show_change_detail_loop()`.** Solo en modo `--terminal`, después de imprimir la página 3 (`render_terminal_page_rest()`), `render_status.py` pide un id en bucle (`Enter an id for its detail card, or press Enter to go back:`). Cada id introducido invoca `filter_status.py --search-id <id> --terminal` como subproceso (`subprocess.run()`, mismo mecanismo que `pv.py`'s `run_script()` pero dentro de un script `pv-status`, no de `pv.py`) — es decir, muestra exactamente **la misma "ficha detalle"** que ya usa "Search by id" en el submenú "Changes info" de `pv.py`, incluido su mensaje de "no existe" si el id no matchea ningún estado. Tras mostrar la ficha (encontrada o no), vuelve a preguntar — el bucle solo termina con un input vacío, que hace que el script termine y devuelva el control a quien lo invocó (`pv.py`, que entonces muestra su propia pausa "Press Enter to return to the menu..."), igual que pasaba antes de que este prompt existiera.
+**"Ficha detalle" tras la página 3 — es `pv.py`, no `render_status.py`.** `render_status.py --terminal` solo imprime sus tres páginas y termina — no pide ningún id. El prompt en bucle (`Enter an id for its detail card, or press Enter to go back:`) vive en `pv.py`'s `show_general_status()`, justo después de invocar `render_status.py` vía `run_script()`. Este cambio de dueño (antes vivía dentro de `render_status.py`, invocando `filter_status.py --search-id` como subproceso anidado) existe para que este prompt pueda ofrecer la misma Selección incrustada de borrado que "Search by id" — algo que un script `pv-status` corriendo como subproceso hijo no podía hacer, al no tener acceso a los helpers de `pv.py` ni a `delete-todo.py`. Cada id introducido llama a la misma `show_id_detail_card(query)` que usa `search_by_id()` (ver "Guía para Extender pv.py"): muestra la ficha (`filter_status.py --search-id <id> --terminal`, incluido su mensaje de "no existe" si no matchea ningún estado) y, si el id resuelve a una idea de `todo/`, la Selección incrustada "Delete this idea" debajo. Tras eso, vuelve a preguntar — el bucle solo termina con un input vacío, que devuelve el control a `run_menu()` (pausa "Press Enter to return to the menu...").
 
 Este prompt **no aparece en el modo markdown** (`render()`, usado por `/pv-status` desde el chat) — es exclusivo de `--terminal`, ya que `filter_status.py --search-id` es en sí mismo `--terminal`-only.
 
@@ -378,7 +421,7 @@ Este prompt **no aparece en el modo markdown** (`render()`, usado por `/pv-statu
 
 ### La Ficha Detalle
 
-Es el nombre fijo (junto con "ficha de detalle") con el que nos referimos, en este documento y en la conversación de desarrollo, al bloque que `render_terminal()` (en `filter_status.py`) imprime por cada entrada — es el formato compartido por **las tres** rutas que llegan a `render_terminal()`: "Filter by state" (`<estado>`), "Search by id" (`--search-id`), "Search by content" (`--search-content`), y también el prompt de id al final de "Project status" (`render_status.py`'s `show_change_detail_loop()`, que delega en `filter_status.py --search-id`). Las cuatro rutas producen exactamente el mismo bloque — no hay una quinta variante.
+Es el nombre fijo (junto con "ficha de detalle") con el que nos referimos, en este documento y en la conversación de desarrollo, al bloque que `render_terminal()` (en `filter_status.py`) imprime por cada entrada — es el formato compartido por **las tres** rutas que llegan a `render_terminal()`: "Filter by state" (`<estado>`), "Search by id" (`--search-id`), "Search by content" (`--search-content`), y también el prompt de id al final de "Project status" (`pv.py`'s `show_general_status()`, que también delega en `filter_status.py --search-id` vía `show_id_detail_card()`). Las cuatro rutas producen exactamente el mismo bloque — no hay una quinta variante. Dos de esas cuatro rutas ("Search by id" y el prompt de "Project status", ambas controladas directamente por `pv.py` vía `show_id_detail_card()`) además ofrecen la misma Selección incrustada "Delete this idea" cuando el id resuelve a una idea de `todo/` — "Filter by state" y "Search by content" no la ofrecen, porque su resultado puede mezclar varias entradas y no hay un único id sobre el que actuar.
 
 Sin color propio (hereda el GOLD del bloque que la contiene solo en el título/cierre de la pantalla, el cuerpo va sin colorear, igual que el resto de "Info delegada"). El formato es el mismo sea cual sea el modo — el prefijo `(estado)` de la línea 1 se muestra siempre, incluso en "Filter by state" donde el título de la pantalla ya lo indica (unificado a propósito para que la ficha se vea siempre igual, en vez de tener un formato ligeramente distinto según cómo se llegó a ella).
 
@@ -515,12 +558,13 @@ Puntos de fricción reales de este diseño — ten cuidado con ellos al añadir 
 
 | Script | Ubicación | Propósito |
 |--------|-----------|-----------|
-| `render_status.py` | `.claude/skills/pv-status/scripts/` | Mostrar estado general; en `--terminal`, tras la página 3 delega en `filter_status.py --search-id` para mostrar la ficha detalle de un id introducido |
-| `list_todo.py` | `.claude/skills/pv-status/scripts/` | Listar ideas en todo/ |
-| `filter_status.py` | `.claude/skills/pv-status/scripts/` | Filtrar cambios por estado (`<estado>`), buscar por id exacto en todos los estados (`--search-id <texto>`), o buscar por contenido de `description.md` en todos los estados (`--search-content <texto>`) |
+| `render_status.py` | `.claude/skills/pv-status/scripts/` | Mostrar estado general (3 páginas en `--terminal`). Ya no pide ningún id ni invoca `filter_status.py` — ese bucle vive en `pv.py`'s `show_general_status()`. Acepta `--width` |
+| `list_todo.py` | `.claude/skills/pv-status/scripts/` | Listar ideas en todo/. Acepta `--width` |
+| `filter_status.py` | `.claude/skills/pv-status/scripts/` | Filtrar cambios por estado (`<estado>`), buscar por id exacto en todos los estados (`--search-id <texto>`), o buscar por contenido de `description.md` en todos los estados (`--search-content <texto>`). Acepta `--width` |
 | `sync-skill-models.py` | `.claude/skills/pv-init/scripts/` | Sincronizar modelos de skills |
 | `move-change.py` | `.claude/skills/pv-internal-workflow/scripts/` | Mover entrada a closed |
-| `terminal_output.py` | `.claude/skills/pv-status/scripts/` | Módulo de rendering compartido por los tres scripts de `pv-status` (no un script ejecutable, se importa) |
+| `delete-todo.py` | `.claude/skills/pv-internal-workflow/scripts/` | Borrar una carpeta de idea en `changes/todo/{xxxx}` |
+| `terminal_output.py` | `.claude/skills/pv-status/scripts/` | Módulo de rendering compartido por los tres scripts de `pv-status` (no un script ejecutable, se importa). Sin `WIDTH` propio: cada función lo recibe por parámetro, `DEFAULT_WIDTH = 70` si el caller no opina |
 
 ### Archivos y Directorios
 

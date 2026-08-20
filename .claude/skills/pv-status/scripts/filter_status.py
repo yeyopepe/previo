@@ -394,7 +394,7 @@ TERMINAL_DESCRIPTION_MAX_CHARS = 500
 SEARCH_KIND_LABELS = {"id": "id", "content": "content"}
 
 
-def render_terminal(result: dict) -> str:
+def render_terminal(result: dict, width: int = term.DEFAULT_WIDTH) -> str:
     is_search = "query" in result
     title = f"PROJECT STATUS — search: {result['query']}" if is_search else f"PROJECT STATUS — {result['state']}"
     empty_message = (
@@ -404,14 +404,14 @@ def render_terminal(result: dict) -> str:
     )
 
     lines = [
-        term.title(title, f"Generated: {datetime.now().strftime('%Y-%m-%d')}"),
+        term.title(title, f"Generated: {datetime.now().strftime('%Y-%m-%d')}", width=width),
     ]
 
     if not result["entries"]:
         lines.append("")
-        lines.append(term.wrap(empty_message))
+        lines.append(term.wrap(empty_message, width=width))
         lines.append("")
-        lines.append(term.hr())
+        lines.append(term.hr(width=width))
         return "\n".join(lines) + "\n"
 
     for entry in result["entries"]:
@@ -430,7 +430,7 @@ def render_terminal(result: dict) -> str:
             # ## Idea text already doubles as both name and content).
             lines.append(f"({entry['state']})  {entry['code']}  [{type_}]")
             lines.append(f"created: {entry['date'] or '—'}")
-            lines.append(term.wrap(entry["name"] or "(no name)", indent="> "))
+            lines.append(term.wrap(entry["name"] or "(no name)", indent="> ", width=width))
             continue
 
         risk = f"{entry['risk']}/10" if entry["risk"] else "?"
@@ -440,12 +440,12 @@ def render_terminal(result: dict) -> str:
         extra_files = entry["extra_files"] or 0
         lines.append(f"({entry['state']})  {entry['code']}  [{type_}]  Risk: {risk}")
         lines.append(f"created: {entry['date'] or '—'}, planned: {planned}")
-        lines.append(term.wrap(entry["name"] or "(no name)", indent="> "))
-        lines.append(term.wrap(description, indent="  "))
+        lines.append(term.wrap(entry["name"] or "(no name)", indent="> ", width=width))
+        lines.append(term.wrap(description, indent="  ", width=width))
         lines.append(f"extra files: {extra_files}")
 
     lines.append("")
-    lines.append(term.hr())
+    lines.append(term.hr(width=width))
     return "\n".join(lines) + "\n"
 
 
@@ -480,9 +480,18 @@ def main() -> None:
     parser.add_argument(
         "--terminal",
         action="store_true",
-        help="Plain-text output without markdown, fixed to 70 columns, for "
-        "pasting into a classic terminal. Exclusive use of pv.py: the "
-        "pv-status skill (invoked from chat) must not pass this flag.",
+        help="Plain-text output without markdown, for pasting into a "
+        "classic terminal. Exclusive use of pv.py: the pv-status skill "
+        "(invoked from chat) must not pass this flag.",
+    )
+    parser.add_argument(
+        "--width",
+        type=int,
+        default=term.DEFAULT_WIDTH,
+        help="Column width for --terminal output (also used by "
+        "--search-id/--search-content, which are --terminal-only "
+        "already). The caller decides this -- pv.py passes its own WIDTH "
+        f"so delegated screens match its menu's width. Default {term.DEFAULT_WIDTH}.",
     )
     args = parser.parse_args()
 
@@ -503,16 +512,16 @@ def main() -> None:
 
     if args.search_id:
         result = collect_search_by_id(changes_dir, args.search_id)
-        print(render_terminal(result))
+        print(render_terminal(result, width=args.width))
         return
 
     if args.search_content:
         result = collect_search_by_content(changes_dir, args.search_content)
-        print(render_terminal(result))
+        print(render_terminal(result, width=args.width))
         return
 
     result = collect(changes_dir, args.state)
-    print(render_terminal(result) if args.terminal else render_report(result))
+    print(render_terminal(result, width=args.width) if args.terminal else render_report(result))
 
 
 if __name__ == "__main__":

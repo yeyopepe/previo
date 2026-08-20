@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """Formatting helpers for pv-status scripts' --terminal mode.
 
-Plain-text output without markdown, fixed to a 70-column width so it can be
-pasted as-is into a classic terminal. Used directly by pv.py (the pv-*
-framework's terminal menu) when invoking render_status.py / filter_status.py
-/ list_todo.py with --terminal; the pv-status skill itself (used from chat)
-must never pass that flag -- its reference output is still the default
-markdown.
+Plain-text output without markdown, so it can be pasted as-is into a
+classic terminal. Used directly by pv.py (the pv-* framework's terminal
+menu) when invoking render_status.py / filter_status.py / list_todo.py
+with --terminal; the pv-status skill itself (used from chat) must never
+pass that flag -- its reference output is still the default markdown.
+
+The column width isn't fixed here: every function takes it as an explicit
+`width` parameter (default 70, this module's own historical width, used
+when a caller doesn't have an opinion). The caller is the one who knows
+what width it needs -- pv.py, for instance, passes its own WIDTH (80) via
+each script's --width flag, so delegated screens match its own screens'
+width exactly.
 """
 
 import os
@@ -14,7 +20,7 @@ import sys
 import textwrap
 import unicodedata
 
-WIDTH = 70
+DEFAULT_WIDTH = 70
 
 # Same gold as pv.py's ring core (RING_CHAR_COLORS['#']), reused here for
 # section titles.
@@ -34,27 +40,27 @@ def colorize(text: str, color: str = TITLE_COLOR) -> str:
     return f"{color}{text}{COLOR_RESET}"
 
 
-def hr(char: str = "=") -> str:
-    return colorize(char * WIDTH)
+def hr(char: str = "=", width: int = DEFAULT_WIDTH) -> str:
+    return colorize(char * width)
 
 
-def title(text: str, subtitle: str = "") -> str:
-    lines = [hr(), colorize(text.center(WIDTH))]
+def title(text: str, subtitle: str = "", width: int = DEFAULT_WIDTH) -> str:
+    lines = [hr(width=width), colorize(text.center(width))]
     if subtitle:
-        lines.append(subtitle.center(WIDTH))
-    lines.append(hr())
+        lines.append(subtitle.center(width))
+    lines.append(hr(width=width))
     return "\n".join(lines)
 
 
-def heading(text: str) -> str:
-    underline = colorize("-" * min(display_width(text), WIDTH))
+def heading(text: str, width: int = DEFAULT_WIDTH) -> str:
+    underline = colorize("-" * min(display_width(text), width))
     return f"{colorize(text)}\n{underline}"
 
 
-def wrap(text: str, indent: str = "") -> str:
+def wrap(text: str, indent: str = "", width: int = DEFAULT_WIDTH) -> str:
     return textwrap.fill(
         text,
-        width=WIDTH,
+        width=width,
         initial_indent=indent,
         subsequent_indent=" " * len(indent),
     )

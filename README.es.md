@@ -1,8 +1,8 @@
-# Previo
+# **Previo**
 
 *Read this in [English](README.md).*
 
-**Previo** es un framework de desarrollo creado y dirigido por IA para [Claude Code](https://claude.com/claude-code): define cambios, valida el diseño sobre maquetas y diagramas, gestiona el estado de cada cambio y prepara entregas — todo de forma conversacional, sin plantillas rígidas ni herramientas adicionales.
+****Previo**** es un framework de desarrollo creado y dirigido por IA para [Claude Code](https://claude.com/claude-code): define cambios, valida el diseño sobre maquetas y diagramas, gestiona el estado de cada cambio y prepara entregas — todo de forma conversacional, sin plantillas rígidas ni herramientas adicionales.
 
 Aporta el control y la trazabilidad del *spec-driven development* sin la sobrecarga de proceso que ese enfoque suele exigir en proyectos grandes. Pensado para proyectos de cualquier tamaño y gestionados por una sola persona.
 
@@ -28,7 +28,8 @@ Aporta el control y la trazabilidad del *spec-driven development* sin la sobreca
 |<u>**Especificación completa, formato libre**</u>|Cada entrada exige la estructura mínima necesaria para ser útil (intención, plan, estado), sin formatos de *spec* complejos que haya que aprender o mantener a mano.|
 |<u>**Valida siempre sobre diseños**</u>|Visualiza y valida los cambios visuales y los flujos de trabajo con maquetas estáticas (HTML/CSS o personalizado) antes implementar nada, evitando el ciclo de "implementar → ver que no convence → rehacer".|
 |<u>**Análisis detallados, riesgos claros**</u>|Cada cambio es analizado y escrito en un plan al detalle para asegurar el éxito y anticipar el riesgo que conlleva.|
-|<u>**Documentación siempre al día**</u>|Previo mantiene siempre actualizada la documentación técnica y funcional del proyecto, así como los cambios entre versiones. Puedes empezar el proyecto con un diseño técnico inicial o dejar que Previo la vaya generando por su cuenta.|
+|<u>**Documentación siempre al día**</u>|**Previo** mantiene siempre actualizada la documentación técnica y funcional del proyecto, así como los cambios entre versiones. Puedes empezar el proyecto con un diseño técnico inicial o dejar que **Previo** la vaya generando por su cuenta.|
+|<u>**Trazabilidad**</u>| Qué, cuándo y cómo de todo. Siempre. |
 |<u>**Adaptable y versátil**</u> | Ideal para proyectos de cualquier tamaño y se adapta al stack de cada uno.|
 |<u>**Sin herramientas adicionales**</u> |No requiere más que Claude Code y Python en la máquina de desarrollo — sin instalaciones en tu máquina, servicios externos, bases de datos ni otros quebraderos de cabeza.|
 |<u>**100% construido con IA y para IA**</u> |Todo el ciclo (desde la idea hasta su realización) es un proceso 100% guiado por IA, para cualquier tipo de perfil. Unos pocos tokens más, mucha complejidad menos.|
@@ -40,16 +41,16 @@ Aporta el control y la trazabilidad del *spec-driven development* sin la sobreca
 
 | Qué puedes personalizar | Cómo |
 |---|---|
-|<u>**Idioma**</u>|Habla con Previo en tu idioma mientras cada tipo de documento (changes, changelog, documentación funcional y técnica) se escribe en el suyo propio — configurable punto por punto en `.claude/pv-context.json`.|
+|<u>**Idioma**</u>|Habla con **Previo** en tu idioma mientras cada tipo de documento (changes, changelog, documentación funcional y técnica) se escribe en el suyo propio — configurable punto por punto en `.claude/pv-context.json`.|
 |<u>**Piezas a tu medida**</u>|Sustituye la generación de maquetas o diagramas por una skill propia de tu proyecto, sin tocar el resto del framework.|
-|<u>**Estructura de carpetas y documentación**</u>|Define dónde vive cada cosa — carpeta de cambios, código fuente, documentación de arquitectura, estilo y funcionalidades — para encajar Previo en la estructura que ya tiene tu proyecto.|
+|<u>**Estructura de carpetas y documentación**</u>|Define dónde vive cada cosa — carpeta de cambios, código fuente, documentación de arquitectura, estilo y funcionalidades — para encajar **Previo** en la estructura que ya tiene tu proyecto.|
 |<u>**Modelo por skill**</u>|Asigna el modelo y el nivel de esfuerzo que prefieras a cada skill (por ejemplo, uno más ligero para tareas de consulta y uno más potente para el análisis técnico).|
 
-Consulta la [`Guía de usuario`](.claude/pv-doc/pv-guide.es.md#más-formas-de-personalizar-previo) para el detalle de cada opción.
+Consulta la [`Guía de usuario`](.claude/pv-doc/pv-guide.es.md#más-formas-de-personalizar-**Previo**) para el detalle de cada opción.
 
 ## ⚠️Puntos menos fuertes y lo que está por llegar
-- <u>**Contextos grandes.**</u> A medida que el proyecto crezca, el contexto necesario para que Previo haga su trabajo también crecerá (y el consumo de tokens). Hemos priorizado la calidad de los resultados frente al supuesto ahorro de tokens (aunque no los hemos olvidado) porque nuestra experiencia nos dice que el retrabajo siempre sale más caro que un buen análisis previo.
-- <u>**Mejor con mejores modelos.**</u> Previo puede funcionar con cualquier modelo, aunque los resultados irán en consonancia, claro. Esto es como decidir qué perfil quieres contratar para hacer un trabajo: un junior (ej: Haiku) irá más rápido y te costará menos, pero el riesgo de errores y retrabajo es grande. Incluso puedes tener varios en paralelo si quieres, pero entonces ya no te sale tan barato. Un senior (ej: Sonnet) te costará un poco más, pero se lo pensará mejor y el riesgo será mucho menor. Hemos probado Previo con ambos enfoques (Sonnet ya es lo bastante senior) y siempre nos ha compensado el uso de un senior (porcentaje de retrabajo en el último proyecto: 5%) para todo, en lugar de intentar ahorrar con juniors (retrabajo en el mismo proyecto: 40%). Son solo nuestros números, lo sabemos, así que pruébalo tú mismo.
+- <u>**Contextos grandes.**</u> A medida que el proyecto crezca, el contexto necesario para que **Previo** haga su trabajo también crecerá (y el consumo de tokens). Hemos priorizado la calidad de los resultados frente al supuesto ahorro de tokens (aunque no los hemos olvidado) porque nuestra experiencia nos dice que el retrabajo siempre sale más caro que un buen análisis **Previo**.
+- <u>**Mejor con mejores modelos.**</u> **Previo** puede funcionar con cualquier modelo, aunque los resultados irán en consonancia, claro. Esto es como decidir qué perfil quieres contratar para hacer un trabajo: un junior (ej: Haiku) irá más rápido y te costará menos, pero el riesgo de errores y retrabajo es grande. Incluso puedes tener varios en paralelo si quieres, pero entonces ya no te sale tan barato. Un senior (ej: Sonnet) te costará un poco más, pero se lo pensará mejor y el riesgo será mucho menor. Hemos probado **Previo** con ambos enfoques (Sonnet ya es lo bastante senior) y siempre nos ha compensado el uso de un senior (porcentaje de retrabajo en el último proyecto: 5%) para todo, en lugar de intentar ahorrar con juniors (retrabajo en el mismo proyecto: 40%). Son solo nuestros números, lo sabemos, así que pruébalo tú mismo.
 - <u>**Riesgo vs. pruebas.**</u> Como hemos priorizado la calidad del trabajo y la reducción de riesgos, hemos dejado de lado de momento la implementación de herramientas de pruebas más específicas. Estamos pensando cómo incorporarlo de manera que no afecte a la agilidad del framework. Obviamente solo tienes que indicar en un cambio qué tipos de tests quieres que se hagan de ahora en adelante y el framework se asegurará de hacerlo, pero creemos que puede haber una manera mejor en el futuro cercano.
 
 ## 🛜Instalación
@@ -60,27 +61,27 @@ Desde la raíz del proyecto donde quieras usar el framework, ejecuta:
 
 Última versión disponible:
 ```
-curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/yeyopepe/**Previo**-sdd/main/install.sh | sh
 ```
 
 Versión específica:
 ```
-curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.sh | sh -s -- 0.9.5b6
+curl -fsSL https://raw.githubusercontent.com/yeyopepe/**Previo**-sdd/main/install.sh | sh -s -- 0.9.5b6
 ```
 
 **Windows (PowerShell):**
 
 Última versión disponible:
 ```
-irm https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/yeyopepe/**Previo**-sdd/main/install.ps1 | iex
 ```
 
 Versión específica:
 ```
-$env:PREVIO_VERSION = "0.9.5b6"; irm https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.ps1 | iex
+$env:**Previo**_VERSION = "0.9.5b6"; irm https://raw.githubusercontent.com/yeyopepe/**Previo**-sdd/main/install.ps1 | iex
 ```
 
-Esto instala (o actualiza) `.claude/skills` y la documentación (`pv-guide.md` y su versión `.en.md`) con el contenido del framework, sin tocar tu configuración (`pv-context.json`, `settings.json`) ni ninguna skill propia que no empiece por `pv-`. Volver a ejecutarlo en cualquier momento actualiza el framework a la última versión: añade skills nuevas, actualiza las existentes y elimina las que ya no formen parte de Previo.
+Esto instala (o actualiza) `.claude/skills` y la documentación (`pv-guide.md` y su versión `.en.md`) con el contenido del framework, sin tocar tu configuración (`pv-context.json`, `settings.json`) ni ninguna skill propia que no empiece por `pv-`. Volver a ejecutarlo en cualquier momento actualiza el framework a la última versión: añade skills nuevas, actualiza las existentes y elimina las que ya no formen parte de **Previo**.
 
 Después, desde la raíz de ese proyecto, ejecuta según tu caso ```/pv-init``` si es primera instalación o ```/pv-update``` si estás actualizando desde una versión anterior.
 
@@ -91,15 +92,15 @@ Después, desde la raíz de ese proyecto, ejecuta según tu caso ```/pv-init``` 
 
 ### Estructura completa de carpetas
 
-Así es cómo quedará tu repo tras la instalación, listo para empezar a trabajar con Previo:
+Así es cómo quedará tu repo tras la instalación, listo para empezar a trabajar con **Previo**:
 
 ```
 {raíz del repo}/
 ├── src/                         # el código fuente de tu app (carpeta por defecto)
 ├── .claude/
-│   └── skills/                  # aquí está el framework de Previo
+│   └── skills/                  # aquí está el framework de **Previo**
 │
-└── previo-sdd/                  # carpeta de trabajo principal del framework
+└── **Previo**-sdd/                  # carpeta de trabajo principal del framework
     ├── changes/                 # todo tu trabajo de documentación e implementación pasa por aquí, según su estado actual
     │   ├── inProgress/          
     │   ├── implemented/         
@@ -109,9 +110,9 @@ Así es cómo quedará tu repo tras la instalación, listo para empezar a trabaj
     ├── versions/                # aquí aparece cada entrega que prepares 
     │   └── {XXXX}/              
     │
-    ├── stuff/                   # aquí hay material diverso que usa Previo
+    ├── stuff/                   # aquí hay material diverso que usa **Previo**
     │
-    └── docs/                    # la documentación de tu proyecto que Previo mantiene actualizada
+    └── docs/                    # la documentación de tu proyecto que **Previo** mantiene actualizada
         ├── architecture/        
         ├── style/               
         └── features/            
@@ -156,7 +157,7 @@ Skills opcionales que complementan el ciclo mínimo: anotar ideas antes de compr
 
 
 ## ⭐La experiencia completa
-Consulta en la [`Guía de usuario`](.claude/pv-doc/pv-guide.es.md) todo lo que puedes hacer con Previo.
+Consulta en la [`Guía de usuario`](.claude/pv-doc/pv-guide.es.md) todo lo que puedes hacer con **Previo**.
 
 
 ## 📐Cómo está hecho, al detalle

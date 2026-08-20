@@ -37,7 +37,7 @@ Before running any script, look at how the skill was invoked — each mode uses 
 
 Don't run `collect_status.py` directly in any mode: it's an internal module that `list_todo.py` and `render_status.py` import and reuse on their own, not a script meant to be invoked from the skill — its JSON output brings nothing the skill needs to show or reformat.
 
-All three scripts (`list_todo.py`, `filter_status.py`, `render_status.py`) also accept a `--terminal` flag that switches the output to plain text without markdown, fitted to 70 columns. It's for the exclusive use of `pv.py` (the framework's terminal menu); this skill, invoked from chat, must **never** pass `--terminal` — the default markdown is always the right format for a chat reply.
+All three scripts (`list_todo.py`, `filter_status.py`, `render_status.py`) also accept a `--terminal` flag that switches the output to plain text without markdown, plus a `--width` flag (default 70) controlling that plain-text output's column width — the caller decides the width, not the script. It's for the exclusive use of `pv.py` (the framework's terminal menu, which passes its own width via `--width` so delegated screens match its menu); this skill, invoked from chat, must **never** pass `--terminal`/`--width` — the default markdown is always the right format for a chat reply.
 
 ## 1.b `todo` mode: list ideas only
 
