@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Audits .claude/pv-context.json and everything it configures against the
-real state of the repo: schema shape, referenced skills, on-disk paths, and
-skillModels vs each SKILL.md's real frontmatter.
+real state of the repo: schema shape, referenced skills, on-disk paths,
+skillModels vs each SKILL.md's real frontmatter, and the [[[...]]]-marked
+structural labels (see pv-design.en.md's "Marker convention in templates")
+in every template-derived document under workFolder's changes/ subtree.
 
 Doesn't decide anything or write anything -- purely read-only diagnostics,
-for pv-init-update to turn into a report and, only with user approval, fixes.
+for pv-update to turn into a report and, only with user approval, fixes.
 Distinguishes REQUIRED checks (the framework is effectively broken if they
 fail) from OPTIONAL checks (only checked if the corresponding field is
 configured; an unconfigured optional field is never a problem on its own).
@@ -29,7 +31,7 @@ Prints ONLY a JSON on stdout:
   }
 
 Usage:
-  python .claude/skills/pv-init-update/scripts/audit-context.py
+  python .claude/skills/pv-update/scripts/audit-context.py
 """
 
 import json
@@ -60,7 +62,7 @@ WORKFOLDER_SUBFOLDERS = (
 
 
 def repo_root() -> Path:
-    # This script lives at {repo}/.claude/skills/pv-init-update/scripts/
+    # This script lives at {repo}/.claude/skills/pv-update/scripts/
     return Path(__file__).resolve().parents[4]
 
 
@@ -106,6 +108,65 @@ def read_model_effort(path: Path) -> tuple[str, str] | None:
     return model, effort
 
 
+MARKER_RE = re.compile(r"\[\[\[(.+?)\]\]\]")
+
+# Maps each template that uses the [[[...]]] marker convention (see
+# pv-design.en.md's "Marker convention in templates") to the glob(s), relative
+# to workFolder, of the real files derived from it. The template itself is the
+# source of truth for which labels are protected -- this script never
+# hardcodes the label list, only where to look for files written from it.
+MARKED_TEMPLATES = (
+    (".claude/skills/pv-internal-workflow/description.template.md",
+     ("changes/inProgress/*/description.md", "changes/implemented/*/description.md")),
+    (".claude/skills/pv-how/PLAN.template.md",
+     ("changes/inProgress/*/plan.md",)),
+    (".claude/skills/pv-todo/description.template.md",
+     ("changes/todo/*/description.md",)),
+)
+
+
+def extract_markers(template_path: Path) -> list[str]:
+    """Returns each [[[Label]]] found in a template, in file order, deduped."""
+    text = template_path.read_text(encoding="utf-8")
+    seen: list[str] = []
+    for match in MARKER_RE.finditer(text):
+        label = match.group(1).strip()
+        if label not in seen:
+            seen.append(label)
+    return seen
+
+
+def marker_pattern(label: str) -> re.Pattern:
+    # A marked label appears in a template either as a bold-inline field
+    # ("**[[[Label]]]**:") or as a heading ("## [[[Label]]]"); check the
+    # generated file for either form, unmarked, so the check doesn't care
+    # which shape a given template used.
+    escaped = re.escape(label)
+    return re.compile(rf"(\*\*{escaped}\*\*|^#{{1,6}}\s*{escaped}\s*$)", re.MULTILINE)
+
+
+def check_marked_documents(root: Path, work_folder: str, problems: list) -> None:
+    wf_path = resolve_under(root, work_folder)
+    for template_rel, file_globs in MARKED_TEMPLATES:
+        template_path = root / template_rel
+        if not template_path.is_file():
+            continue
+        labels = extract_markers(template_path)
+        if not labels:
+            continue
+        for file_glob in file_globs:
+            for doc_path in sorted(wf_path.glob(file_glob)):
+                text = doc_path.read_text(encoding="utf-8")
+                missing = [label for label in labels if not marker_pattern(label).search(text)]
+                if missing:
+                    rel = doc_path.relative_to(root).as_posix()
+                    add(problems, f"marker-missing:{rel}", "optional", rel,
+                        f"'{rel}' is missing the structural marker(s) {', '.join(missing)} "
+                        f"expected from '{template_rel}' -- likely translated or otherwise altered by hand, "
+                        f"which breaks pv-status's literal parsing of them.",
+                        expected=", ".join(labels), actual=", ".join(l for l in labels if l not in missing) or "(none found)")
+
+
 def check_docs_dir(root: Path, work_folder: str, relative_dir: str, field: str,
                     problems: list, requires_index: bool = True) -> None:
     folder = resolve_under(root, f"{work_folder.rstrip('/')}/{relative_dir}")
@@ -140,7 +201,7 @@ def main() -> None:
 
     if not result["exists"]:
         add(problems, "context-missing", "required", "(file)",
-            "'.claude/pv-context.json' doesn't exist -- run pv-init first, not pv-init-update.")
+            "'.claude/pv-context.json' doesn't exist -- run pv-init first, not pv-update.")
         json.dump(result, sys.stdout, ensure_ascii=False, indent=2)
         print()
         return
@@ -212,6 +273,10 @@ def main() -> None:
                     "changes/{inProgress,implemented}",
                     f"Change code '{code}' exists in both inProgress/ and implemented/ -- codes must never repeat.",
                     actual=code)
+
+    # --- structural markers in changes/**-derived documents (optional) ---
+    if isinstance(work_folder, str) and work_folder.strip():
+        check_marked_documents(root, work_folder, problems)
 
     # --- sourcecodeDir (required to exist if set, has a default) ---
     source_dir = framework.get("sourcecodeDir", "/src")

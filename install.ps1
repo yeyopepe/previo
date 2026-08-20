@@ -1,6 +1,6 @@
-# Instala o actualiza Previo en el proyecto actual.
-# Uso: irm https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.ps1 | iex
-# Uso (versión concreta): $env:PREVIO_VERSION = "v1.2.3"; irm https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.ps1 | iex
+# Installs or updates Previo in the current project.
+# Usage: irm https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.ps1 | iex
+# Usage (specific version): $env:PREVIO_VERSION = "v1.2.3"; irm https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.ps1 | iex
 param(
     [string]$Version = $env:PREVIO_VERSION
 )
@@ -8,12 +8,16 @@ $ErrorActionPreference = "Stop"
 
 $Repo = "yeyopepe/previo-sdd"
 
+# Detect, before overwriting anything, whether this project already had the
+# framework installed -- used at the end to show the right next-step message.
+$WasAlreadyInstalled = Test-Path ".claude\skills\pv-init"
+
 if ($Version) {
     try {
         $Release = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/tags/$Version"
     }
     catch {
-        throw "La versión '$Version' no existe en los releases de Previo."
+        throw "Version '$Version' doesn't exist in Previo's releases."
     }
 }
 else {
@@ -21,25 +25,25 @@ else {
 }
 $Tag = $Release.tag_name
 if (-not $Tag) {
-    throw "No se ha podido determinar la versión de Previo a instalar."
+    throw "Couldn't determine which version of Previo to install."
 }
 $Tarball = "https://github.com/$Repo/archive/refs/tags/$Tag.tar.gz"
 
 $Tmp = Join-Path $env:TEMP "previo-install-$([guid]::NewGuid())"
 New-Item -ItemType Directory -Path $Tmp -Force | Out-Null
 try {
-    Write-Host "Descargando Previo ($Tag)..."
+    Write-Host "Downloading Previo ($Tag)..."
     $TarPath = Join-Path $Tmp "previo.tar.gz"
     Invoke-WebRequest -Uri $Tarball -OutFile $TarPath
 
     tar -xzf $TarPath -C $Tmp --strip-components=1
-    if ($LASTEXITCODE -ne 0) { throw "Fallo al extraer el paquete descargado." }
+    if ($LASTEXITCODE -ne 0) { throw "Failed to extract the downloaded package." }
 
     $SrcSkills = Join-Path $Tmp ".claude\skills"
     $DestSkills = ".claude\skills"
     New-Item -ItemType Directory -Path $DestSkills -Force | Out-Null
 
-    # Sincroniza solo las skills del framework (prefijo pv-), sin tocar skills propias del usuario.
+    # Syncs only the framework's own skills (pv- prefix), without touching the user's own skills.
     Get-ChildItem -Path $SrcSkills -Directory -Filter "pv-*" | ForEach-Object {
         $Dest = Join-Path $DestSkills $_.Name
         if (Test-Path $Dest) { Remove-Item -Recurse -Force $Dest }
@@ -50,13 +54,13 @@ try {
         Get-ChildItem -Path $DestSkills -Directory -Filter "pv-*" | ForEach-Object {
             $SrcDir = Join-Path $SrcSkills $_.Name
             if (-not (Test-Path $SrcDir)) {
-                Write-Host "Eliminando skill obsoleta: $($_.Name)"
+                Write-Host "Removing obsolete skill: $($_.Name)"
                 Remove-Item -Recurse -Force $_.FullName
             }
         }
     }
 
-    # Sincroniza la documentación del framework.
+    # Syncs the framework's documentation.
     $DestDocDir = Join-Path ".claude" "pv-doc"
     New-Item -ItemType Directory -Force -Path $DestDocDir | Out-Null
     foreach ($doc in @("pv-guide.en.md", "pv-guide.es.md")) {
@@ -67,20 +71,31 @@ try {
         }
     }
 
-    # Sincroniza el changelog del framework.
+    # Syncs the framework's changelog.
     $SrcChangelog = Join-Path $Tmp ".claude\pv-changelog.en.md"
     if (Test-Path $SrcChangelog) {
         Copy-Item -Path $SrcChangelog -Destination (Join-Path ".claude" "pv-changelog.en.md") -Force
     }
 
-    # Sincroniza el lanzador pv.py en la raíz del repo (fichero generado, se sobrescribe siempre).
+    # Syncs the pv.py launcher at the repo root (generated file, always overwritten).
     $SrcPvPy = Join-Path $SrcSkills "pv-init\assets\pv.py"
     if (Test-Path $SrcPvPy) {
         Copy-Item -Path $SrcPvPy -Destination "pv.py" -Force
     }
 
-    Write-Host "Previo instalado/actualizado en .claude/skills."
-    Write-Host "Si es la primera instalación, ejecuta /pv-init en tu agente para configurarlo."
+    Write-Host "Previo installed/updated in .claude/skills."
+    Write-Host ""
+    if ($WasAlreadyInstalled) {
+        Write-Host "=========================================================="
+        Write-Host " You're updating from a previous version: run /pv-update"
+        Write-Host " in your agent to check and repair the configuration."
+        Write-Host "=========================================================="
+    }
+    else {
+        Write-Host "=========================================================="
+        Write-Host " First install: run /pv-init in your agent to set it up."
+        Write-Host "=========================================================="
+    }
 }
 finally {
     Remove-Item -Recurse -Force $Tmp -ErrorAction SilentlyContinue

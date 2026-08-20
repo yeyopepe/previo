@@ -1,15 +1,20 @@
 #!/bin/sh
-# Instala o actualiza Previo en el proyecto actual.
-# Uso: curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.sh | sh
-# Uso (versión concreta): curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.sh | sh -s -- v1.2.3
+# Installs or updates Previo in the current project.
+# Usage: curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.sh | sh
+# Usage (specific version): curl -fsSL https://raw.githubusercontent.com/yeyopepe/previo-sdd/main/install.sh | sh -s -- v1.2.3
 set -e
 
 REPO="yeyopepe/previo-sdd"
 REQUESTED_TAG="$1"
 
+# Detect, before overwriting anything, whether this project already had the
+# framework installed -- used at the end to show the right next-step message.
+WAS_ALREADY_INSTALLED=0
+[ -d ".claude/skills/pv-init" ] && WAS_ALREADY_INSTALLED=1
+
 if [ -n "$REQUESTED_TAG" ]; then
   RELEASE_JSON=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/tags/${REQUESTED_TAG}") || {
-    echo "La versión '${REQUESTED_TAG}' no existe en los releases de Previo." >&2
+    echo "Version '${REQUESTED_TAG}' doesn't exist in Previo's releases." >&2
     exit 1
   }
   TAG=$(echo "$RELEASE_JSON" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
@@ -17,7 +22,7 @@ else
   TAG=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
 fi
 if [ -z "$TAG" ]; then
-  echo "No se ha podido determinar la versión de Previo a instalar." >&2
+  echo "Couldn't determine which version of Previo to install." >&2
   exit 1
 fi
 TARBALL="https://github.com/${REPO}/archive/refs/tags/${TAG}.tar.gz"
@@ -25,14 +30,14 @@ TARBALL="https://github.com/${REPO}/archive/refs/tags/${TAG}.tar.gz"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-echo "Descargando Previo (${TAG})..."
+echo "Downloading Previo (${TAG})..."
 curl -fsSL "$TARBALL" | tar -xz -C "$TMP" --strip-components=1
 
 SRC_SKILLS="$TMP/.claude/skills"
 DEST_SKILLS=".claude/skills"
 mkdir -p "$DEST_SKILLS"
 
-# Sincroniza solo las skills del framework (prefijo pv-), sin tocar skills propias del usuario.
+# Syncs only the framework's own skills (pv- prefix), without touching the user's own skills.
 for dir in "$SRC_SKILLS"/pv-*; do
   name=$(basename "$dir")
   rm -rf "$DEST_SKILLS/$name"
@@ -43,12 +48,12 @@ for dir in "$DEST_SKILLS"/pv-*; do
   [ -d "$dir" ] || continue
   name=$(basename "$dir")
   if [ ! -d "$SRC_SKILLS/$name" ]; then
-    echo "Eliminando skill obsoleta: $name"
+    echo "Removing obsolete skill: $name"
     rm -rf "$dir"
   fi
 done
 
-# Sincroniza la documentación del framework.
+# Syncs the framework's documentation.
 mkdir -p ".claude/pv-doc"
 for doc in pv-guide.en.md pv-guide.es.md; do
   if [ -f "$TMP/.claude/pv-doc/$doc" ]; then
@@ -56,15 +61,25 @@ for doc in pv-guide.en.md pv-guide.es.md; do
   fi
 done
 
-# Sincroniza el changelog del framework.
+# Syncs the framework's changelog.
 if [ -f "$TMP/.claude/pv-changelog.en.md" ]; then
   cp "$TMP/.claude/pv-changelog.en.md" ".claude/pv-changelog.en.md"
 fi
 
-# Sincroniza el lanzador pv.py en la raíz del repo (fichero generado, se sobrescribe siempre).
+# Syncs the pv.py launcher at the repo root (generated file, always overwritten).
 if [ -f "$SRC_SKILLS/pv-init/assets/pv.py" ]; then
   cp "$SRC_SKILLS/pv-init/assets/pv.py" "pv.py"
 fi
 
-echo "Previo instalado/actualizado en .claude/skills."
-echo "Si es la primera instalación, ejecuta /pv-init en tu agente para configurarlo."
+echo "Previo installed/updated in .claude/skills."
+echo ""
+if [ "$WAS_ALREADY_INSTALLED" = "1" ]; then
+  echo "=========================================================="
+  echo " You're updating from a previous version: run /pv-update"
+  echo " in your agent to check and repair the configuration."
+  echo "=========================================================="
+else
+  echo "=========================================================="
+  echo " First install: run /pv-init in your agent to set it up."
+  echo "=========================================================="
+fi
