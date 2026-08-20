@@ -32,7 +32,7 @@ It brings the control and traceability of *spec-driven development* without the 
 |<u>**Adaptable and versatile**</u>| Great for projects of any size, and adapts to each project's stack.|
 |<u>**No extra tooling**</u> |Requires nothing beyond Claude Code and Python on the development machine — no installs on your machine, external services, databases, or other headaches.|
 |<u>**100% built by AI, for AI**</u> |The whole cycle (from idea to delivery) is a 100% AI-guided process, for any kind of profile. A few more tokens, much less complexity.|
-|<u>**Multi-language support**</u>| Speak in English, write the technical documentation in Spanish, and draft the changelog in French (for example). Multi-language support is configurable across up to 5 points. |
+|<u>**Multi-language support**</u>| Speak in Spanish, write the technical documentation in English, and draft the changelog in French (for example). Multi-language support is configurable across up to 5 points. |
 |<u>**And plenty more**</u>| Tracking and traceability for every change, release generation (documentation included), a prompt history tied to each change, fast changes, security reviews, an autonomous update-checking system, and more.|
 
 
@@ -82,11 +82,7 @@ $env:PREVIO_VERSION = "0.9.5b6"; irm https://raw.githubusercontent.com/yeyopepe/
 
 This installs (or updates) `.claude/skills` and the documentation (`pv-guide.md` and its `.en.md` version) with the framework's content, without touching your configuration (`pv-context.json`, `settings.json`) or any custom skill that doesn't start with `pv-`. Running it again at any time updates the framework to the latest version: it adds new skills, updates existing ones, and removes any that are no longer part of Previo.
 
-Then, from that project's root, run once:
-
-```
-/pv-init
-```
+Then, from that project's root, run `/pv-init` or `/pv-update` depending on whether this is your first install or an update.
 
 > ❗**IMPORTANT:**
 > From here, the framework guides you through the setup process: it checks the required tools (Git, Python 3, and any conditional ones depending on the project's stack) and generates `.claude/pv-context.json` — the configuration file the rest of the skills depend on — asking which language(s) you want to use for each area, where changes will be stored, where your source code is or will be, whether you want to provide project information up front so it can start documenting it, and more.

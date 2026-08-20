@@ -134,7 +134,7 @@ def apply_section(text: str, name: str, keep: bool) -> str:
 
 def format_risk(entry: dict) -> str:
     risk = entry.get("risk")
-    return f"{risk}/10" if risk is not None else "—"
+    return f"{risk}/10" if risk is not None else "?"
 
 
 def entry_lines(entries: list[dict], row_template: str, empty_template: str) -> str:

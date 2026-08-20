@@ -396,12 +396,12 @@ created: 2026-08-01, planned: 2026-08-03      ← Línea 2: created = descriptio
 
 - **`created`** (línea 2): `description.md`'s campo `**Creation date**` (bold inline); si no existe, cae al mtime de `description.md`.
 - **`planned`** (línea 2): `plan.md`'s campo `**Creation date**` (mismo formato bold-inline, ver `PLAN.template.md`) — es la fecha en que `pv-how` escribió el plan, no la de creación del cambio. Si `plan.md` no existe todavía, o existe pero le falta ese campo, se muestra literalmente **`pending`** (no un guion ni "unknown" — indica explícitamente que la planificación aún no ha ocurrido). `build_entry()` calcula esto reutilizando `extract_date()` sobre el texto de `plan.md`, sin un patrón nuevo — el campo tiene exactamente el mismo formato en ambos ficheros.
-- **`Risk`** (línea 1): `plan.md`'s campo `**Risk**`, formato `{valor}/10` — `—` si no hay `plan.md` o el campo no tiene ese formato exacto.
+- **`Risk`** (línea 1): `plan.md`'s campo `**Risk**`, formato `{valor}/10` — `?` si no hay `plan.md` o el campo no tiene ese formato exacto.
 - La línea 4 usa **su propio límite de 200 caracteres**, distinto e independiente de los 250 caracteres que usa la tabla markdown de `/pv-status` (chat) — cambiar uno no afecta al otro; son dos rutas de render separadas dentro de `filter_status.py` (`render_terminal()` vs `render_report()`), y solo el modo terminal muestra la ficha detalle en absoluto (la tabla markdown no tiene columnas Name/Planned).
 
 #### Ficha de una idea (`todo/`)
 
-Formato distinto y más corto que el de cambio/fix — **3 líneas, no 4**: sin `Risk` (`todo/` nunca tiene `plan.md`, así que siempre habría sido `—` — ruido, no información) y sin línea de descripción separada (el texto de `## Idea` ya hace de nombre, no hay nada más que mostrar debajo).
+Formato distinto y más corto que el de cambio/fix — **3 líneas, no 4**: sin `Risk` (`todo/` nunca tiene `plan.md`, así que siempre habría sido `?` — ruido, no información) y sin línea de descripción separada (el texto de `## Idea` ya hace de nombre, no hay nada más que mostrar debajo).
 
 ```
 (todo)  a3f9k  [💡 Todo]                      ← Línea 1: (estado), id, tipo — sin Risk

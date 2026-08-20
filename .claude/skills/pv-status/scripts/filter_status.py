@@ -350,7 +350,7 @@ def render_report(result: dict) -> str:
                 code=entry["code"],
                 type=TYPE_LABELS.get(entry["type"], entry["type"]),
                 description=entry["description"] or "—",
-                risk=f"{entry['risk']}/10" if entry["risk"] else "—",
+                risk=f"{entry['risk']}/10" if entry["risk"] else "?",
                 date=entry["date"] or "—",
             )
             for entry in result["entries"]
@@ -402,7 +402,7 @@ def render_terminal(result: dict) -> str:
 
         if entry["state"] == "todo":
             # todo/ ideas never have plan.md, so Risk/planned would always
-            # be "—"/"pending" -- shown as noise, not information. 3 lines
+            # be "?"/"pending" -- shown as noise, not information. 3 lines
             # instead of 4: no separate description line either (line 3's
             # ## Idea text already doubles as both name and content).
             lines.append(f"({entry['state']})  {entry['code']}  [{type_}]")
@@ -410,7 +410,7 @@ def render_terminal(result: dict) -> str:
             lines.append(term.wrap(entry["name"] or "(no name)", indent="> "))
             continue
 
-        risk = f"{entry['risk']}/10" if entry["risk"] else "—"
+        risk = f"{entry['risk']}/10" if entry["risk"] else "?"
         description = entry["description"] or "—"
         if len(description) > TERMINAL_DESCRIPTION_MAX_CHARS:
             description = description[:TERMINAL_DESCRIPTION_MAX_CHARS].rstrip() + "..."
