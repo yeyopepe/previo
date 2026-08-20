@@ -62,9 +62,14 @@ for doc in pv-guide.en.md pv-guide.es.md; do
 done
 
 # Syncs the framework's changelog.
-if [ -f "$TMP/.claude/pv-changelog.en.md" ]; then
-  cp "$TMP/.claude/pv-changelog.en.md" ".claude/pv-changelog.en.md"
-fi
+CHANGELOG_MISSING=0
+for doc in pv-changelog.en.md pv-changelog.es.md; do
+  if [ -f "$TMP/.claude/$doc" ]; then
+    cp "$TMP/.claude/$doc" ".claude/$doc"
+  else
+    CHANGELOG_MISSING=1
+  fi
+done
 
 # Syncs the pv.py launcher at the repo root (generated file, always overwritten).
 if [ -f "$SRC_SKILLS/pv-init/assets/pv.py" ]; then
@@ -73,6 +78,14 @@ fi
 
 echo "Previo installed/updated in .claude/skills."
 echo ""
+if [ "$CHANGELOG_MISSING" = "1" ]; then
+  echo "=========================================================="
+  echo " Warning: the new version was installed, but something"
+  echo " went wrong and the changelog for this release is missing."
+  echo " You won't have information about what changed."
+  echo "=========================================================="
+  echo ""
+fi
 if [ "$WAS_ALREADY_INSTALLED" = "1" ]; then
   echo "=========================================================="
   echo " You're updating from a previous version: run /pv-update"

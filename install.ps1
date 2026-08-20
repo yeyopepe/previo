@@ -72,9 +72,15 @@ try {
     }
 
     # Syncs the framework's changelog.
-    $SrcChangelog = Join-Path $Tmp ".claude\pv-changelog.en.md"
-    if (Test-Path $SrcChangelog) {
-        Copy-Item -Path $SrcChangelog -Destination (Join-Path ".claude" "pv-changelog.en.md") -Force
+    $ChangelogMissing = $false
+    foreach ($doc in @("pv-changelog.en.md", "pv-changelog.es.md")) {
+        $SrcChangelog = Join-Path $Tmp ".claude\$doc"
+        if (Test-Path $SrcChangelog) {
+            Copy-Item -Path $SrcChangelog -Destination (Join-Path ".claude" $doc) -Force
+        }
+        else {
+            $ChangelogMissing = $true
+        }
     }
 
     # Syncs the pv.py launcher at the repo root (generated file, always overwritten).
@@ -85,6 +91,14 @@ try {
 
     Write-Host "Previo installed/updated in .claude/skills."
     Write-Host ""
+    if ($ChangelogMissing) {
+        Write-Host "=========================================================="
+        Write-Host " Warning: the new version was installed, but something"
+        Write-Host " went wrong and the changelog for this release is missing."
+        Write-Host " You won't have information about what changed."
+        Write-Host "=========================================================="
+        Write-Host ""
+    }
     if ($WasAlreadyInstalled) {
         Write-Host "=========================================================="
         Write-Host " You're updating from a previous version: run /pv-update"

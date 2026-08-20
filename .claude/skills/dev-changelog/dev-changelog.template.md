@@ -1,13 +1,25 @@
-"Previo v{XXX}" changelog (previous version v{YYY})
+# Previo v{XXX} changelog (from v{YYY})
 
-## New
+## Index
+
+- ⭐[New](#link-to-new-section)
+  - {Title describing the change}
+  - ...
+- ✏️[Changed](#link-to-changed-section)
+  - {Title describing the change}
+  - ...
+- ❌[Deleted](#link-to-deleted-section)
+  - {Title describing the change}
+  - ...
+
+## ⭐New
 
 - **{Title describing the change}** — {functional summary}.
 
-## Changed
+## ✏️Changed
 
 - **{Title describing the change}** — {functional summary}.
 
-## Deleted
+## ❌Deleted
 
 - **{Title describing the change}** — {functional summary}.

@@ -5,8 +5,8 @@ argument-hint: "[base commit, tag, or branch]"
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.1.0
-  uses: []
+  version: 0.3.2
+  uses: [en-translate, es-translate]
 ---
 
 # dev-changelog
@@ -76,9 +76,9 @@ For these, state plainly what changed structurally and what action the user must
 
 ## 5. Write the files
 
-Write `.claude/pv-changelog.en.md` following [`dev-changelog.template.md`](dev-changelog.template.md): title line `"Previo v{XXX}" changelog (previous version v{YYY})`, then the **New**, **Changed**, **Deleted** sections in that order. Omit an entire section if it has no entries — don't leave the heading with nothing under it. If the file already exists, overwrite it (this skill always regenerates the full comparison from scratch, it doesn't append).
+Draft the entries in whichever language comes naturally while classifying the diff in step 4. Write `.claude/pv-changelog.en.md` following [`dev-changelog.template.md`](dev-changelog.template.md) **exactly** — title line, heading text, emoji, and the Index-before-detail structure all come from that template verbatim; don't reproduce or paraphrase its literal formatting here, since the template is the single source of truth and this file must never drift out of sync with it. Fill in `{XXX}`/`{YYY}` and every entry (Index titles matching the detail titles, grouped and ordered the same way New/Changed/Deleted). **Keep the emoji glued directly to the heading text with no space** (`## ⭐New`, not `## ⭐ New`) — a space between them breaks the anchor link, since GitHub's anchor for a heading is derived from the heading text with the emoji stripped and everything lowercased, and a leftover leading space would shift the anchor. The template's index links are placeholders (`#link-to-new-section` etc.), not literal text to copy — after writing each `## {emoji}{heading}` line (no space), replace the placeholder with that heading's real anchor: strip the emoji, lowercase the remaining heading text, and use that (e.g. a heading `## ⭐New` anchors as `#new`). Omit an entire section (in both the index and the detail) if it has no entries — don't leave the heading with nothing under it. If the file already exists, overwrite it (this skill always regenerates the full comparison from scratch, it doesn't append).
 
-Then write `.claude/pv-changelog.es.md` as its exact Spanish translation — same structure, same entries, same order, only the prose translated (section headings too: `## Nuevo`, `## Cambios`, `## Eliminado`). Never leave one language stale relative to the other.
+Then produce `.claude/pv-changelog.es.md` as its exact Spanish translation — same structure (including the template's emoji, glued to the heading text with no space), same entries, same order, only the prose and heading text translated. **Anchors are language-specific, not copied from the English file**: each file's index links must point to that same file's own translated headings (e.g. `## ✏️Cambios` anchors as `#cambios`, not `#changed`) — recompute them for the translated headings using the same rule as above. Don't translate the prose yourself: invoke the `es-translate` skill (Skill tool) with the finished English file's content (changelog/release-notes register) and write its result to `.claude/pv-changelog.es.md`, then fix up the headings (no space after the emoji) and index anchors per the rules above (the translator skill isn't told about GitHub's anchor-slug rules, so verify/correct them after — translation can reintroduce the space or leave a stale English anchor). If you drafted the entries in Spanish first instead, write that draft to `.claude/pv-changelog.es.md` (still following the template's exact formatting, emoji spacing and anchors included) and invoke `en-translate` the same way to produce `.claude/pv-changelog.en.md`, then likewise fix up its headings and anchors. Either direction, only one of the two files is hand-written — the other is always the translator skill's output (plus the heading/anchor fix-up), never redone by hand, so the two never drift out of sync.
 
 ## 6. Confirm to the user
 
