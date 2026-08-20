@@ -5,7 +5,7 @@ user-invocable: false
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.5b7
+  version: 0.9.5b8
   uses: []
 ---
 
@@ -13,7 +13,7 @@ metadata:
 
 Generic process and single point where the `pv-*` framework knows how to create and move `{changesDir}` folders. Only invoked by other framework skills — not meant for direct invocation by the user.
 
-**Language.** Use `framework.interaction.language` (default English) for the guardrail message to the user in the section below. `description.md`/`history.md` (action `create`) follow `framework.changes.language` (default `interaction.language`, English if neither is configured). If `language` is not configured anywhere, everything is English.
+**Language.** Use `framework.interaction.language` (default English) for the guardrail message to the user in the section below. `description.md`/`history.md` (action `create`) follow `framework.changes.language` (default `interaction.language`, English if neither is configured) — except the labels wrapped in `[[[...]]]` in `description.template.md`, which stay fixed in English always (see the "Marker convention in templates" section of `pv-design.en.md`): write them without the brackets, exactly as they appear once unwrapped. If `language` is not configured anywhere, everything is English.
 
 It has two independent actions, each invoked with an `action` parameter:
 

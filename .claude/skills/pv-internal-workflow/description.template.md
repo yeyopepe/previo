@@ -1,7 +1,7 @@
-- **Name**: 
-- **Code**: 
-- **Type**: 
-- **Creation date**: 
+- **[[[Name]]]**: 
+- **[[[Code]]]**: 
+- **[[[Type]]]**: 
+- **[[[Creation date]]]**: 
 
 ## Full description
 

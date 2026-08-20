@@ -5,7 +5,7 @@ argument-hint: "[code] <idea to note or develop>"
 model: claude-haiku-4-5
 effort: medium
 metadata:
-  version: 0.9.5b7
+  version: 0.9.5b8
   uses: []
 ---
 
@@ -13,7 +13,7 @@ metadata:
 
 The `pv-*` framework's idea notebook, but **outside** its workflow: it doesn't document a change/fix to implement, it just keeps a record of an idea to develop later, at a different pace from `pv-new`/`pv-fix`. There's no planning (`pv-how`/`pv-do`), no states (`inProgress`/`implemented`/`closed`), and no version: an idea noted here stays here until, if ever, someone decides to turn it into a real change/fix with `pv-new`/`pv-fix` (outside this skill already).
 
-**Language.** Use `framework.interaction.language` (default English) for everything you say to the user in this conversation. `description.md` follows `framework.changes.language` (default `interaction.language`, English if neither is configured) — except the four markdown headings themselves (`## Idea`, `## Code`, `## Creation date`, `## Notes`), which stay fixed in English always (see step 3: `pv-status`'s scripts parse them literally). If `language` is not configured anywhere, everything is English.
+**Language.** Use `framework.interaction.language` (default English) for everything you say to the user in this conversation. `description.md` follows `framework.changes.language` (default `interaction.language`, English if neither is configured) — except the labels wrapped in `[[[...]]]` in `description.template.md` (the four markdown headings), which stay fixed in English always (see step 3, and the "Marker convention in templates" section of `pv-design.en.md`): write them without the brackets. If `language` is not configured anywhere, everything is English.
 
 Lives at `{changesDir}/todo/`, a sibling subfolder to `inProgress`/`implemented`/`closed` but **entirely separate** from the rest of the framework: no other `pv-*` skill reads it, writes it, or counts its folders when numbering or looking up changes/fixes. The codes this skill uses have no relation to change/fix's numeric `xxxx` — they're just unique identifiers within `{changesDir}/todo/`.
 
@@ -54,7 +54,7 @@ Without asking scope questions or proposing answers to functional gaps (that's w
 {changesDir}/todo/{code}/description.md
 ```
 
-**`description.md`** follows **exactly** the [`description.template.md`](description.template.md) template in this same folder: four markdown headings `## Idea`, `## Code`, `## Creation date` and `## Notes`, in that order, without bold or a trailing `:` on the heading (neither `## Idea:` nor `**Idea:**`) — `pv-status`'s `list_todo.py`/`collect_status.py` parse these headings with a literal regular expression (`^##\s*Idea\s*\n+`) and any variation (bold heading, colon, a different title like "Ide") makes the idea unreadable, showing up as "(no idea)" in `/pv-status todo`. **These four headings stay in English always, regardless of `changes.language`** — only the content under each one follows it.
+**`description.md`** follows **exactly** the [`description.template.md`](description.template.md) template in this same folder: four markdown headings `## Idea`, `## Code`, `## Creation date` and `## Notes` (marked `[[[...]]]` in the template — write them without the brackets), in that order, without bold or a trailing `:` on the heading (neither `## Idea:` nor `**Idea:**`) — `pv-status`'s `list_todo.py`/`collect_status.py` parse these headings with a literal regular expression (`^##\s*Idea\s*\n+`) and any variation (bold heading, colon, a different title like "Ide", or a translated heading) makes the idea unreadable, showing up as "(no idea)" in `/pv-status todo`.
 
 - **Idea** — short name summarizing the idea.
 - **Code** — the code generated in step 2.

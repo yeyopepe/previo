@@ -5,7 +5,7 @@ argument-hint: "[xxxx | todo <code>] <description of the change>"
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.5b7
+  version: 0.9.5b8
   uses: [pv-internal-workflow, pv-internal-tech-analysis, pv-internal-mockups-html, pv-internal-tech-mermaid, pv-how]
 ---
 
@@ -13,7 +13,7 @@ metadata:
 
 Analyzes and documents an intentional change to the project (new functionality or a deliberate modification to existing behavior — for bugs use the `pv-fix` skill, not this one). Part of the `pv-*` framework.
 
-**Language.** Use `framework.interaction.language` (default English) for everything you say to the user in this conversation. `description.md`, `design_navigation_*.md`, and the sample text inside `design_*.html`/`design_data_*.md` follow `framework.changes.language` (default `interaction.language`, English if neither is configured). If `language` is not configured anywhere, everything is English.
+**Language.** Use `framework.interaction.language` (default English) for everything you say to the user in this conversation. `description.md`, `design_navigation_*.md`, and the sample text inside `design_*.html`/`design_data_*.md` follow `framework.changes.language` (default `interaction.language`, English if neither is configured) — `description.md`'s own `[[[...]]]`-marked field labels are `pv-internal-workflow`'s concern (which actually writes the file): see its "Language." note. If `language` is not configured anywhere, everything is English.
 
 **It implements nothing.** This skill only understands and documents the functional scope of what's being asked; the technical solution is done afterward by the `pv-how` skill, and the implementation by the `pv-do` skill, once it's decided to plan/implement this entry.
 

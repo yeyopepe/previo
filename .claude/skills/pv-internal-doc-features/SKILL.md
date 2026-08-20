@@ -5,7 +5,7 @@ user-invocable: false
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.5b7
+  version: 0.9.5b8
   uses: []
 ---
 
@@ -13,7 +13,7 @@ metadata:
 
 A single, shared procedure to organize `docs.functional.featuresDocPathDir` as a folder with one file per feature, instead of a single monolithic document — designed so that analyzing or updating one feature doesn't require reading the entire listing. Only invoked by `pv-do` (which writes this documentation after implementing a change/fix) — not meant for direct invocation by the user.
 
-**Language.** This skill doesn't talk to the user directly. The content it writes to each feature file and to `INDEX.md` follows `docs.functional.language` (default `interaction.language`, English if neither is configured) — the caller (`pv-do`) tells it, since this skill doesn't read `.claude/pv-context.json` itself. The structural field labels (`**Area**`, `**Available in**`, `**Code**`, `**Since**`, `**Last modified**`) stay fixed in English always, regardless of `docs.functional.language` — `rebuild-index.py` parses `**Area**` literally to group `INDEX.md`; only the free-text content following each label follows the configured language.
+**Language.** This skill doesn't talk to the user directly. The content it writes to each feature file and to `INDEX.md` follows `docs.functional.language` (default `interaction.language`, English if neither is configured) — the caller (`pv-do`) tells it, since this skill doesn't read `.claude/pv-context.json` itself. The labels wrapped in `[[[...]]]` in `FEATURE.template.md` (`Area`, `Available in`, `Code`, `Since`, `Last modified`, and the `NNN` numeric prefix in the title) stay fixed in English always, regardless of `docs.functional.language` — write them without the brackets (see the "Marker convention in templates" section of `pv-design.en.md`). `rebuild-index.py` parses `**Area**` literally to group `INDEX.md`, and `next-feature-number.py` parses the `NNN` prefix; only the free-text content following each label follows the configured language.
 
 **This skill doesn't decide what the documentation says.** It doesn't draft functional descriptions nor decide whether an existing feature's behavior changed — that's always `pv-do`'s job, which already knows the implemented change. This skill only knows **where** and **how** that documentation should live once drafted: naming the file, keeping the index consistent, and returning the relevant file when it needs checking whether it already exists.
 

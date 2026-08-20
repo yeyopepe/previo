@@ -1,5 +1,5 @@
-- **Creation date**: [YYYY-MM-DD]
-- **Risk**: [median 0-10 returned by pv-internal-tech-risks] — [description of the "Meaning" matching that median per the table in section (f)]
+- **[[[Creation date]]]**: [YYYY-MM-DD]
+- **[[[Risk]]]**: [median 0-10 returned by pv-internal-tech-risks] — [description of the "Meaning" matching that median per the table in section (f)]
 
 ## (a) Functional notes
 

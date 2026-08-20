@@ -5,7 +5,7 @@ argument-hint: <xxxx of the already-planned change/fix>
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.5b7
+  version: 0.9.5b8
   uses: [pv-internal-workflow, pv-internal-doc-features, pv-internal-doc-technical]
 ---
 
@@ -13,7 +13,7 @@ metadata:
 
 Takes an entry from `{changesDir}/inProgress/{xxxx}/` whose technical solution is already written in `plan.md` (by the `pv-how` skill) and carries it through to implemented: edits the code, updates the synced documentation, and moves the folder to `{changesDir}/implemented/{xxxx}/`.
 
-**Language.** Use `framework.interaction.language` (default English) for everything you say to the user in this conversation. When updating `docs.functional.featuresDocPathDir` (via `pv-internal-doc-features`), use `docs.functional.language`; when updating `docs.tech.architectureDocDir`/`styleBibleDocDir`, use `docs.tech.language` (fallback `interaction.language` in both cases) — **not** `changes.language`, even though the source (`plan.md`) is in another language: translating the content when writing it into the final reference document is your responsibility. If `language` is not configured anywhere, everything is English.
+**Language.** Use `framework.interaction.language` (default English) for everything you say to the user in this conversation. When updating `docs.functional.featuresDocPathDir` (via `pv-internal-doc-features`), use `docs.functional.language`; when updating `docs.tech.architectureDocDir`/`styleBibleDocDir`, use `docs.tech.language` (fallback `interaction.language` in both cases) — **not** `changes.language`, even though the source (`plan.md`) is in another language: translating the content when writing it into the final reference document is your responsibility. In the legacy single-file case (step 2.2) where you write `FEATURES.template.md` yourself, the labels wrapped in `[[[...]]]` there (`Available in`, `Code`) stay fixed in English always — write them without the brackets (see the "Marker convention in templates" section of `pv-design.en.md`); `migrate-legacy-features-doc.py` parses `**Available in**` literally when the project later migrates to a folder. If `language` is not configured anywhere, everything is English.
 
 **Source of truth.** This entry's `plan.md` is the guide for what to implement. If during implementation something doesn't line up with the real code, the code rules — stop and tell the user instead of improvising a different solution without telling them (see step 2). If the entry has a `history.md`, don't open it: it's prompt history for the exclusive use of `pv-new`/`pv-fix`, never information to take into account when implementing or documenting (step 2.1), and reading it would only spend context without adding anything.
 

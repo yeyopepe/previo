@@ -12,6 +12,7 @@ Mapa de las skills que componen el framework `pv-*` y cómo se invocan entre sí
   - [skillModels](#skillmodels)
   - [framework](#framework)
 - [El lanzador `pv.py`](#el-lanzador-pvpy)
+- [Convención de marcadores en plantillas](#convención-de-marcadores-en-plantillas)
 - [Estructura completa de carpetas y ficheros](#estructura-completa-de-carpetas-y-ficheros)
 
 ## Diagrama de relaciones
@@ -299,6 +300,26 @@ Cualquier campo de `docs` que no esté configurado hace que el paso correspondie
 ## El lanzador `pv.py`
 
 Script Python autocontenido pensado para quien quiera consultar o cerrar cambios del framework directamente desde una terminal, sin pasar por Claude Code. Diseño completo (pantallas, flujo de navegación, dependencias) en [`pv-design-onescript.es.md`](../pv-design-onescript/pv-design-onescript.es.md).
+
+## Convención de marcadores en plantillas
+
+Cada `*.template.md` que una skill `pv-*` usa para escribir un fichero (`description.template.md`, `PLAN.template.md`, `FEATURE.template.md`, el `description.template.md` de `pv-todo`, etc.) está redactado en un idioma fijo (inglés), pero el documento que produce sigue el `language` que corresponda (`changes.language`, `docs.functional.language`, etc. — ver "Configuración de idioma" más arriba). La mayor parte de una plantilla es texto libre y se traduce con todo lo demás. Sin embargo, algunas etiquetas de campo y encabezados los parsean literalmente scripts `pv-*` (`collect_status.py`/`filter_status.py` de `pv-status`, `rebuild-index.py`/`next-feature-number.py` de `pv-internal-doc-features`) con expresiones regulares solo en inglés — si el modelo traduce una de esas etiquetas en vez de traducir solo el valor que la sigue, el script deja de encontrarla en silencio: el campo aparece vacío, `—`, o "unknown" en `/pv-status` o en `INDEX.md`, sin ningún error visible.
+
+Para que esa distinción sea inequívoca justo en el momento en que importa —mientras se sigue una plantilla para escribir un fichero real—, cualquier fragmento envuelto en **`[[[...]]]`** dentro de una plantilla es un marcador estructural que se queda siempre en inglés, sea cual sea el idioma de destino. Todo lo demás en la plantilla (texto `[placeholder]` normal, prosa, notas `<...>` para quien redacta) sigue el idioma configurado como de costumbre. Por ejemplo:
+
+```
+- **[[[Creation date]]]**: [YYYY-MM-DD]
+```
+
+produce, una vez escrito en un fichero real con `changes.language` en español:
+
+```
+- **Creation date**: 2026-08-19
+```
+
+`[[[...]]]` es sintaxis exclusiva de la plantilla: le indica a quien la rellena qué no traducir. Nunca aparece en el fichero generado — los corchetes se eliminan igual que `[YYYY-MM-DD]` se resuelve a una fecha real; solo sobrevive la etiqueta, en inglés, sin cambios.
+
+Cuando se añada un campo nuevo a una plantilla que algún script vaya a parsear literalmente, márcalo con `[[[...]]]` en la propia plantilla en vez de limitarte a describir la regla en prosa en un `SKILL.md` — la plantilla es la única fuente de verdad de qué etiquetas están protegidas, así que no hay nada que mantener sincronizado a mano. Un `SKILL.md` que escribe a partir de una plantilla marcada solo necesita un recordatorio breve en su nota "Language." de que las etiquetas marcadas se quedan fijas — no una lista repetida de cuáles son.
 
 ## Estructura completa de carpetas y ficheros
 

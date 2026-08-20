@@ -5,7 +5,7 @@ argument-hint: <description of the bug or change to apply>
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.5b7
+  version: 0.9.5b8
   uses: [pv-internal-workflow, pv-internal-tech-analysis, pv-internal-mockups-html, pv-internal-tech-mermaid, pv-new, pv-how]
 ---
 
@@ -13,7 +13,7 @@ metadata:
 
 Analyzes, documents and implements a fix (broken behavior) on the project, and is also the `pv-*` framework's fast path for **very small, almost-zero-analysis** changes (a typo, a piece of text, a one-off value/constant, an isolated style tweak — whether or not they're a bug). For new functionality or non-trivial intentional changes use the `pv-new` skill, not this one. Part of the `pv-*` framework.
 
-**Language.** Use `framework.interaction.language` (default English) for everything you say to the user in this conversation, including the fixed messages below. `description.md` (and its `## Applied changes` section in the fast-track branch) and the sample text inside `design_*.html`/`design_data_*.md` follow `framework.changes.language` (default `interaction.language`, English if neither is configured). If `language` is not configured anywhere, everything is English.
+**Language.** Use `framework.interaction.language` (default English) for everything you say to the user in this conversation, including the fixed messages below. `description.md` (and its `## Applied changes` section in the fast-track branch) and the sample text inside `design_*.html`/`design_data_*.md` follow `framework.changes.language` (default `interaction.language`, English if neither is configured) — `description.md`'s own `[[[...]]]`-marked field labels are `pv-internal-workflow`'s concern (which actually writes the file, including in the fast-track branch): see its "Language." note. `## Applied changes` itself isn't marked in any template — it's free-text prose you write directly, and follows `changes.language` like the rest. If `language` is not configured anywhere, everything is English.
 
 A non-trivial fix is, by nature, a scoped change: the analysis and solution must focus **solely and exclusively on correcting the reported bug**, with the smallest possible change. No taking the opportunity to refactor, rename, or touch code unrelated to the root cause — if that's needed, it's a separate `pv-new`.
 

@@ -343,7 +343,7 @@ Every point except `interaction.language` is optional: if you don't configure th
 
 `pv-init` always asks about language on a first-time setup, proposing English as the default for `interaction` and offering to reuse the same value for the rest unless you want something different. If you initialized this project before language support existed, the next time you run `pv-init` it asks just this, without repeating the rest of the questionnaire. You can edit the values by hand in `.claude/pv-context.json` at any point afterward.
 
-Two things always stay in English no matter what you configure: `pv-status`'s report table (it's built by deterministic scripts, not the model, to keep it free and consistent — only the sentence introducing it follows `interaction.language`), and the markdown field labels scripts parse literally in `description.md` (`**Type**`, `**Name**`, `## Idea`, `## Notes`...) — only the text that follows each label follows the configured language.
+Two things always stay in English no matter what you configure: `pv-status`'s report table (it's built by deterministic scripts, not the model, to keep it free and consistent — only the sentence introducing it follows `interaction.language`), and the markdown field labels scripts parse literally in `description.md` and `plan.md` (`**Type**`, `**Name**`, `**Creation date**`, `**Risk**`, `## Idea`, `## Notes`...). These are marked with `[[[...]]]` in each skill's `*.template.md` — see the "Marker convention in templates" section of `pv-design.en.md` for the full rule — so only the text that follows each label follows the configured language.
 
 ### 3. Each skill's model/effort: `skillModels`
 

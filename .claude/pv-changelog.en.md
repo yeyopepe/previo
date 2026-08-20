@@ -1,0 +1,18 @@
+"Previo v0.9.5" changelog (previous version v0.9.21)
+
+## New
+
+- **Usage guide (`pv-guide`)** — added a full English/Spanish usage guide covering setup, folder structure, the natural work cycle (`pv-todo` → `pv-new`/`pv-fix` → `pv-how` → `pv-do`), preparing a release with `pv-version`, customizing mockups/diagrams/languages/model-effort, and using `pv.py` without Claude Code.
+- **`pv-init-update`** — new skill that audits the framework's health in an already-initialized project (`pv-context.json`'s shape, referenced skills, on-disk paths, `pv.py` freshness, `skillModels` drift), reports every inconsistency with a proposed fix, and only applies what the user explicitly approves. `pv-init` now delegates to it automatically whenever it detects a problem beyond an unconfigured optional field.
+- **`pv-internal-doc-technical`** — new shared writing style for the architecture and style-bible documentation, favoring dense, AI-readable fact fragments (signatures as code, tables, fixed English tags) over human-oriented prose. `pv-do` now loads it before drafting or editing that documentation.
+- **Multi-language support** — `pv-init` now asks for an interaction language and lets each area of the framework's output (in-progress change documents, the release changelog, functional docs, technical docs) use that same language or a language of its own, recording the reasoning in `pv-context.json`.
+- **Risk shown in status reports** — `pv-status` (both the general report and the per-state listing) now shows each entry's risk score (as assessed by `pv-how`) alongside its other columns, and the general report also shows the total number of prepared versions.
+- **`pv.py` — check versions and diagnose stuck releases** — the standalone launcher gained a "Check versions" submenu (list past versions and read their changelog) and a check for a stuck `closed/temp/` folder left behind by an interrupted `pv-version` run, plus a submenu option to sync skill models from `pv-context.json` without leaving the script.
+
+## Changed
+
+- **`pv-init`** — no longer asks where to put the framework's working folder: it's now always a fixed `previo-sdd` folder, set silently. Documentation folders (architecture, style, features) are now expected under that same working folder rather than anywhere in the repo, and are only scaffolded with empty placeholders (no longer drafted by the model) once the project's initial setup is written. The framework's per-skill model/effort configuration is now always written on init (mirroring what's already on disk), instead of being left absent when the user doesn't customize it.
+- **`pv-do`** — when updating the architecture or style-bible documentation, now writes that content following the new AI-oriented writing style, and always writes each kind of documentation (technical, functional) in its own configured language instead of possibly reusing the source document's language.
+- **`pv-fix`**'s trivial-change threshold was relaxed slightly: a change with very low (not just zero) risk to the rest of the application can now still qualify for the fast, no-plan path.
+- **`pv-internal-changelog`** — closed entries are now staged into an isolated `closed/temp/` copy before drafting the changelog, so a change closed while the changelog is being written no longer interferes with that run; deleting the folded-in entries afterward no longer requires a separate user confirmation, since the staged copy is guaranteed to match exactly what was just written.
+- **`pv-version`**'s project-specific build procedure file (`how-to-compile-version.md`) now lives under the framework's `stuff/` folder instead of a `framework/` folder.
