@@ -27,6 +27,13 @@ For each entry in the state folder, five columns are computed:
     as written); otherwise description.md's modification time (mtime)
     formatted as YYYY-MM-DD; if there's no description.md, the folder's own
     mtime.
+  - extra_files: count of files directly inside the entry folder that
+    aren't the framework's own (description.md, plan.md, history.md) --
+    e.g. design_*.html/design_*.txt mockups, or anything else a change/fix
+    folder may accumulate. Only surfaces in --terminal mode's detail card
+    (see TERMINAL_FRAMEWORK_FILES below); 'todo/' entries never show it,
+    same reasoning as Risk/planned (todo/ folders only ever hold
+    description.md).
 
 Two more fields, name (description.md's '**Name**' field) and planned_date
 (plan.md's '**Creation date**' field, same bold-inline format as
@@ -138,6 +145,12 @@ def load_changes_dir(root: Path, override: str | None) -> Path:
 
 DESCRIPTION_MAX_CHARS = 250
 
+# Files an entry folder always carries as part of the pv-new/pv-fix/pv-how
+# workflow -- everything else directly inside the folder (design_*.html,
+# design_*.txt, or anything else a change/fix accumulates) counts as
+# "extra" for the detail card's file count.
+TERMINAL_FRAMEWORK_FILES = {"description.md", "plan.md", "history.md"}
+
 
 def summarize(text: str) -> str:
     # Collapses repeated line breaks/whitespace before truncating, so the
@@ -186,6 +199,14 @@ def mtime_str(path: Path) -> str:
     return datetime.fromtimestamp(path.stat().st_mtime).strftime("%Y-%m-%d")
 
 
+def count_extra_files(entry_dir: Path) -> int:
+    return sum(
+        1
+        for p in entry_dir.iterdir()
+        if p.is_file() and p.name not in TERMINAL_FRAMEWORK_FILES
+    )
+
+
 def build_entry(state: str, entry_dir: Path) -> dict:
     description_path = entry_dir / "description.md"
     plan_path = entry_dir / "plan.md"
@@ -222,6 +243,7 @@ def build_entry(state: str, entry_dir: Path) -> dict:
     # rather than a second date pattern. None here (no plan.md, or a plan.md
     # missing the field) means "pending" to the caller, not "unknown yet".
     planned_date = extract_date(plan_text) if plan_text else None
+    extra_files = None if state == "todo" else count_extra_files(entry_dir)
 
     return {
         "code": entry_dir.name,
@@ -232,6 +254,7 @@ def build_entry(state: str, entry_dir: Path) -> dict:
         "date": date,
         "planned_date": planned_date,
         "risk": risk,
+        "extra_files": extra_files,
     }
 
 
@@ -365,7 +388,7 @@ def render_report(result: dict) -> str:
     )
 
 
-TERMINAL_DESCRIPTION_MAX_CHARS = 200
+TERMINAL_DESCRIPTION_MAX_CHARS = 500
 
 
 SEARCH_KIND_LABELS = {"id": "id", "content": "content"}
@@ -414,10 +437,12 @@ def render_terminal(result: dict) -> str:
         description = entry["description"] or "—"
         if len(description) > TERMINAL_DESCRIPTION_MAX_CHARS:
             description = description[:TERMINAL_DESCRIPTION_MAX_CHARS].rstrip() + "..."
+        extra_files = entry["extra_files"] or 0
         lines.append(f"({entry['state']})  {entry['code']}  [{type_}]  Risk: {risk}")
         lines.append(f"created: {entry['date'] or '—'}, planned: {planned}")
         lines.append(term.wrap(entry["name"] or "(no name)", indent="> "))
         lines.append(term.wrap(description, indent="  "))
+        lines.append(f"extra files: {extra_files}")
 
     lines.append("")
     lines.append(term.hr())

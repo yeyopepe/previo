@@ -382,7 +382,7 @@ Es el nombre fijo (junto con "ficha de detalle") con el que nos referimos, en es
 
 Sin color propio (hereda el GOLD del bloque que la contiene solo en el título/cierre de la pantalla, el cuerpo va sin colorear, igual que el resto de "Info delegada"). El formato es el mismo sea cual sea el modo — el prefijo `(estado)` de la línea 1 se muestra siempre, incluso en "Filter by state" donde el título de la pantalla ya lo indica (unificado a propósito para que la ficha se vea siempre igual, en vez de tener un formato ligeramente distinto según cómo se llegó a ella).
 
-Hay **dos variantes de contenido, con distinto número de líneas** — 4 líneas para cambio/fix, 3 para idea (`todo/`, sin `Risk` ni descripción separada, ver más abajo por qué):
+Hay **dos variantes de contenido, con distinto número de líneas** — 5 líneas para cambio/fix, 3 para idea (`todo/`, sin `Risk`, sin conteo de ficheros adicionales, ni descripción separada, ver más abajo por qué):
 
 #### Ficha de un cambio/fix (`inProgress`/`implemented`/`closed`)
 
@@ -390,18 +390,20 @@ Hay **dos variantes de contenido, con distinto número de líneas** — 4 línea
 (implemented)  1001  [🆕 Change]  Risk: 6/10  ← Línea 1: (estado), id, tipo, riesgo — sin fecha aquí
 created: 2026-08-01, planned: 2026-08-03      ← Línea 2: created = description.md, planned = plan.md ("pending" si no existe)
 > Add user authentication                     ← Línea 3: nombre (description.md, campo **Name**), prefijo "> "
-  Lets users sign in with email and           ← Línea 4: primeros 200 caracteres de la
+  Lets users sign in with email and           ← Línea 4: primeros 500 caracteres de la
   password, backed by a new sessions table…      descripción (## Full description), con "…" si se trunca
+extra files: 2                                ← Línea 5: nº de ficheros no-framework directamente en la carpeta del cambio
 ```
 
 - **`created`** (línea 2): `description.md`'s campo `**Creation date**` (bold inline); si no existe, cae al mtime de `description.md`.
 - **`planned`** (línea 2): `plan.md`'s campo `**Creation date**` (mismo formato bold-inline, ver `PLAN.template.md`) — es la fecha en que `pv-how` escribió el plan, no la de creación del cambio. Si `plan.md` no existe todavía, o existe pero le falta ese campo, se muestra literalmente **`pending`** (no un guion ni "unknown" — indica explícitamente que la planificación aún no ha ocurrido). `build_entry()` calcula esto reutilizando `extract_date()` sobre el texto de `plan.md`, sin un patrón nuevo — el campo tiene exactamente el mismo formato en ambos ficheros.
 - **`Risk`** (línea 1): `plan.md`'s campo `**Risk**`, formato `{valor}/10` — `?` si no hay `plan.md` o el campo no tiene ese formato exacto.
-- La línea 4 usa **su propio límite de 200 caracteres**, distinto e independiente de los 250 caracteres que usa la tabla markdown de `/pv-status` (chat) — cambiar uno no afecta al otro; son dos rutas de render separadas dentro de `filter_status.py` (`render_terminal()` vs `render_report()`), y solo el modo terminal muestra la ficha detalle en absoluto (la tabla markdown no tiene columnas Name/Planned).
+- La línea 4 usa **su propio límite de 500 caracteres** (`TERMINAL_DESCRIPTION_MAX_CHARS`), distinto e independiente de los 250 caracteres que usa la tabla markdown de `/pv-status` (chat) — cambiar uno no afecta al otro; son dos rutas de render separadas dentro de `filter_status.py` (`render_terminal()` vs `render_report()`), y solo el modo terminal muestra la ficha detalle en absoluto (la tabla markdown no tiene columnas Name/Planned/extra files).
+- **`extra files`** (línea 5): nº de ficheros directamente dentro de la carpeta del cambio que no son del framework (`description.md`, `plan.md`, `history.md`) — p.ej. mockups `design_*.html`/`design_*.txt`, o cualquier otro fichero que acumule la carpeta. Se calcula con `count_extra_files()` contra el conjunto `TERMINAL_FRAMEWORK_FILES`; `0` si no hay ninguno.
 
 #### Ficha de una idea (`todo/`)
 
-Formato distinto y más corto que el de cambio/fix — **3 líneas, no 4**: sin `Risk` (`todo/` nunca tiene `plan.md`, así que siempre habría sido `?` — ruido, no información) y sin línea de descripción separada (el texto de `## Idea` ya hace de nombre, no hay nada más que mostrar debajo).
+Formato distinto y más corto que el de cambio/fix — **3 líneas, no 5**: sin `Risk` ni conteo de ficheros adicionales (`todo/` nunca tiene `plan.md`, y sus entradas solo tienen `description.md` — ambos siempre habrían sido `?`/`0`, ruido no información) y sin línea de descripción separada (el texto de `## Idea` ya hace de nombre, no hay nada más que mostrar debajo).
 
 ```
 (todo)  a3f9k  [💡 Todo]                      ← Línea 1: (estado), id, tipo — sin Risk

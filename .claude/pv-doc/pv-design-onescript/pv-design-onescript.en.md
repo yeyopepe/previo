@@ -382,7 +382,7 @@ The fixed name (along with "detail card") we use, in this document and in develo
 
 No color of its own (inherits the GOLD of the surrounding block only for the screen's title/closing rule, the body stays uncolored, same as the rest of "Delegated info"). The format is the same regardless of mode — the `(state)` prefix on line 1 is always shown, even in "Filter by state" where the screen's own title already says it (unified on purpose so the card always looks the same, instead of having a slightly different format depending on how you got to it).
 
-There are **two content variants, with a different number of lines** — 4 lines for change/fix, 3 for idea (`todo/`, no `Risk`, no separate description line, see why below):
+There are **two content variants, with a different number of lines** — 5 lines for change/fix, 3 for idea (`todo/`, no `Risk`, no extra-files count, no separate description line, see why below):
 
 #### Change/fix card (`inProgress`/`implemented`/`closed`)
 
@@ -390,18 +390,20 @@ There are **two content variants, with a different number of lines** — 4 lines
 (implemented)  1001  [🆕 Change]  Risk: 6/10  ← Line 1: (state), id, type, risk — no date here
 created: 2026-08-01, planned: 2026-08-03      ← Line 2: created = description.md, planned = plan.md ("pending" if absent)
 > Add user authentication                     ← Line 3: name (description.md's **Name** field), "> " prefix
-  Lets users sign in with email and           ← Line 4: first 200 characters of the
+  Lets users sign in with email and           ← Line 4: first 500 characters of the
   password, backed by a new sessions table…      description (## Full description), with "…" if truncated
+extra files: 2                                ← Line 5: count of non-framework files directly in the entry folder
 ```
 
 - **`created`** (line 2): `description.md`'s `**Creation date**` field (bold inline); falls back to `description.md`'s mtime if absent.
 - **`planned`** (line 2): `plan.md`'s `**Creation date**` field (same bold-inline format, see `PLAN.template.md`) — the date `pv-how` wrote the plan on, not the change's creation date. If `plan.md` doesn't exist yet, or exists but lacks that field, shows literally **`pending`** (not a dash or "unknown" — explicitly signals planning hasn't happened yet). `build_entry()` computes this by reusing `extract_date()` on `plan.md`'s text, no new pattern needed — the field has the exact same format in both files.
 - **`Risk`** (line 1): `plan.md`'s `**Risk**` field, `{value}/10` format — `?` if there's no `plan.md` or the field isn't in that exact format.
-- Line 4 uses **its own 200-character limit**, separate from and independent of the 250-character limit used by `/pv-status`'s markdown table (chat) — changing one doesn't affect the other; they're two separate rendering paths inside `filter_status.py` (`render_terminal()` vs `render_report()`), and only terminal mode shows the detail card at all (the markdown table has no Name/Planned columns).
+- Line 4 uses **its own 500-character limit** (`TERMINAL_DESCRIPTION_MAX_CHARS`), separate from and independent of the 250-character limit used by `/pv-status`'s markdown table (chat) — changing one doesn't affect the other; they're two separate rendering paths inside `filter_status.py` (`render_terminal()` vs `render_report()`), and only terminal mode shows the detail card at all (the markdown table has no Name/Planned/extra-files columns).
+- **`extra files`** (line 5): count of files directly inside the entry folder that aren't the framework's own (`description.md`, `plan.md`, `history.md`) — e.g. `design_*.html`/`design_*.txt` mockups, or anything else the folder accumulates. Computed by `count_extra_files()` against the `TERMINAL_FRAMEWORK_FILES` set; `0` if there are none.
 
 #### Idea card (`todo/`)
 
-Different, shorter format than the change/fix card — **3 lines, not 4**: no `Risk` (`todo/` never has `plan.md`, so it would always have been `?` — noise, not information) and no separate description line (the `## Idea` text already serves as the name, there's nothing else to show below it).
+Different, shorter format than the change/fix card — **3 lines, not 5**: no `Risk`, no extra-files count (`todo/` never has `plan.md`, and its entries only ever hold `description.md` — both would always have been `?`/`0`, noise not information) and no separate description line (the `## Idea` text already serves as the name, there's nothing else to show below it).
 
 ```
 (todo)  a3f9k  [💡 Todo]                      ← Line 1: (state), id, type — no Risk
