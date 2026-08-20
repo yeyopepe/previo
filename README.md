@@ -32,8 +32,8 @@ It brings the control and traceability of *spec-driven development* without the 
 |<u>**Adaptable and versatile**</u>| Great for projects of any size, and adapts to each project's stack.|
 |<u>**No extra tooling**</u> |Requires nothing beyond Claude Code and Python on the development machine — no installs on your machine, external services, databases, or other headaches.|
 |<u>**100% built by AI, for AI**</u> |The whole cycle (from idea to delivery) is a 100% AI-guided process, for any kind of profile. A few more tokens, much less complexity.|
-|<u>**Multi-language support**</u>| Speak in English, write the technical documentation in French, and draft the changelog in Spanish (for example). Multi-language support is configurable across up to 5 points. |
-|<u>**And plenty more**</u>| Tracking and traceability for every change, release generation (documentation included), a prompt history tied to each change, fast changes, security reviews, and more.|
+|<u>**Multi-language support**</u>| Speak in English, write the technical documentation in Spanish, and draft the changelog in French (for example). Multi-language support is configurable across up to 5 points. |
+|<u>**And plenty more**</u>| Tracking and traceability for every change, release generation (documentation included), a prompt history tied to each change, fast changes, security reviews, an autonomous update-checking system, and more.|
 
 
 ## 🛠️Configurable and extensible
@@ -157,7 +157,7 @@ Optional skills that complement the minimal cycle: jotting down ideas before com
 - **`/pv-version <code>`** — packages a release: generates the deliverable, archives the current documentation, and writes the functional changelog from what's been closed.
 
 
-### ⭐The Full Experience
+## ⭐The Full Experience
 See the [user guide](.claude/pv-doc/pv-guide.en.md) for everything you can do with Previo.
 
 ## 📐How it's built, in detail
