@@ -31,6 +31,8 @@ Read `.claude/pv-context.json` at the repo root. If it doesn't exist, or is miss
 This project doesn't have the `pv-*` framework initialized yet (or is missing configuration). Run `/pv-init` first before invoking me again.
 ```
 
+Additionally, if `framework.frameworkStatus.blocked` is `true`, don't continue either: tell the user the framework is in a blocked state (show `framework.frameworkStatus.blockedReason` if present) and that they must run `pv-update` to diagnose and resolve it before this skill can proceed.
+
 `docs.tech.architectureDocDir`, `docs.functional.featuresDocPathDir` and `docs.tech.styleBibleDocDir` are optional and used in step 2.1; if not configured, skip the corresponding updates without asking anything.
 
 ## 1. Identify the entry to implement

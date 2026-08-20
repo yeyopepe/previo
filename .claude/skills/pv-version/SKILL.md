@@ -25,6 +25,8 @@ Read `.claude/pv-context.json` at the repo root. If it doesn't exist, or is miss
 This project doesn't have the `pv-*` framework initialized yet (or is missing configuration). Run `/pv-init` first before invoking me again.
 ```
 
+Additionally, if `framework.frameworkStatus.blocked` is `true`, don't continue either: tell the user the framework is in a blocked state (show `framework.frameworkStatus.blockedReason` if present) and that they must run `pv-update` to diagnose and resolve it before this skill can proceed.
+
 ## 0.1. Process diagram, on demand
 
 At any point during invocation, if the user asks how the process works or explicitly asks for "the diagram"/"the flow", show [`version-flow-diagram.template.md`](version-flow-diagram.template.md)'s full content as-is (without regenerating or paraphrasing it) and continue wherever the flow had gotten to.

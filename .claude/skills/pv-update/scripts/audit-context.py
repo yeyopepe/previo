@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """Audits .claude/pv-context.json and everything it configures against the
 real state of the repo: schema shape, referenced skills, on-disk paths,
-skillModels vs each SKILL.md's real frontmatter, and the [[[...]]]-marked
+skillModels vs each SKILL.md's real frontmatter, the [[[...]]]-marked
 structural labels (see pv-design.en.md's "Marker convention in templates")
-in every template-derived document under workFolder's changes/ subtree.
+in every template-derived document under workFolder's changes/ subtree, and
+version consistency -- every pv-* skill's metadata.version should share the
+same major.minor (skill-version-mismatch:*), and pv-context.json's
+frameworkStatus.lastVerifiedVersion should match pv-init/SKILL.md's real
+metadata.version (version-check-outdated / version-check-downgrade).
 
 Doesn't decide anything or write anything -- purely read-only diagnostics,
 for pv-update to turn into a report and, only with user approval, fixes.
@@ -50,6 +54,7 @@ KNOWN_FRAMEWORK_FIELDS = {
     "skills",
     "numberWidth",
     "docs",
+    "frameworkStatus",
 }
 WORKFOLDER_SUBFOLDERS = (
     "changes/inProgress",
@@ -106,6 +111,49 @@ def read_model_effort(path: Path) -> tuple[str, str] | None:
     if model is None or effort is None:
         return None
     return model, effort
+
+
+# Versions in this framework aren't strict semver -- they carry an optional
+# 'bN' beta suffix with no separator (e.g. "0.9.5b8"). The suffix is captured
+# but never used for ordering: two versions differing only in suffix compare
+# equal for every check in this script.
+VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)([a-zA-Z][\w.-]*)?$")
+
+
+def parse_version(version: str) -> tuple[int, int, int, str] | None:
+    match = VERSION_RE.match(version.strip())
+    if not match:
+        return None
+    major, minor, patch, suffix = match.groups()
+    return int(major), int(minor), int(patch), suffix or ""
+
+
+def read_skill_version(path: Path) -> str | None:
+    """Reads metadata.version from a SKILL.md's YAML frontmatter, manually
+    (no PyYAML) -- same frontmatter-detection style as read_model_effort(),
+    but 'version:' lives indented under a 'metadata:' block instead of at the
+    frontmatter's top level."""
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return None
+    try:
+        close_idx = next(i for i in range(1, len(lines)) if lines[i].strip() == "---")
+    except StopIteration:
+        return None
+    in_metadata = False
+    for line in lines[1:close_idx]:
+        if re.match(r"^metadata:\s*$", line):
+            in_metadata = True
+            continue
+        if not in_metadata:
+            continue
+        version_match = re.match(r"^\s+version:\s*(.+?)\s*$", line)
+        if version_match:
+            return version_match.group(1).strip().strip('"').strip("'")
+        if not line.startswith((" ", "\t")):
+            in_metadata = False
+    return None
 
 
 MARKER_RE = re.compile(r"\[\[\[(.+?)\]\]\]")
@@ -350,6 +398,67 @@ def main() -> None:
                     f"skillModels.overrides.{name}",
                     f"'skillModels.overrides' has an entry for '{name}', but '.claude/skills/{name}/SKILL.md' doesn't exist.",
                     expected=f".claude/skills/{name}/SKILL.md", actual="missing")
+
+    # --- Check B: every pv-* skill should share the same major.minor version (required) ---
+    versions_by_skill: dict[str, str] = {}
+    for skill_md in sorted(skills_dir.glob("pv-*/SKILL.md")):
+        name = skill_md.parent.name
+        raw_version = read_skill_version(skill_md)
+        if raw_version is None:
+            add(problems, f"skill-version-unreadable:{name}", "optional", f"metadata.version ({name})",
+                f"Couldn't read 'metadata.version' from '{name}/SKILL.md''s frontmatter.")
+            continue
+        versions_by_skill[name] = raw_version
+
+    if versions_by_skill:
+        mm_counts: dict[tuple[int, int], int] = {}
+        parsed_by_skill: dict[str, tuple[int, int, int, str]] = {}
+        for name, raw_version in versions_by_skill.items():
+            parsed = parse_version(raw_version)
+            if parsed is None:
+                add(problems, f"skill-version-unreadable:{name}", "optional", f"metadata.version ({name})",
+                    f"'{name}/SKILL.md''s metadata.version ('{raw_version}') doesn't match the expected 'X.Y.Z' or 'X.Y.ZbN' format.")
+                continue
+            parsed_by_skill[name] = parsed
+            mm = (parsed[0], parsed[1])
+            mm_counts[mm] = mm_counts.get(mm, 0) + 1
+
+        if mm_counts:
+            majority_mm = max(mm_counts.items(), key=lambda kv: kv[1])[0]
+            majority_str = f"{majority_mm[0]}.{majority_mm[1]}"
+            for name, parsed in sorted(parsed_by_skill.items()):
+                mm = (parsed[0], parsed[1])
+                if mm != majority_mm:
+                    add(problems, f"skill-version-mismatch:{name}", "required", f"metadata.version ({name})",
+                        f"'{name}/SKILL.md' is at version {versions_by_skill[name]} (major.minor {mm[0]}.{mm[1]}), "
+                        f"which differs from the majority of pv-* skills at {majority_str} -- looks like a partial "
+                        f"or interrupted framework update.",
+                        expected=majority_str, actual=versions_by_skill[name])
+
+    # --- Check A: pv-context.json's last verified version vs. the real installed version (required) ---
+    framework_status = framework.get("frameworkStatus") or {}
+    last_verified = framework_status.get("lastVerifiedVersion")
+    if last_verified:
+        pv_init_md = skills_dir / "pv-init" / "SKILL.md"
+        real_raw = read_skill_version(pv_init_md) if pv_init_md.is_file() else None
+        real_parsed = parse_version(real_raw) if real_raw else None
+        verified_parsed = parse_version(last_verified)
+        if real_parsed is not None and verified_parsed is not None:
+            real_mmp = real_parsed[:3]
+            verified_mmp = verified_parsed[:3]
+            if real_mmp > verified_mmp:
+                add(problems, "version-check-outdated", "required", "framework.frameworkStatus.lastVerifiedVersion",
+                    f"Installed pv-init/SKILL.md is at version {real_raw}, but pv-context.json last verified "
+                    f"{last_verified} -- an update was installed and pv-update hasn't run since. This audit run "
+                    "itself resolves it (see mark-verified.py --clear).",
+                    expected=real_raw, actual=last_verified)
+            elif real_mmp < verified_mmp:
+                add(problems, "version-check-downgrade", "required", "framework.frameworkStatus.lastVerifiedVersion",
+                    f"Installed pv-init/SKILL.md is at version {real_raw}, OLDER than {last_verified} already "
+                    "verified in pv-context.json -- looks like a downgrade, a hand-edit, or a restored stale "
+                    "backup. This blocks the framework until resolved: inspect git history for these files to "
+                    "understand what happened before deciding how to fix it.",
+                    expected=f">= {last_verified}", actual=real_raw)
 
     result["schemaOk"] = not any(p["id"].startswith(("unknown-", "framework-missing")) for p in problems)
     json.dump(result, sys.stdout, ensure_ascii=False, indent=2)

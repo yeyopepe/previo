@@ -2,10 +2,19 @@
   "_warning": "Fichero gestionado por la skill pv-init. No lo edites a mano si no sabes lo que haces -- cada skill pv-* lo lee tal cual, sin mas validacion que el schema en .claude/skills/pv-init/schema.json.",
   "skillModels": {
     "_instructions": "Tras editar 'default' o 'overrides' de esta seccion, ejecuta desde la raiz del repo: python .claude/skills/pv-init/scripts/sync-skill-models.py -- reescribe el campo 'model'/'effort' en el frontmatter de cada SKILL.md 'pv-*' segun lo que quede configurado aqui. El harness de Claude Code solo lee ese frontmatter, no este JSON, asi que sin ejecutar el script los cambios de aqui no tienen efecto.",
-    "default": { "model": "claude-sonnet-5", "effort": "medium" },
+    "default": {
+      "model": "claude-sonnet-5",
+      "effort": "medium"
+    },
     "overrides": {
-      "pv-status": { "model": "claude-haiku-4-5", "effort": "medium" },
-      "pv-todo": { "model": "claude-haiku-4-5", "effort": "medium" }
+      "pv-status": {
+        "model": "claude-haiku-4-5",
+        "effort": "medium"
+      },
+      "pv-todo": {
+        "model": "claude-haiku-4-5",
+        "effort": "medium"
+      }
     }
   },
   "framework": {
@@ -16,9 +25,15 @@
     "sourcecodeDir": "/src",
     "workFolder": "/previo-sdd",
     "numberWidth": 5,
-    "interaction": { "language": "es" },
-    "changes": { "language": "es" },
-    "versions": { "language": "es" },
+    "interaction": {
+      "language": "es"
+    },
+    "changes": {
+      "language": "es"
+    },
+    "versions": {
+      "language": "es"
+    },
     "docs": {
       "functional": {
         "featuresDocPathDir": "docs/features",
@@ -38,6 +53,10 @@
       "versions.language": "Idioma de changelog.md, generado por pv-internal-changelog en {workFolder}/versions/{XXXX}/ a partir de changes/closed. Coincide con interaction porque el changelog se redacta en espanol.",
       "docs.functional.language": "Idioma de la documentacion de funcionalidades (featuresDocPathDir, p.ej. docs/features dentro de workFolder) que pv-do mantiene actualizada tras cada change/fix implementado. En espanol.",
       "docs.tech.language": "Idioma compartido por la documentacion de arquitectura (architectureDocDir) y la biblia de estilo (styleBibleDocDir), que pv-do mantiene actualizadas tras cada change/fix implementado. En espanol."
+    },
+    "frameworkStatus": {
+      "lastVerifiedVersion": "0.9.5b8",
+      "blocked": false
     }
   }
 }

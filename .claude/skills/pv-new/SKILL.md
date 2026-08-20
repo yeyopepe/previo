@@ -40,6 +40,8 @@ initialize/complete the framework in this project, and stop there.
 This project doesn't have the `pv-*` framework initialized yet (or is missing configuration). Run `/pv-init` first before invoking me again.
 ```
 
+Additionally, if `framework.frameworkStatus.blocked` is `true`, don't continue either: tell the user the framework is in a blocked state (show `framework.frameworkStatus.blockedReason` if present) and that they must run `pv-update` to diagnose and resolve it before this skill can proceed.
+
 ## 0.1 Check whether the given code is already in progress
 
 If, when invoking this skill, the user gives a change/fix code (`xxxx`) — e.g. `/pv-new 0001 ...` or "add this to change 0001" — check whether that folder exists **exactly** at `{changesDir}/inProgress/{xxxx}/`.

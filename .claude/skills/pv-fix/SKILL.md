@@ -42,6 +42,8 @@ If `.claude/pv-context.json` doesn't exist at the repo root, or is missing the `
 This project doesn't have the `pv-*` framework initialized yet (or is missing configuration). Run `/pv-init` first before invoking me again.
 ```
 
+Additionally, if `framework.frameworkStatus.blocked` is `true`, don't continue either: tell the user the framework is in a blocked state (show `framework.frameworkStatus.blockedReason` if present) and that they must run `pv-update` to diagnose and resolve it before this skill can proceed.
+
 ## 1. Understand the request at the functional level
 
 If there's ambiguity about which behavior is correct (for a bug) or exactly what needs to change (for a small change), ask. There's no need to locate the root cause in code yet — if the change turns out not to be trivial, `pv-how` does that when analyzing the fix in detail.

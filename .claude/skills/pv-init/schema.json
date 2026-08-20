@@ -118,6 +118,29 @@
           "description": "OPTIONAL (default 5). Number of digits of the sequential 'xxxx' code, zero-padded. Always written to pv-context.json even when the default is used -- the scripts that consume it have no fallback of their own. No need to ask the user unless they want something different from the default.",
           "examples": [5]
         },
+        "frameworkStatus": {
+          "type": "object",
+          "description": "OPTIONAL. Written exclusively by pv-update (scripts/mark-verified.py) at the end of a successful run -- no other skill writes here. Tracks whether the installed pv-* skill files (metadata.version in each SKILL.md's frontmatter) are in sync with what pv-update last verified, so every other user-invocable skill can do a one-line, zero-cost check at its own step 0 instead of re-running the full audit. Absent entirely on a project that has never run pv-update after pv-init -- that's the expected initial state, not itself a problem.",
+          "additionalProperties": false,
+          "properties": {
+            "lastVerifiedVersion": {
+              "type": "string",
+              "description": "OPTIONAL. The framework version (metadata.version read from pv-init/SKILL.md's frontmatter, formatted 'X.Y.Z' or 'X.Y.ZbN') at the end of the last pv-update run that verified the project. Compared by pv-update's audit-context.py against the CURRENT metadata.version of pv-init/SKILL.md on disk: a newer real version than this recorded one means an update was installed but pv-update hasn't run since (self-resolves the next time it does); an OLDER real version than this recorded one means a downgrade or inconsistency (see 'blocked').",
+              "examples": ["0.9.5b8"]
+            },
+            "blocked": {
+              "type": "boolean",
+              "default": false,
+              "description": "OPTIONAL (default false). Set to true by pv-update only when it detects the installed skills' real version is OLDER than lastVerifiedVersion already recorded here (someone hand-edited a SKILL.md, restored a stale backup, or otherwise downgraded the framework after it was already verified at a newer version). While true, every other pv-* skill refuses to continue past its own step 0 and tells the user to run pv-update to diagnose -- this field is the single place that decides that, so no skill re-implements the detection itself. Cleared back to false only by pv-update, once the user resolves or confirms the situation.",
+              "examples": [false, true]
+            },
+            "blockedReason": {
+              "type": "string",
+              "description": "OPTIONAL. Short, human-readable one-liner explaining why blocked is true, written by pv-update at the same time it sets blocked -- lets every other skill show something meaningful to the user without re-running the audit script itself.",
+              "examples": ["pv-init/SKILL.md reports version 0.9.4, but pv-context.json last verified 0.9.5b8 -- looks like a downgrade or restored backup. Run /pv-update to investigate."]
+            }
+          }
+        },
         "docs": {
           "type": "object",
           "description": "OPTIONAL. External reference documentation for the project, grouped by area ('functional', 'tech').",
@@ -201,6 +224,10 @@
       "framework": {
         "workFolder": "/previo-sdd",
         "numberWidth": 5,
+        "frameworkStatus": {
+          "lastVerifiedVersion": "0.9.5b8",
+          "blocked": false
+        },
         "interaction": { "language": "en" },
         "changes": { "language": "es" },
         "versions": { "language": "es" },

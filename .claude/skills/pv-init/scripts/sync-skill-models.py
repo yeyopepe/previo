@@ -36,11 +36,14 @@ def repo_root() -> Path:
 
 
 def bump_patch(version: str) -> str:
-    match = re.match(r"^(\d+)\.(\d+)\.(\d+)$", version.strip())
+    # Versions in this framework aren't strict semver -- they carry an
+    # optional 'bN' beta suffix with no separator (e.g. "0.9.5b8"), which
+    # must be preserved as-is across the bump, not stripped or reset.
+    match = re.match(r"^(\d+)\.(\d+)\.(\d+)([a-zA-Z][\w.-]*)?$", version.strip())
     if not match:
         return version
-    major, minor, patch = match.groups()
-    return f"{major}.{minor}.{int(patch) + 1}"
+    major, minor, patch, suffix = match.groups()
+    return f"{major}.{minor}.{int(patch) + 1}{suffix or ''}"
 
 
 def sync_skill_file(path: Path, model: str, effort: str) -> str | None:
@@ -87,7 +90,7 @@ def sync_skill_file(path: Path, model: str, effort: str) -> str | None:
 
     # Bump metadata.version patch, if a metadata block with a version exists.
     for i, line in enumerate(new_lines):
-        version_match = re.match(r"^(\s+)version:\s*([0-9]+\.[0-9]+\.[0-9]+)\s*$", line)
+        version_match = re.match(r"^(\s+)version:\s*([0-9]+\.[0-9]+\.[0-9]+[a-zA-Z]?[\w.-]*)\s*$", line)
         if version_match:
             indent, version = version_match.groups()
             new_lines[i] = f"{indent}version: {bump_patch(version)}\n"

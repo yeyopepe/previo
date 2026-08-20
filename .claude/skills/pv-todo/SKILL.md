@@ -25,6 +25,8 @@ If `.claude/pv-context.json` doesn't exist at the repo root, or is missing the `
 This project doesn't have the `pv-*` framework initialized yet (or is missing configuration). Run `/pv-init` first before invoking me again.
 ```
 
+Additionally, if `framework.frameworkStatus.blocked` is `true`, don't continue either: tell the user the framework is in a blocked state (show `framework.frameworkStatus.blockedReason` if present) and that they must run `pv-update` to diagnose and resolve it before this skill can proceed.
+
 From here on, `changesDir` is shorthand for `{workFolder}/changes` (a fixed-name subfolder inside `framework.workFolder`, which defaults to `"/"`, the repo root).
 
 ## 1. Decide whether it's a new idea or an expansion
