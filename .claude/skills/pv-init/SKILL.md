@@ -99,12 +99,16 @@ Fields to resolve — `framework` section:
 
     > Cuando termine toda la configuración, analizaré la app en `{sourcecodeDir}` para escribir su documentación técnica y de features. ¿Qué nivel de documentación quieres que genere?
     >
-    > **(a) Mínimo**: miraré el código fuente de la app y crearé:
-    > - En `architectureDocDir`: documentación centrada solamente en ficheros y clases, y la responsabilidad general de cada uno.
-    > - En `styleBibleDocDir`: documentación completa sobre el estilo de la app (si aplica).
-    > - En `featuresDocPathDir`: documentación básica, simplemente enumerando las funcionalidades detectadas.
+    > **(a) Mínimo**: más rápido y con un consumo de tokens menor. Es menos precisa al principio, pero se irá completando y mejorando automáticamente según se añadan nuevos cambios y fixes.
     >
-    > **(b) Completa**: miraré todo el código fuente y crearé documentación completa en `architectureDocDir`, `styleBibleDocDir` y `featuresDocPathDir`.
+    > **(b) Completa**: más lento y con mayor consumo de tokens (mayor cuánto mayor sea el tamaño/complejidad del proyecto). Mejor resultado desde el primer momento.
+
+    Internal only — what each mode actually generates, not shown to the user in the question above (it drives step 5.5's behavior, not the user's decision):
+    - **Mínimo**: look at the app's source code and create:
+      - In `architectureDocDir`: documentation focused only on files and classes, and each one's general responsibility.
+      - In `styleBibleDocDir`: full documentation on the app's style (if applicable).
+      - In `featuresDocPathDir`: basic documentation, just enumerating the detected features.
+    - **Completa**: look at all the source code and create full documentation in `architectureDocDir`, `styleBibleDocDir` and `featuresDocPathDir`.
 
     Keep the user's answer (mínimo/completa) in this conversation's memory only — never write it to `pv-context.json`, it's a one-off action for this run, not persistent configuration. This drives the new step 5.5 below.
 - `numberWidth` (optional, default `5`, no need to ask unless the user wants something different): always write it to `pv-context.json` — the default value if the user doesn't want something else, same as `skills.mockups`/`skills.diagrams` below — never leave the field absent. The scripts that consume it (`next-change-number.py`, `get-max-change-codes.py`) have no fallback of their own and fail if it's missing.
