@@ -16,6 +16,8 @@ Bootstraps the `pv-*` framework in the current project: creates (or completes) `
 
 Read [`schema.json`](schema.json) first if you haven't already this session — it's a JSON Schema that defines the exact shape of the file (the `framework` section), with every field documented in its `description` (required or not, what it's for, which skill uses it) and complete examples in `examples`.
 
+**Before any other step**, read [`workflow.init.md`](workflow.init.md) — it's the source of truth for this flow's sequence and branches (see `pv-design.en.md`'s "Workflow diagrams" section for the notation). If it doesn't exist or can't be followed, stop and report that instead of improvising the flow from the prose below. The numbered steps that follow are each node's detail (which script to run, what text to use) — the diagram governs sequence and branching; if the two ever disagree, the diagram wins and this prose gets corrected to match.
+
 ## 0. Check the dev environment and required tooling
 
 Before touching `.claude/pv-context.json`, verify that the command-line tools the `pv-*` framework depends on are installed and working. This step comes first because there's little point leaving the framework configured if `pv-new`/`pv-fix`/`pv-how`/`pv-do` then fail for lack of a tool.
@@ -32,39 +34,33 @@ Conditional tools — look at the repo (same as the exploration in step 2) to kn
 
 How to check: run the version commands with the shell tool for the system (`Bash` or `PowerShell` depending on the environment's `Platform`/`Shell`). A command that doesn't exist or returns a "not found" error counts as a missing tool.
 
-If any tool is missing:
+Detail for this step's `ASK` nodes (`workflow.init.md`'s `S0Ask`/`S0Proceed`):
 
-1. Tell the user clearly what's missing and what the framework needs it for (use the list above as reference).
-2. Propose how to install it on their OS (e.g. `winget install`/`choco install` on Windows, `brew install` on macOS, `apt install` on Linux) — be specific about the package and the exact command proposed.
-3. **Never install anything without the user's explicit confirmation** — installing software affects the system outside the repo. Ask first (`AskUserQuestion` or a direct confirmation) and, if they agree, run the install command with their help.
-4. After installing, re-check the tool (repeat the version command) to verify it installed and configured correctly (on `PATH`, expected version, etc.) before continuing.
-5. If the user doesn't want to or can't install something right now, ask explicitly whether they'd rather continue the initialization anyway (noting that this part of the framework won't work until it's resolved) or stop here. Don't assume which they prefer.
-
-Only once the base tools are available (and the conditional ones that can already be determined at this point, or the user has explicitly decided to proceed without them) continue to step 1.
+- Tell the user clearly what's missing and what the framework needs it for (use the list above as reference), and propose how to install it on their OS (e.g. `winget install`/`choco install` on Windows, `brew install` on macOS, `apt install` on Linux) — be specific about the package and the exact command proposed. **Never install anything without the user's explicit confirmation** — installing software affects the system outside the repo.
+- After installing, re-check the tool (repeat the version command) to verify it installed and configured correctly (on `PATH`, expected version, etc.) before continuing.
+- If the user doesn't want to or can't install something right now, don't assume which they'd prefer: ask explicitly whether to continue the initialization anyway (noting that part of the framework won't work until it's resolved) or stop here.
 
 ## 1. Check current state
 
-- **If `.claude/pv-context.json` doesn't exist**: follow the normal process from step 2 onward (exploration + questions + full write).
-- **If it exists but isn't valid JSON, or `check-context.py` below fails to run for any reason**: don't try to diagnose or fix it yourself — stop this flow and invoke `pv-update` (`Skill` tool) instead. It owns everything beyond "which optional fields were never configured": broken JSON, unknown fields, referenced skills/paths that don't exist on disk, a stale `pv.py`, `skillModels` drift, etc. Once it finishes (fixes applied automatically and reported, or stopped asking the user to fix genuinely-broken JSON by hand), re-run `check-context.py` and resume this step from the top — only continue the normal `pv-init` flow below if the file is now valid and there's still something left to configure.
-- **If it already exists and is valid JSON**, the comparison against the required fields in [`schema.json`](schema.json) is done deterministically and for free in tokens by the script [`scripts/check-context.py`](scripts/check-context.py) (standard Python, no external dependencies) — don't eyeball it against the schema yourself. Run from the repo root:
+The comparison against the fields in [`schema.json`](schema.json) is done deterministically and for free in tokens by the script [`scripts/check-context.py`](scripts/check-context.py) (standard Python, no external dependencies) — don't eyeball it against the schema yourself. Run from the repo root:
+
+```
+python .claude/skills/pv-init/scripts/check-context.py
+```
+
+It prints a single JSON on stdout: `{"exists", "hasFramework", "missingRequired", "complete", "hasLanguage"}`. `framework` no longer has any field marked `required: true` in `schema.json` (`workFolder` is optional, with default `"/"`), so `missingRequired` always comes back empty — `complete` simply reflects whether the `framework` section exists. `hasLanguage` is `true` when `framework.interaction.language` exists in the file, regardless of its value — it's the only field whose absence unconditionally triggers the language question in step 3; `changes.language`/`versions.language`/`docs.*.language` are optional refinements asked in the same round but don't gate `hasLanguage`. To know which other optionals are still unconfigured (needed for `workflow.init.md`'s `S1Complete` branch), read `.claude/pv-context.json` yourself and compare it field by field against the `framework` properties in `schema.json` (`workFolder`, `docs.tech.architectureDocDir`, `docs.tech.styleBibleDocDir`, `docs.functional.featuresDocPathDir`, `sourcecodeDir`, `skillModels`) to build your own "unconfigured optionals" list.
+
+Detail for this step's nodes:
+
+- **`S1Broken` (invalid JSON or `check-context.py` fails to run)**: don't try to diagnose or fix it yourself — invoke `pv-update` (`Skill` tool) instead. It owns everything beyond "which optional fields were never configured": broken JSON, unknown fields, referenced skills/paths that don't exist on disk, a stale `pv.py`, `skillModels` drift, etc. Once it finishes, re-run `check-context.py` and resume this step from the top.
+- **`S1AskReset`**: use `AskUserQuestion` with this exact text:
 
   ```
-  python .claude/skills/pv-init/scripts/check-context.py
+  The `pv-*` framework is already initialized in this project. Do you want to reinitialize it from scratch? This erases the current configuration (`framework`) in `.claude/pv-context.json` and repeats all the questions as if it didn't exist.
   ```
-
-  It prints a single JSON on stdout: `{"exists", "hasFramework", "missingRequired", "complete", "hasLanguage"}`. `framework` no longer has any field marked `required: true` in `schema.json` (`workFolder` is optional, with default `"/"`), so `missingRequired` always comes back empty — `complete` simply reflects whether the `framework` section exists. `hasLanguage` is `true` when `framework.interaction.language` exists in the file, regardless of its value — it's the only field whose absence unconditionally triggers the language question in step 3 (see below); `changes.language`/`versions.language`/`docs.*.language` are optional refinements asked in the same round but don't gate `hasLanguage`. To know which other optionals are still unconfigured, read `.claude/pv-context.json` yourself and compare it field by field against the `framework` properties in `schema.json` (`workFolder`, `docs.tech.architectureDocDir`, `docs.tech.styleBibleDocDir`, `docs.functional.featuresDocPathDir`, `sourcecodeDir`, `skillModels`) to build your own "unconfigured optionals" list. With both lists (the script's `missingRequired` + the optionals you detected):
-
-  - **If `complete` is `true`, `hasLanguage` is `true`, and there are no other unconfigured optionals**: use `AskUserQuestion` to ask the user if they want to re-initialize the project from scratch. Make it clear that this erases the current context (`framework`) and repeats the whole question process as if it didn't exist. If they confirm, erase the current content and continue from step 2. If not, skip straight to step 5 (see the rule below) and then step 6 — don't stop here without touching anything.
-
-    ```
-    The `pv-*` framework is already initialized in this project. Do you want to reinitialize it from scratch? This erases the current configuration (`framework`) in `.claude/pv-context.json` and repeats all the questions as if it didn't exist.
-    ```
-  - **If `complete` is `false`** (the `framework` section doesn't exist yet): follow the normal process from step 2 onward — there's nothing to preserve with a merge.
-  - **If `complete` is `true` but `hasLanguage` is `false` and/or there are other unconfigured optionals** (e.g. the user initialized once only confirming `workFolder` and declined the rest, or never got the language question because the project predates it): don't offer the destructive full reset up front. Ask first with `AskUserQuestion` whether they want to complete/review those specific optional fields (listing them, including language if `hasLanguage` is `false`) or leave things as they are; only if they explicitly ask to reset everything from scratch, follow the branch above. If they want to complete things, go to step 3 scoped to those fields and update in step 4 with a merge, same as with fields that were missing outright. If `hasLanguage` is already `true`, never ask about language again. Either way (completed now or left as-is), continue to step 5 per the rule below.
-
-  **Beyond `check-context.py`'s own checks**, if at any point in this step (or later, while exploring the repo or writing the file) you notice something `check-context.py` doesn't cover — a path configured in `pv-context.json` that doesn't exist on disk, `framework.skills.mockups`/`diagrams` naming a skill folder that isn't there, `{repo root}/pv.py` missing or clearly stale, a `{xxxx}` change code duplicated between `inProgress`/`implemented` — don't try to fix it inline as part of this normal flow: stop and invoke `pv-update` (`Skill` tool) instead, same as the invalid-JSON case above. Resume this flow afterward only if there's still configuration left for `pv-init` itself to handle.
-
-  **Step 5 always runs, on every invocation of this skill, regardless of which branch above was taken** — including a run where the user declines every question and nothing in `.claude/pv-context.json` changes. This is what keeps `{repo root}/pv.py` current after installing a newer version of the framework's skill files: `scaffold-project.py` always overwrites `pv.py` unconditionally and only creates folders/placeholders that don't yet exist, so re-running it against an already-configured, unchanged project is safe and idempotent — never skip straight from step 1 to "done" without it.
+- **`S1AskComplete`**: list the specific unconfigured optionals (including language if `hasLanguage` is `false`) and ask whether to complete/review them or leave things as they are; only if the user explicitly asks to reset everything from scratch, follow `S1AskReset` instead. If they want to complete things, step 3 is scoped to just those fields, and step 4 updates with a merge, same as fields missing outright. If `hasLanguage` is already `true`, never ask about language again.
+- **Beyond `check-context.py`'s own checks**, if at any point in this step (or later, while exploring the repo or writing the file) you notice something it doesn't cover — a path configured in `pv-context.json` that doesn't exist on disk, `framework.skills.mockups`/`diagrams` naming a skill folder that isn't there, `{repo root}/pv.py` missing or clearly stale, a `{xxxx}` change code duplicated between `inProgress`/`implemented` — don't try to fix it inline: invoke `pv-update` (`Skill` tool) instead, same as `S1Broken`. Resume this flow afterward only if there's still configuration left for `pv-init` itself to handle.
+- **Why step 5 always runs** regardless of which branch above was taken, including a run where the user declines every question and nothing in `.claude/pv-context.json` changes: this is what keeps `{repo root}/pv.py` current after installing a newer version of the framework's skill files — `scaffold-project.py` always overwrites `pv.py` unconditionally and only creates folders/placeholders that don't yet exist, so re-running it against an already-configured, unchanged project is safe and idempotent.
 
 ## 2. Explore the repo for clues
 
@@ -96,6 +92,21 @@ Fields to resolve — `framework` section:
   - If the user **is missing one of the three**, don't generate anything yourself here — leave its path (default or user-confirmed) written in `pv-context.json` as-is. [`scripts/scaffold-project.py`](scripts/scaffold-project.py) (step 5, run right after the file is written) creates the empty folder with its minimal placeholder deterministically, for free in tokens, instead of the model drafting it by hand on every init.
   - If the user **explicitly decides they don't want one of the three** when shown the summary in step 6 (e.g. they're not interested in maintaining a style guide), respect that decision: delete what `scaffold-project.py` generated for that field in step 5 and leave the field undefined in `pv-context.json` — the rest of the skills treat it as optional and skip it without asking anything.
 - `sourcecodeDir` (optional, default `"/src"`, but always ask/confirm it — don't assume it silently): propose the source code root folder detected in step 2 and ask for confirmation with `AskUserQuestion` (or the right name if detection failed). Write it with a leading `/` (e.g. `/src`, `/app`), relative to the repo root — the same convention as `workFolder`, to make it visually obvious it's not relative to `workFolder` like `docs.*` is. Used by `pv-how` as fallback context when `docs.tech.architectureDocDir` doesn't exist.
+
+  **Existing code check.** Once `sourcecodeDir` is confirmed, check whether that folder already exists and has content beyond an empty scaffold (e.g. more than just a `.gitkeep`) — a plain directory listing, no script needed.
+  - **If it doesn't exist, or exists but is empty**: continue the normal flow below, without mentioning anything about analysis.
+  - **If it already contains code** (an app already in progress): tell the user, with `AskUserQuestion`, using this exact fixed text (copy it verbatim every time — don't redraft it):
+
+    > Cuando termine toda la configuración, analizaré la app en `{sourcecodeDir}` para escribir su documentación técnica y de features. ¿Qué nivel de documentación quieres que genere?
+    >
+    > **(a) Mínimo**: miraré el código fuente de la app y crearé:
+    > - En `architectureDocDir`: documentación centrada solamente en ficheros y clases, y la responsabilidad general de cada uno.
+    > - En `styleBibleDocDir`: documentación completa sobre el estilo de la app (si aplica).
+    > - En `featuresDocPathDir`: documentación básica, simplemente enumerando las funcionalidades detectadas.
+    >
+    > **(b) Completa**: miraré todo el código fuente y crearé documentación completa en `architectureDocDir`, `styleBibleDocDir` y `featuresDocPathDir`.
+
+    Keep the user's answer (mínimo/completa) in this conversation's memory only — never write it to `pv-context.json`, it's a one-off action for this run, not persistent configuration. This drives the new step 5.5 below.
 - `numberWidth` (optional, default `5`, no need to ask unless the user wants something different): always write it to `pv-context.json` — the default value if the user doesn't want something else, same as `skills.mockups`/`skills.diagrams` below — never leave the field absent. The scripts that consume it (`next-change-number.py`, `get-max-change-codes.py`) have no fallback of their own and fail if it's missing.
 - `skills.mockups` and `skills.diagrams`: always write their defaults (`pv-internal-mockups-html`, `pv-internal-tech-mermaid`) to the file silently, without asking about them or mentioning them anywhere in this init — not in the questions, not in the step 6 summary. If the user ever wants to swap the underlying skill/technology, they'll find that documented in `schema.json` themselves.
 
@@ -136,6 +147,23 @@ For each of `docs.tech.architectureDocDir`/`docs.tech.styleBibleDocDir` the scri
 
 `pv.py` and the folders `scaffold-project.py` creates under `workFolder` (kept non-empty in git via their `.gitkeep`) are versioned in git like any other framework file (same as `.claude/pv-context.json`) — don't add them to `.gitignore`.
 
+## 5.5 Analyze existing code and generate initial documentation
+
+Only runs if step 3's `sourcecodeDir` check found existing code and the user picked a mode (mínimo/completa). If there was no existing code, skip this step entirely — don't mention it in step 6's summary either.
+
+1. Invoke `pv-internal-tech-analysis` (Skill tool) with a summary along the lines of "initial full analysis of the app in `{sourcecodeDir}` to generate architecture and style documentation for the first time" — `docs.tech` is empty at this point, so it goes straight to exploring the real code under `sourcecodeDir`, and returns already-synthesized context (architecture/layers, style conventions, file/symbol map).
+2. Invoke `pv-internal-doc-technical` (Skill tool, no parameters) to load its writing rules before drafting anything for `architectureDocDir`/`styleBibleDocDir` — same as `pv-do`'s step 2.1.
+3. Draft `architectureDocDir`, replacing the placeholder step 5 left there:
+   - **Mínimo**: only files/classes and each one's general responsibility.
+   - **Completa**: full architecture documentation (layers, flows, decisions) — not just the file/class listing.
+   - Update that folder's `INDEX.md` too if the content ends up split across more than one file (same convention `pv-do` follows: `NN-slug.md` + index table).
+4. Draft `styleBibleDocDir` — full style documentation in both modes (mínimo already asks for it "completa" too), only if it applies to the project. If the project has no visual/interaction layer to speak of, say so in step 6's summary instead of forcing empty content.
+5. Determine the app's feature list from the context already gathered in this step's point 1 (`pv-internal-tech-analysis`'s output):
+   - **Mínimo**: basic enumeration (name + functional area, no extended body).
+   - **Completa**: full functional description per feature.
+   - For each one, invoke `pv-internal-doc-features` with `action=find` (normally no match — this is the first pass) and then `action=upsert` with the drafted content — same contract `pv-do` uses in its step 2.1 (`area`, `title`, `body`, `available_in`, `codes`; use a neutral reference like `init` for `codes` since there's no real change/fix `xxxx` in this context).
+6. Tell the user (as part of step 6's summary, not a separate report) which documentation files were generated by this step.
+
 ## 6. Verify and confirm
 
 Before considering the initialization done:
@@ -144,4 +172,4 @@ Before considering the initialization done:
 2. Check step 5's `scaffold-project.py` output: every folder it reports as `"created"` or `"skipped"` should be configured and real on disk — a `docs.*` field with no matching entry in that JSON means it wasn't picked up correctly. If any of the three was left undefined because the user explicitly declined it, confirm no trace was left on disk or in the JSON (see step 5's decline handling).
 3. Confirm `{repo root}/pv.py` exists and matches [`assets/pv.py`](assets/pv.py) (step 5's `pvPy.status` should read `"overwritten"`).
 
-Show the user a complete summary of what was configured: the file's path, every `framework` field resolved (including ones left unconfigured and why), the resolved language configuration (`interaction.language`/`changes.language`/`versions.language`/`docs.*.language`, and what was written to `framework._comments`), the `skillModels` baseline written (`default`, and `overrides` if any skill differs from it — always written now, even with no customization), with the reminder to run `sync-skill-models.py` only if the user changed something beyond the mirrored baseline, and that they can now run `python3 pv.py` from the repo root to check the framework's status without going through Claude Code. Remind the user they can invoke this skill again to reconfigure any field later.
+Show the user a complete summary of what was configured: the file's path, every `framework` field resolved (including ones left unconfigured and why), the resolved language configuration (`interaction.language`/`changes.language`/`versions.language`/`docs.*.language`, and what was written to `framework._comments`), the `skillModels` baseline written (`default`, and `overrides` if any skill differs from it — always written now, even with no customization), with the reminder to run `sync-skill-models.py` only if the user changed something beyond the mirrored baseline, and that they can now run `python3 pv.py` from the repo root to check the framework's status without going through Claude Code. If step 5.5 ran, include in this same summary which documentation files it generated or updated (`architectureDocDir`/`styleBibleDocDir`/`featuresDocPathDir`, as applicable) and at which level (mínimo/completa). Remind the user they can invoke this skill again to reconfigure any field later.

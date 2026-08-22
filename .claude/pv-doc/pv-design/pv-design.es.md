@@ -13,6 +13,7 @@ Mapa de las skills que componen el framework `pv-*` y cómo se invocan entre sí
   - [framework](#framework)
 - [El lanzador `pv.py`](#el-lanzador-pvpy)
 - [Convención de marcadores en plantillas](#convención-de-marcadores-en-plantillas)
+- [Diagramas de flujo (workflow diagrams)](#diagramas-de-flujo-workflow-diagrams)
 - [Estructura completa de carpetas y ficheros](#estructura-completa-de-carpetas-y-ficheros)
 
 ## Diagrama de relaciones
@@ -76,6 +77,7 @@ Leyenda:
 - **pv-init** — Inicializa el framework: crea/completa `.claude/pv-context.json` (`framework.workFolder` — fijo en `/previo-sdd`, nunca preguntado, raíz relativa al repo bajo la que el framework gestiona `changes/`, `versions/` y `stuff/`, subcarpetas de nombre fijo que las skills crean por sí mismas —, docs a sincronizar, configuración de idioma) y comprueba que las herramientas de línea de comandos necesarias estén instaladas. En un primer `pv-init`, pregunta siempre el idioma de interacción (`framework.interaction.language`) y, con un sí/no, si el resto de áreas (`changes`, `versions`, `docs.functional`, `docs.tech`) comparten ese mismo idioma o se configuran una a una; deja constancia del porqué de cada elección en `framework._comments`. Si el proyecto ya estaba inicializado sin idioma configurado (`hasLanguage: false`), añade esa pregunta a la misma ronda que complete el resto de opcionales pendientes, sin volver a preguntar si ya estaba resuelto. Único punto de configuración del que dependen todas las demás skills. *Usa:* ninguna otra skill.
 
   Assets y scripts:
+  - [`workflow.init.md`](skills/pv-init/workflow.init.md) — diagrama Mermaid del flujo completo de esta skill (ver "Diagramas de flujo" más arriba); se lee antes de ejecutar cualquier paso, fuente de verdad de la secuencia y las ramas.
   - [`assets/pv.py`](skills/pv-init/assets/pv.py) — copia maestra del lanzador `pv.py`; `scaffold-project.py` la copia (sobrescribiendo siempre) a la raíz del repo en cada `pv-init`.
   - [`schema.json`](skills/pv-init/schema.json) — JSON Schema completo de `.claude/pv-context.json` (`additionalProperties: false` en cada nivel); es la referencia normativa de qué campos existen y sus valores por defecto.
   - [`scripts/check-context.py`](skills/pv-init/scripts/check-context.py) — comprueba si `pv-context.json` existe y está completo (sección `framework` presente, si tiene `interaction.language`), para que `pv-init` decida si hace falta el cuestionario completo, solo lo que falta, o nada.
@@ -268,7 +270,7 @@ Configuración de forma fija que las skills `pv-*` usan directamente, dividida e
   - `{workFolder}/versions/` — una subcarpeta por entrega preparada con `pv-version`, con código `XXXX` de texto libre elegido por el usuario en cada invocación; espacio de numeración totalmente independiente del `{xxxx}` de `changes/`.
   - `{workFolder}/stuff/` — ficheros propios del proyecto que ninguna otra skill del framework decide por él, empezando por `how-to-compile-version.md` (procedimiento de build que `pv-version` pregunta y escribe la primera vez que hace falta).
 - **`sourcecodeDir`** (`string`, opcional, default `"/src"`): carpeta raíz del código fuente del proyecto, relativa a la raíz del repo — con `/` inicial para que se distinga a simple vista de `docs.*`, que es relativa a `workFolder`. Mismo convenio que `workFolder`: esa `/` inicial es opcional y solo visual, nunca una ruta absoluta real — `"src"` y `"/src"` resuelven igual. La usa `pv-how` como contexto de respaldo al escribir `plan.md`, solo cuando `docs.tech.architectureDocDir` no existe como carpeta real en el repo.
-- **`numberWidth`** (`integer`, opcional, default `4`, mínimo `1`): número de dígitos del código secuencial `xxxx`, con ceros a la izquierda.
+- **`numberWidth`** (`integer`, opcional, default `5`, mínimo `1`): número de dígitos del código secuencial `xxxx`, con ceros a la izquierda.
 
 #### Configuración de skills
 
@@ -320,6 +322,37 @@ produce, una vez escrito en un fichero real con `changes.language` en español:
 `[[[...]]]` es sintaxis exclusiva de la plantilla: le indica a quien la rellena qué no traducir. Nunca aparece en el fichero generado — los corchetes se eliminan igual que `[YYYY-MM-DD]` se resuelve a una fecha real; solo sobrevive la etiqueta, en inglés, sin cambios.
 
 Cuando se añada un campo nuevo a una plantilla que algún script vaya a parsear literalmente, márcalo con `[[[...]]]` en la propia plantilla en vez de limitarte a describir la regla en prosa en un `SKILL.md` — la plantilla es la única fuente de verdad de qué etiquetas están protegidas, así que no hay nada que mantener sincronizado a mano. Un `SKILL.md` que escribe a partir de una plantilla marcada solo necesita un recordatorio breve en su nota "Language." de que las etiquetas marcadas se quedan fijas — no una lista repetida de cuáles son.
+
+## Diagramas de flujo (workflow diagrams)
+
+Algunas skills `pv-*` tienen un flujo con varios pasos y ramas (`pv-init`, `pv-update`). Para esas, la secuencia y las ramas viven en un fichero Mermaid dedicado junto al `SKILL.md` de la skill, y la skill lo lee **primero**, antes de ejecutar cualquier paso, siguiéndolo como fuente de verdad en vez de improvisar el flujo solo a partir de la prosa.
+
+Esta es una convención documental de todo el framework, independiente de `framework.skills.diagrams` (`pv-internal-tech-mermaid` o la alternativa que un proyecto configure ahí) — esa skill solo dibuja los diagramas que un llamador le pide generar para el usuario (diagramas funcionales/técnicos dentro de un change/fix), no conoce esta convención, y un proyecto puede sustituirla por otra tecnología de diagramación sin afectar en nada a los diagramas de flujo.
+
+**Nombre y ubicación del fichero**: `workflow.<nombre-flujo>.md`, dentro de la propia carpeta de la skill (p. ej. `pv-init/workflow.init.md`, `pv-update/workflow.audit.md`) — no hace falta repetir el nombre de la skill en el fichero, ya lo indica la carpeta que lo contiene. Una skill puede tener más de un fichero de este tipo si su `SKILL.md` cubre varias entradas/flujos independientes.
+
+**Contenido del fichero**: un único bloque ```mermaid``` `flowchart TD` con el flujo completo (todos los pasos y ramas), seguido de la leyenda fija de abajo en texto plano fuera del bloque — nada más. El detalle de cada paso (qué script correr, qué texto exacto usar) se queda en el `SKILL.md`; este fichero es el mapa de la secuencia y las ramas, no el texto completo. Debe poder leerse de forma autocontenida, sin depender de esta sección para entender la notación.
+
+Cuatro tipos de nodo, además de las formas habituales de `flowchart` (`[Texto]`/`{Decisión}`/`(Inicio/Fin)`):
+
+- **Paso interno**: `ID[Texto]` — la skill actúa sin hablar con el usuario (leer un fichero, correr un script, escribir algo).
+- **Informa sin bloquear**: `ID[INFO: Texto]` — la skill comunica algo al usuario pero continúa sin esperar respuesta.
+- **Informa y pide confirmación (bloqueante)**: `ID[ASK: Texto]` — la skill no puede avanzar hasta que el usuario responda; si la pregunta ya tiene las opciones como ramas, seguir con un nodo `{...}` justo después, conectado por `-->`.
+- **Rama de decisión**: `ID{Texto}` — cada arista de salida etiquetada (`-->|Sí|`, `-->|No|`, o el caso concreto), igual que cualquier otra decisión en un flowchart de Mermaid.
+
+**Leyenda fija** — copiar tal cual, sin traducir ni reformular, al final de cada fichero `workflow.*.md` nuevo:
+
+```
+Leyenda:
+- `[Texto]` — paso interno, la skill actúa sin hablar con el usuario.
+- `[INFO: Texto]` — la skill informa al usuario; no bloquea, continúa sin esperar respuesta.
+- `[ASK: Texto]` — la skill informa y pide confirmación/datos; bloqueante, no avanza sin respuesta del usuario.
+- `{Texto}` — rama de decisión; cada arista de salida lleva su propia etiqueta.
+```
+
+**Regla de lectura**: toda skill que tenga un `workflow.*.md` debe leerlo **antes** de ejecutar cualquier paso de su flujo (lo primero en su `SKILL.md`, incluso antes de su actual "paso 0"), y seguirlo nodo a nodo. Si el fichero no existe o no se puede parsear como el diagrama que describe su propio flujo, es un fallo duro: la skill se detiene y lo reporta — nunca improvisa el flujo de memoria ni sigue solo la prosa del `SKILL.md` como si el diagrama no existiera.
+
+**Relación con el `SKILL.md`**: el diagrama manda en secuencia y ramas; la prosa numerada del `SKILL.md` aporta el detalle de cada paso. Si alguna vez entran en conflicto, se corrige la prosa para que cuadre con el diagrama — nunca al revés.
 
 ## Estructura completa de carpetas y ficheros
 

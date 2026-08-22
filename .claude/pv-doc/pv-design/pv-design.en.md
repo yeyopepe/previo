@@ -13,6 +13,7 @@ Map of the skills that make up the `pv-*` framework and how they invoke each oth
   - [framework](#framework)
 - [The `pv.py` launcher](#the-pvpy-launcher)
 - [Marker convention in templates](#marker-convention-in-templates)
+- [Workflow diagrams](#workflow-diagrams)
 - [Full folder and file structure](#full-folder-and-file-structure)
 
 ## Relationship diagram
@@ -76,6 +77,7 @@ Legend:
 - **pv-init** — Initializes the framework: creates/completes `.claude/pv-context.json` (`framework.workFolder` — fixed at `/previo-sdd`, never asked about, the root relative to the repo under which the framework manages `changes/`, `versions/`, and `stuff/`, fixed-name subfolders that the skills create on their own —, docs to sync, and language configuration) and checks that the required command-line tools are installed. On a first `pv-init`, it always asks for the interaction language (`framework.interaction.language`) and, with a yes/no question, whether the rest of the areas (`changes`, `versions`, `docs.functional`, `docs.tech`) share that same language or are configured one by one; it records the reasoning behind each choice in `framework._comments`. If the project was already initialized without a configured language (`hasLanguage: false`), it adds that question to the same round that completes the rest of the pending optional fields, without asking again about anything already resolved. It's the single point of configuration all other skills depend on. *Uses:* no other skill.
 
   Assets and scripts:
+  - [`workflow.init.md`](skills/pv-init/workflow.init.md) — Mermaid diagram of this skill's full flow (see "Workflow diagrams" above); read before running any step, source of truth for sequence and branches.
   - [`assets/pv.py`](skills/pv-init/assets/pv.py) — master copy of the `pv.py` launcher; `scaffold-project.py` copies it (always overwriting) to the repo root on every `pv-init` run.
   - [`schema.json`](skills/pv-init/schema.json) — the complete JSON Schema for `.claude/pv-context.json` (`additionalProperties: false` at every level); the normative reference for which fields exist and their default values.
   - [`scripts/check-context.py`](skills/pv-init/scripts/check-context.py) — checks whether `pv-context.json` exists and is complete (whether the `framework` section is present, whether it has `interaction.language`), so `pv-init` can decide whether the full questionnaire is needed, only the missing parts, or nothing at all.
@@ -268,7 +270,7 @@ Fixed-shape configuration used directly by the `pv-*` skills, divided into four 
   - `{workFolder}/versions/` — one subfolder per release prepared with `pv-version`, with a free-text `XXXX` code chosen by the user on each invocation; a numbering space entirely independent from `changes/`'s `{xxxx}`.
   - `{workFolder}/stuff/` — project-specific files that no other framework skill decides on its own, starting with `how-to-compile-version.md` (the build procedure `pv-version` asks about and writes the first time it's needed).
 - **`sourcecodeDir`** (`string`, optional, default `"/src"`): the project's source code root folder, relative to the repo root — with a leading `/` to make it clear at a glance that, unlike `docs.*`, it's relative to the repo root rather than `workFolder`. Same convention as `workFolder`: that leading `/` is optional and purely visual, never a real absolute path — `"src"` and `"/src"` resolve identically. Used by `pv-how` as fallback context when analyzing a change/fix and writing its `plan.md`, only when `docs.tech.architectureDocDir` doesn't exist as a real folder in the repo.
-- **`numberWidth`** (`integer`, optional, default `4`, minimum `1`): the number of digits in the sequential `xxxx` code, zero-padded.
+- **`numberWidth`** (`integer`, optional, default `5`, minimum `1`): the number of digits in the sequential `xxxx` code, zero-padded.
 
 #### Skill configuration
 
@@ -320,6 +322,37 @@ produces, once written to a real file with `changes.language` set to Spanish:
 `[[[...]]]` is template-only syntax: it tells whoever is filling in the template what not to translate. It never appears in the generated file — the brackets are stripped the same way `[YYYY-MM-DD]` resolves to an actual date; only the label inside survives, in English, unchanged.
 
 When a new field is added to a template that some script will parse literally, mark it with `[[[...]]]` in the template itself rather than only describing the rule in prose in a `SKILL.md` — the template is the single source of truth for which labels are protected, so there's nothing to keep in sync by hand. A `SKILL.md` that writes from a marked template only needs a short reminder in its "Language." note that marked labels stay fixed — not a restated list of which ones.
+
+## Workflow diagrams
+
+Some `pv-*` skills have a multi-step flow with several branches (`pv-init`, `pv-update`). For those, the sequence and branches themselves live in a dedicated Mermaid file next to the skill's `SKILL.md`, and the skill reads that file **first**, before running any step, following it as the source of truth instead of improvising the flow from prose alone.
+
+This is a framework-wide documentation convention, independent of `framework.skills.diagrams` (`pv-internal-tech-mermaid` or whatever alternative a project configures there) — that skill only draws diagrams a caller asks it to generate for the user (functional/technical diagrams inside a change/fix), it doesn't know anything about this convention, and a project is free to swap it for another diagramming technology without affecting workflow diagrams at all.
+
+**File name and location**: `workflow.<flow-name>.md`, inside the skill's own folder (e.g. `pv-init/workflow.init.md`, `pv-update/workflow.audit.md`) — no need to repeat the skill's name in the file, the folder it lives in already says that. A skill can have more than one such file if its `SKILL.md` covers several independent entry points/flows.
+
+**File content**: a single ```mermaid``` `flowchart TD` block with the complete flow (every step and branch), followed by the fixed legend below in plain text outside the block — nothing else. Each step's detail (which script to run, what exact text to use) stays in the `SKILL.md`; this file is the map of sequence and branches, not the full text. It must be readable on its own, without needing to come back to this section to understand the notation.
+
+Four node kinds, on top of `flowchart`'s usual `[Text]`/`{Decision}`/`(Start/End)` shapes:
+
+- **Internal step**: `ID[Text]` — the skill acts without talking to the user (read a file, run a script, write something).
+- **Informs without blocking**: `ID[INFO: Text]` — the skill tells the user something but keeps going without waiting for a reply.
+- **Informs and asks for confirmation (blocking)**: `ID[ASK: Text]` — the skill can't proceed until the user answers; if the question's own options are the branches, follow it with a `{...}` node right after, connected by `-->`.
+- **Decision branch**: `ID{Text}` — every outgoing edge labeled (`-->|Yes|`, `-->|No|`, or the specific case), same as any other decision in a Mermaid flowchart.
+
+**Fixed legend** — copy verbatim, without translating or rewording, at the end of every new `workflow.*.md` file:
+
+```
+Legend:
+- `[Text]` — internal step, the skill acts without talking to the user.
+- `[INFO: Text]` — the skill informs the user; doesn't block, continues without waiting for a reply.
+- `[ASK: Text]` — the skill informs and asks for confirmation/input; blocking, doesn't proceed without the user's answer.
+- `{Text}` — decision branch; each outgoing edge carries its own label.
+```
+
+**Reading rule**: any skill with a `workflow.*.md` must read it **before** running any step of its flow (the very first thing in its `SKILL.md`, ahead of even its current "step 0"), and follow it node by node. If the file doesn't exist or can't be parsed as the diagram describing its own flow, that's a hard stop: the skill halts and reports it — never improvising the flow from memory, nor following the `SKILL.md`'s prose alone as if the diagram didn't exist.
+
+**Relationship with the `SKILL.md`**: the diagram governs sequence and branching; the `SKILL.md`'s numbered prose supplies each step's detail. If the two ever disagree, the diagram wins and the prose gets corrected to match — never the other way around.
 
 ## Full folder and file structure
 
