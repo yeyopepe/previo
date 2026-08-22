@@ -43,8 +43,15 @@ Once the changelog files are written, create a git tag named exactly the target 
 git tag <version>
 ```
 
-Don't push the tag — that's a separate, explicit action the user takes themselves when ready. Confirm the tag was created by listing it (`git tag --list <version>`) before reporting success.
+Confirm the tag was created by listing it (`git tag --list <version>`) before continuing.
 
-## 5. Confirm to the user
+## 5. Ask whether to push
 
-Tell the user the version is ready: the version now set across every `pv-*/SKILL.md`, the changelog files written, and the tag created (name and that it points at the current `HEAD`, not pushed). Remind them the tag still needs an explicit `git push --tags` (or `git push origin <version>`) whenever they want it published, since this skill never pushes on its own.
+Everything so far (frontmatter edits, changelog files, the local tag) is local and reversible. Pushing is not — it publishes to the shared remote and, once someone else fetches it, the tag/commits are no longer something you can quietly redo. Ask the user explicitly with `AskUserQuestion`: do they want you to push the branch and the tag yourself now, or will they push it themselves later?
+
+- **If they want you to push**: confirm which remote/branch (default to the current branch's upstream if it has one), then run `git push` for the branch followed by `git push origin <version>` (or `git push --tags` if they'd rather push every pending tag) for the tag. Report the exact commands run and their result.
+- **If they'll push it themselves**: don't run any push command. Just note in the final summary (step 6) that it's still pending.
+
+## 6. Confirm to the user
+
+Tell the user the version is ready: the version now set across every `pv-*/SKILL.md`, the changelog files written, the tag created (name and that it points at `HEAD`), and whether it was pushed (and where) or is still pending the user's own push per step 5.
