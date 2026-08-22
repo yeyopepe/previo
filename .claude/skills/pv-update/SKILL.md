@@ -4,7 +4,7 @@ description: Audits and repairs the pv-* framework's health in the current proje
 model: claude-sonnet-5
 effort: medium
 metadata:
-  version: 0.9.5b10
+  version: 0.9.5b11
   uses: []
 ---
 
