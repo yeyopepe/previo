@@ -489,12 +489,12 @@ Flag exclusivo del test harness del propio framework (`test/pv-test.py`, una cop
 ```json
 {
   "repoRoot": "..",
-  "workFolder": "/test/previo-sdd"
+  "workFolder": "/sandbox-test1/previo-sdd"
 }
 ```
 
 - `repoRoot`: ruta a la raíz real del repo (donde vive `.claude/skills/...`), **resuelta relativa a la ubicación del propio fichero de config** (que a su vez está siempre junto al script), no al directorio desde el que se invoca. Necesaria porque `pv.py` sigue invocando los scripts reales del framework (`filter_status.py`, `render_status.py`, etc.) — nunca copias — así que necesita saber dónde están.
-- `workFolder`: el `workFolder` de prueba a usar en vez del configurado en `pv-context.json` (p.ej. `/test/previo-sdd`), para no tocar los datos reales del proyecto.
+- `workFolder`: el `workFolder` de prueba a usar en vez del configurado en `pv-context.json` (p.ej. `/sandbox-test1/previo-sdd`), para no tocar los datos reales del proyecto.
 
 `run_script()` reenvía este `workFolder` como `--work-folder <valor>` a los 4 scripts que ya soportan ese override (`filter_status.py`, `render_status.py`, `list_todo.py`, `move-change.py`) — `sync-skill-models.py` queda excluido porque no toca `changes/`/`workFolder` en absoluto y no tiene ese flag.
 
